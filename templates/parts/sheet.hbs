@@ -1,0 +1,80 @@
+<section class="fcp-tab {{#if (eq activeTab 'sheet')}}active{{/if}}" data-tab="sheet">
+  {{#if actors.length}}
+  {{#if (gt actors.length 1)}}
+  <div class="fcp-actorpicker">
+    {{#each actors}}
+    <button type="button" class="{{#if this.active}}active{{/if}}" data-action="selectActor" data-actor-id="{{this.id}}"><img src="{{this.img}}" alt="">{{this.name}}</button>
+    {{/each}}
+  </div>
+  {{/if}}
+  {{/if}}
+
+  {{#unless actor}}
+  <div class="fcp-empty">{{localize "FCP.NoActor"}}</div>
+  {{else}}
+
+  {{#if header.hp}}
+  <div class="fcp-hp-editor">
+    <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}">
+    <button type="button" class="fcp-dmg" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
+    <button type="button" class="fcp-heal" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
+  </div>
+  {{/if}}
+
+  {{#if sheet.modes}}
+  <div class="fcp-modebar">
+    {{#each sheet.modes}}
+    <button type="button" class="{{#if this.active}}active{{/if}}" data-action="setMode" data-mode="{{this.key}}">{{this.label}}</button>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{#each sheet.sections}}
+  <div class="fcp-section">
+    <h3>{{this.title}}</h3>
+    {{#if (eq this.layout "list")}}
+    <div class="fcp-list">
+      {{#each this.tiles}}
+      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+        {{#if this.img}}<img src="{{this.img}}" alt="">{{else}}<span></span>{{/if}}
+        <div class="fcp-row-main"><div class="fcp-row-title">{{this.label}}</div>{{#if this.sub}}<div class="fcp-row-meta">{{this.sub}}</div>{{/if}}</div>
+        <div class="fcp-row-right">{{this.value}}</div>
+      </button>
+      {{/each}}
+    </div>
+    {{else}}
+    <div class="fcp-grid {{#if this.cols}}cols-{{this.cols}}{{/if}}">
+      {{#each this.tiles}}
+      <button type="button" class="fcp-tile {{#if this.prof}}fcp-prof{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+        <span class="fcp-tile-label">{{this.label}}</span>
+        <span class="fcp-tile-value">{{this.value}}</span>
+        {{#if this.sub}}<span class="fcp-tile-sub">{{this.sub}}</span>{{/if}}
+      </button>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/each}}
+
+  {{#if conditions.length}}
+  <div class="fcp-section">
+    <h3>{{localize "FCP.Conditions"}}</h3>
+    <div class="fcp-chips">
+      {{#each conditions}}
+      <button type="button" class="fcp-chip {{#if this.active}}active{{/if}}" data-action="toggleStatus" data-status-id="{{this.id}}">{{#if this.img}}<img src="{{this.img}}" alt="">{{/if}}{{this.name}}</button>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{#if sheet.rests.length}}
+  <div class="fcp-section">
+    <div class="fcp-grid cols-2">
+      {{#each sheet.rests}}
+      <button type="button" data-action="rest" data-kind="{{this.kind}}">{{this.label}}</button>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+  {{/unless}}
+</section>
