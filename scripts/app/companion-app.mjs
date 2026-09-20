@@ -41,7 +41,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ["fcp"],
     window: { frame: false, positioned: false },
     actions: {
-      tab: CompanionApp.#onTab,
+      // "tab" is reserved: ApplicationV2 handles data-action="tab" itself and throws without a tab group.
+      switchTab: CompanionApp.#onTab,
       selectActor: CompanionApp.#onSelectActor,
       refresh: CompanionApp.#onRefresh,
       exitCompanion: CompanionApp.#onExit,
@@ -106,7 +107,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Re-render only some parts, coalescing bursts of updates. */
   refreshParts = foundry.utils.debounce(() => {
-    if (!this.rendered || !this._dirty.size) return; // keep the set: flushed after the first render
+    if (!this._dirty.size) return;
+    if (!this.rendered) {
+      // Mid-render (or not rendered yet): try again shortly instead of dropping the update.
+      if (this.state === CompanionApp.RENDER_STATES.RENDERING) setTimeout(() => this.refreshParts(), 120);
+      return;
+    }
     const parts = Array.from(this._dirty);
     this._dirty.clear();
     this.render({ parts });
@@ -145,6 +151,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /** Pinned hint, derived from the live actor so it never goes stale. */
+  #pinText(actor) {
+    if (!this.pin || !actor || this.pin.actorId !== actor.id) return "";
+    return this.adapter.pinText?.(actor, this.pin.key) ?? "";
+  }
+
   /** Kicker, one-line summary and pinned hint shown by the header of each tab. */
   #headerInfo(actor, header) {
     const loc = key => game.i18n.localize(key);
@@ -160,7 +172,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       left: tab === "sheet" ? loc("FCP.Title") : loc(`FCP.Tabs.${tab.capitalize()}`),
       right,
       summary: header?.summary?.[tab] ?? "",
-      pin: this.pin ?? ""
+      pin: this.#pinText(actor)
     };
   }
 
@@ -204,7 +216,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Current value of a text input, so a re-render does not wipe what the player is typing. */
   #draft(name) {
-    return this.rendered ? (this.element?.querySelector(`input[name=${name}]`)?.value ?? "") : "";
+    // Not gated on `rendered`: during a re-render the state is already RENDERING but the old DOM is still there.
+    return this.element?.querySelector(`input[name=${name}]`)?.value ?? "";
   }
 
   /** Reference mode: tiles stay informative but do not roll; no advantage/reaction bar. */
@@ -213,10 +226,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const section of sheet.sections ?? []) {
       for (const tile of section.tiles ?? []) {
         if (tile.action !== "roll") continue;
-        if (tile.pin) {
+        if (tile.data?.kind === "trait" && this.adapter.pinText) {
           // Reference mode: tapping a trait pins its dice recipe in the header instead of rolling.
           tile.action = "pin";
-          tile.data = { pin: tile.pin };
           continue;
         }
         tile.action = "noop";
@@ -354,8 +366,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       log.appendChild(html);
     }
-    const tab = log.closest(".fcp-tab");
-    if (tab) tab.scrollTop = tab.scrollHeight;
+    log.scrollTop = log.scrollHeight;
   }
 
   /** Called by hooks when a chat message changes. */
@@ -399,8 +410,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static #onPin(event, target) {
-    const text = target.dataset.pin;
-    this.pin = this.pin === text ? null : text;
+    const key = target.dataset.key;
+    const same = this.pin?.key === key && this.pin?.actorId === this.actor?.id;
+    this.pin = same ? null : { actorId: this.actor?.id, key };
     this.markDirty("header");
   }
 
@@ -410,6 +422,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static #onSelectActor(event, target) {
     this._actorId = target.dataset.actorId;
+    this.pin = null;
     setSetting(SETTINGS.LAST_ACTOR, this._actorId);
     this.tokenId = null;
     this.mapTarget = null;

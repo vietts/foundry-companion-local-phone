@@ -1,7 +1,23 @@
 /* Phone Companion — Broadsheet look: newsprint serif, cyan and magenta as spot colors, no boxes. */
 
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap");
-@import url("https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css");
+/* Fonts and icons ship with the module (no CDN): Source Serif 4 (OFL) and Phosphor duotone (MIT). */
+@import url("./vendor/phosphor.css");
+
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("./vendor/source-serif-4-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("./vendor/source-serif-4-latin-wght-italic.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
 
 :root {
   --fcp-safe-top: env(safe-area-inset-top, 0px);
@@ -58,6 +74,13 @@ body.fcp-active #notifications {
   --radius-sm: 1px;
   --fcp-tap: 44px;
 
+  /* The companion is always light: do not inherit Foundry's dark-theme text colors. */
+  color-scheme: light;
+  --color-text-emphatic: var(--color-text);
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-neutral-700);
+  --color-text-subtle: var(--color-neutral-600);
+
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -78,16 +101,20 @@ body.fcp-active #notifications {
   box-sizing: border-box;
 }
 
-/* Resets use :where() so component classes below always win. */
+/*
+ * Foundry restyles every button and field (height, background, border, glow on hover/focus/.active).
+ * These resets sit in the "modules" layer, after Foundry's "elements" layer, so `all: unset` wins over all of it.
+ * They use :where() so the component classes below always override them.
+ */
 :where(#fcp-app) button {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  cursor: pointer;
   font: inherit;
   color: inherit;
-  background: none;
-  border: none;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
   text-align: left;
+  -webkit-tap-highlight-color: transparent;
 }
 
 :where(#fcp-app) button:active {
@@ -107,9 +134,11 @@ body.fcp-active #notifications {
 
 :where(#fcp-app) input,
 :where(#fcp-app) select {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
   font: 400 15px var(--font-body);
   color: var(--color-text);
-  background: none;
   border: 1.5px solid var(--color-neutral-500);
   border-radius: var(--radius-sm);
   min-height: 44px;
@@ -119,8 +148,44 @@ body.fcp-active #notifications {
   -webkit-user-select: text;
 }
 
+:where(#fcp-app) select {
+  appearance: auto;
+}
+
+#fcp-app input::placeholder {
+  color: var(--color-neutral-600);
+  opacity: 1;
+}
+
+:where(#fcp-app) :is(h1, h2, h3, h4, h5, h6) {
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 :where(#fcp-app) i[class*="ph-"] {
   line-height: 1;
+}
+
+/* Buttons that hold centered text or an icon. */
+.fcp-dicebar button,
+.fcp-customroll button,
+.fcp-chat-compose button,
+.fcp-rests button,
+.fcp-modebar button,
+.fcp-mapbar button,
+.fcp-btn,
+.fcp-stepper button,
+.fcp-primary,
+.fcp-row-right button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fcp-btn {
+  justify-content: flex-start;
 }
 
 /* ---------- Shared type ---------- */
@@ -208,6 +273,7 @@ body.fcp-active #notifications {
 
 .fcp-name {
   min-width: 0;
+  flex: 1;
 }
 
 .fcp-name b {
@@ -216,7 +282,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-header.big .fcp-name b {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.1;
   letter-spacing: -0.01em;
 }
@@ -246,7 +312,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-menu button {
-  width: 36px;
+  width: 30px;
   height: 36px;
   display: flex;
   align-items: center;
@@ -259,6 +325,12 @@ body.fcp-active #notifications {
 
 .fcp-tab {
   display: none;
+}
+
+.fcp-tab,
+.fcp-chat-log {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-500) transparent;
 }
 
 .fcp-tab.active {
@@ -278,7 +350,7 @@ body.fcp-active #notifications {
   display: flex;
   flex-direction: column;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .fcp-tab[data-tab="chat"].active {
@@ -441,6 +513,18 @@ body.fcp-active #notifications {
   font: 600 16px var(--font-heading);
   color: var(--color-text);
   margin-left: 4px;
+}
+
+/* Typed damage / healing (goes through the system, thresholds and armor slots included). */
+.fcp-hp-editor {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  margin: 0 0 22px;
+}
+
+.fcp-hp-editor input {
+  min-height: 44px;
 }
 
 /* ---------- Sheet: modes, traits, lists ---------- */
@@ -637,6 +721,10 @@ body.fcp-active #notifications {
   width: 16px;
   height: 16px;
   border: none;
+}
+
+.fcp-chip img[src*="icons/svg/"] {
+  filter: invert(1);
 }
 
 .fcp-chip.active {
@@ -840,6 +928,39 @@ body.fcp-active #notifications {
   margin: 0 0 8px;
 }
 
+.fcp-item-desc :is(h1, h2, h3, h4, h5, h6) {
+  font: 600 15px/1.3 var(--font-heading);
+  margin: 10px 0 4px;
+  color: var(--color-text);
+}
+
+.fcp-item-desc a {
+  color: var(--color-accent-700);
+}
+
+.fcp-item-desc :is(ul, ol) {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.fcp-item-desc table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.fcp-item-desc :is(th, td) {
+  border: 1px solid var(--color-neutral-300);
+  padding: 3px 6px;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.fcp-item-desc :is(th) {
+  background: var(--color-neutral-200);
+}
+
 .fcp-item-actions {
   display: flex;
   flex-wrap: wrap;
@@ -904,10 +1025,30 @@ body.fcp-active #notifications {
   -webkit-user-select: text;
 }
 
+/* !important: a system rule outside Foundry's layers would otherwise win with its light-on-dark colors. */
+.fcp-chat-log .chat-message .message-content,
+.fcp-chat-log .chat-message .message-content p {
+  color: var(--color-text) !important;
+}
+
+.fcp-chat-log .chat-message .portrait {
+  flex: none;
+  width: auto;
+}
+
+.fcp-chat-log .chat-message .actor-img,
+.fcp-chat-log .chat-message .portrait img {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
+  border: 1px solid var(--color-neutral-400);
+}
+
 .fcp-chat-log .chat-message .message-header {
+  align-items: center;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  justify-content: flex-start;
+  gap: 8px;
   gap: 8px;
   margin-bottom: 3px;
   font: 700 10.5px/1 var(--font-heading);
@@ -922,6 +1063,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-chat-log .chat-message .message-header time {
+  margin-left: auto;
   font: 400 10.5px var(--font-body);
   letter-spacing: 0;
   text-transform: none;
@@ -1044,8 +1186,8 @@ body.fcp-active #notifications {
 }
 
 .fcp-mapwrap {
-  flex: 1;
-  min-height: 120px;
+  flex: 1 0 200px;
+  min-height: 200px;
   container-type: size;
   display: flex;
   align-items: center;

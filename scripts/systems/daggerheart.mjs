@@ -5,6 +5,11 @@ import { getSetting } from "../settings.mjs";
 const TRAITS = ["agility", "strength", "finesse", "instinct", "presence", "knowledge"];
 
 /** Text for one system label; icon-only information (recall cost, damage type) is rendered as text. */
+/** Number of entries of an Array or a Foundry Collection/Set (which has .size, not .length). */
+function count(list) {
+  return list?.size ?? list?.length ?? 0;
+}
+
 function labelToText(label) {
   if (typeof label === "string") return label;
   if (!label?.value) return "";
@@ -65,13 +70,13 @@ export class DaggerheartAdapter extends SystemAdapter {
       { key: "armor", label: t("FCP.DH.ArmorLabel"), tone: "armor", res: r.armor }
     ].filter(d => d.res && d.res.max > 0);
 
-    // Tap box n: fill up to n, or clear it when it is already the last filled one.
+    // Tap box n: fill up to n, or clear down to n-1 when it is already filled (see setBox).
     const meters = defs.map(({ key, label, tone, res }) => {
       const value = res.value ?? 0;
       const max = res.max ?? 0;
       return {
         key, label, tone, value, max,
-        boxes: Array.from({ length: max }, (_, i) => ({ on: i < value, delta: i + 1 === value ? -1 : i + 1 - value }))
+        boxes: Array.from({ length: max }, (_, i) => ({ on: i < value, n: i + 1 }))
       };
     });
     const by = key => meters.find(m => m.key === key);
@@ -79,6 +84,8 @@ export class DaggerheartAdapter extends SystemAdapter {
 
     return {
       meters,
+      // Typed damage / healing goes through takeDamage / takeHealing (thresholds and armor slots).
+      hpEditor: true,
       stats: [],
       summary: {
         actions: `${t("FCP.DH.HPShort")} ${fmt("hp")} · ${t("FCP.DH.Hope")} ${fmt("hope")} · ${t("FCP.DH.Stress")} ${fmt("stress")}`,
@@ -136,9 +143,7 @@ export class DaggerheartAdapter extends SystemAdapter {
             label,
             value: mod,
             action: "roll",
-            data: { kind: "trait", key },
-            // Reference mode: what to roll at the table, pinned in the header.
-            pin: game.i18n.format("FCP.DH.DiceRecipe", { trait: label, mod })
+            data: { kind: "trait", key }
           };
         })
       }
@@ -180,7 +185,7 @@ export class DaggerheartAdapter extends SystemAdapter {
     if (effects.length) sections.push({ title: t("FCP.DH.ActiveEffects"), layout: "notes", lines: effects });
 
     const passives = actor.items
-      .filter(i => i.type === "feature" && !i.system.actionsList?.length && this.#isAvailable(actor, i))
+      .filter(i => i.type === "feature" && !count(i.system.actionsList) && this.#isAvailable(actor, i))
       .map(i => ({ name: i.name, text: plainText(i.system.description, 200) }));
     if (passives.length) sections.push({ title: t("FCP.DH.Passives"), layout: "passives", entries: passives });
 
@@ -221,7 +226,7 @@ export class DaggerheartAdapter extends SystemAdapter {
   /* ---------------- Actions ---------------- */
 
   #actionRows(item, { actionLabel } = {}) {
-    const list = item.system.actionsList ?? [];
+    const list = Array.from(item.system.actionsList ?? []);
     const rows = [];
     for (const action of list) {
       const isAttack = action === item.system.attack;
@@ -313,7 +318,7 @@ export class DaggerheartAdapter extends SystemAdapter {
 
     // Features with actions (class, subclass, ancestry, community, beastform...).
     const featureRows = [];
-    for (const f of actor.items.filter(i => i.type === "feature")) {
+    for (const f of actor.items.filter(i => i.type === "feature" && this.#isAvailable(actor, i))) {
       featureRows.push(...this.#actionRows(f).map(r => ({ ...r, uses: r.uses ?? this.#itemResource(f) })));
     }
     if (featureRows.length) groups.push({ title: game.i18n.localize("FCP.DH.Features"), items: featureRows });
@@ -323,9 +328,13 @@ export class DaggerheartAdapter extends SystemAdapter {
 
   /** " / max" suffix for the loadout title, empty when the limit cannot be read. */
   #loadoutMax(actor) {
-    const max = (game.system.settings?.homebrew?.maxLoadout ?? null);
-    const bonus = actor.system.bonuses?.maxLoadout ?? 0;
-    return typeof max === "number" ? ` / ${max + bonus}` : "";
+    try {
+      const base = game.settings.get(CONFIG.DH.id, CONFIG.DH.SETTINGS.gameSettings.Homebrew).maxLoadout;
+      const max = (base ?? 0) + (actor.system.bonuses?.maxLoadout ?? 0);
+      return Number.isFinite(max) && max > 0 ? ` / ${max}` : "";
+    } catch (err) {
+      return "";
+    }
   }
 
   #itemResource(item) {
@@ -353,7 +362,7 @@ export class DaggerheartAdapter extends SystemAdapter {
     const withQty = i => [labelsToText(i) || game.i18n.localize(`FCP.DH.Kind.${i.type}`), i.system.quantity > 1 ? `×${i.system.quantity}` : ""].filter(Boolean).join(" · ");
     const consumables = actor.items.filter(i => i.type === "consumable").map(i => ({
       id: i.id, name: i.name, img: i.img, meta: withQty(i), uses: this.#itemResource(i),
-      action: i.system.actionsList?.length ? "useItem" : null, actionLabel: game.i18n.localize("FCP.Use"), data: {}
+      action: count(i.system.actionsList) ? "useItem" : null, actionLabel: game.i18n.localize("FCP.Use"), data: {}
     }));
     if (consumables.length) groups.push({ title: game.i18n.localize("FCP.DH.Consumables"), items: consumables });
 
@@ -401,6 +410,41 @@ export class DaggerheartAdapter extends SystemAdapter {
     return actor.modifyResource([{ key, value: delta }]);
   }
 
+  /** Taps are applied one after the other, each reading the value the previous one left behind. */
+  #queue = Promise.resolve();
+
+  #enqueue(fn) {
+    const run = this.#queue.then(fn, fn);
+    this.#queue = run.catch(() => {});
+    return run;
+  }
+
+  /**
+   * Tap box `n` of a resource, exactly like the desktop sheet: when the box is already filled the value
+   * drops to n-1, otherwise it becomes n. Absolute values, so two quick taps cannot add up wrongly.
+   */
+  setBox(actor, key, n) {
+    return this.#enqueue(async () => {
+      if (key === "armor") {
+        const { value, max } = actor.system.armorScore;
+        const next = value >= n ? n - 1 : n;
+        return actor.system.updateArmorValue({ value: Math.min(next - value, max - value) });
+      }
+      const path = key === "hp" ? "hitPoints" : key;
+      const res = actor.system.resources[path];
+      if (!res) return false;
+      const next = (res.value ?? 0) >= n ? n - 1 : n;
+      return actor.update({ [`system.resources.${path}.value`]: Math.clamp(next, 0, res.max ?? next) });
+    });
+  }
+
+  /** What to roll at the table for a trait: "Agility +2 · d12 Hope + d12 Fear +2". */
+  pinText(actor, key) {
+    const cfg = CONFIG.DH?.ACTOR?.abilities?.[key];
+    const label = cfg?.label ? game.i18n.localize(cfg.label) : key;
+    return game.i18n.format("FCP.DH.DiceRecipe", { trait: label, mod: signed(actor.system.traits?.[key]?.value) });
+  }
+
   /* ---------------- Handlers ---------------- */
 
   #rollOptions() {
@@ -423,7 +467,9 @@ export class DaggerheartAdapter extends SystemAdapter {
       case "useItem": return this.#useItem(actor, data);
       case "toggleItem": return this.#toggleItem(actor, data);
       case "rest": return this.rest(actor, data.kind);
-      case "counter": return this.counter(actor, data.key, Number(data.delta));
+      case "counter":
+        if (data.box !== undefined) return this.setBox(actor, data.key, Number(data.box));
+        return this.counter(actor, data.key, Number(data.delta));
     }
     return false;
   }

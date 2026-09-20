@@ -1,5 +1,5 @@
 <nav class="fcp-nav">
   {{#each tabs}}
-  <button type="button" class="{{#if this.active}}active{{/if}}" data-action="tab" data-tab="{{this.id}}"><i class="{{this.icon}}"></i>{{this.label}}{{#if this.badge}}<span class="fcp-badge">{{this.badge}}</span>{{/if}}</button>
+  <button type="button" class="{{#if this.active}}active{{/if}}" data-action="switchTab" data-tab="{{this.id}}"><i class="{{this.icon}}"></i>{{this.label}}{{#if this.badge}}<span class="fcp-badge">{{this.badge}}</span>{{/if}}</button>
   {{/each}}
 </nav>

@@ -11,7 +11,7 @@ Priorità, in ordine:
 
 Con **Dadi digitali** attivi (impostazione del dispositivo, spenta di default) toccare caratteristiche, attacchi e incantesimi tira tramite il sistema, con il risultato nella chat di Foundry, e la chat guadagna dadi rapidi e formule libere.
 
-Il modulo non usa un server esterno: gira dentro il normale client Foundry. Sul telefono si può disattivare il canvas (il modulo lo propone al primo avvio), così non vengono scaricate le immagini delle scene e il caricamento resta leggero.
+Il modulo non usa un server esterno e nemmeno CDN: gira dentro il normale client Foundry, con font (Source Serif 4, OFL) e icone (Phosphor duotone, MIT) incluse in `styles/vendor/`. Sul telefono si può disattivare il canvas (il modulo lo propone al primo avvio), così non vengono scaricate le immagini delle scene e il caricamento resta leggero.
 
 ## Requisiti
 
@@ -74,6 +74,7 @@ scripts/
   systems/              adattatori: dnd5e, daggerheart, generico
 templates/parts/        template Handlebars per ogni sezione
 styles/companion.css
+  styles/vendor/        font e icone incluse (licenze accanto ai file)
 lang/                   en, it
 ```
 

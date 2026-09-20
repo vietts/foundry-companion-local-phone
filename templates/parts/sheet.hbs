@@ -20,11 +20,18 @@
         <span class="fcp-meter-count">{{this.value}} <small>/ {{this.max}}</small></span>
       </div>
       <div class="fcp-boxes">
-        {{#each this.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../key}}" data-delta="{{this.delta}}"></button>{{/each}}
+        {{#each this.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../key}}" data-box="{{this.n}}" aria-label="{{../label}} {{this.n}}"></button>{{/each}}
       </div>
     </div>
     {{/each}}
   </div>
+  {{#if header.hpEditor}}
+  <div class="fcp-hp-editor">
+    <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}" aria-label="{{localize 'FCP.HP'}}">
+    <button type="button" class="fcp-btn" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
+    <button type="button" class="fcp-btn" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
+  </div>
+  {{/if}}
   {{else}}
   <div class="fcp-section">
     {{#if header.hp}}
@@ -33,7 +40,7 @@
       <div><small>{{localize "FCP.HP"}}</small>{{header.hp.value}} / {{header.hp.max}}{{#if header.hp.temp}}<small> +{{header.hp.temp}}</small>{{/if}}</div>
       <button type="button" data-action="hpDelta" data-delta="1">+</button>
     </div>
-    <div class="fcp-hp-editor" style="display:flex; gap:6px; padding:8px 0">
+    <div class="fcp-hp-editor">
       <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}">
       <button type="button" class="fcp-btn" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
       <button type="button" class="fcp-btn" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
