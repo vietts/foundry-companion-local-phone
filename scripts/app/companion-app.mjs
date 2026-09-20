@@ -8,11 +8,11 @@ const T = `modules/${MODULE_ID}/templates/parts`;
 const VIDEO_RE = /\.(webm|mp4|m4v|ogv|ogg)(\?.*)?$/i;
 
 const TAB_ICONS = {
-  sheet: "fas fa-user",
-  actions: "fas fa-bolt",
-  inventory: "fas fa-suitcase",
-  chat: "fas fa-comments",
-  map: "fas fa-map"
+  sheet: "ph-duotone ph-scroll",
+  actions: "ph-duotone ph-sword",
+  inventory: "ph-duotone ph-backpack",
+  chat: "ph-duotone ph-chat-teardrop-text",
+  map: "ph-duotone ph-compass"
 };
 
 export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -27,6 +27,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this._chatCache = new Map();
     this._actorId = getSetting(SETTINGS.LAST_ACTOR) || null;
     this.expandedItems = new Set();
+    this.pin = null;
   }
 
   /** Digital dice off = reference mode: nothing rolls, items open their text. */
@@ -47,6 +48,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       hpDelta: CompanionApp.#onHpDelta,
       hpApply: CompanionApp.#onHpApply,
       counter: CompanionApp.#onAdapterAction,
+      pin: CompanionApp.#onPin,
       setMode: CompanionApp.#onSetMode,
       roll: CompanionApp.#onAdapterAction,
       useItem: CompanionApp.#onAdapterAction,
@@ -129,6 +131,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       actor: actor ? { id: actor.id, name: actor.name, img: actor.img, subtitle: this.adapter.subtitle(actor) } : null,
       actors,
       header,
+      headerInfo: this.#headerInfo(actor, header),
       dice: this.diceEnabled,
       conditions: actor ? this.adapter.conditions(actor) : [],
       activeTab: this.activeTab,
@@ -142,14 +145,42 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /** Kicker, one-line summary and pinned hint shown by the header of each tab. */
+  #headerInfo(actor, header) {
+    const loc = key => game.i18n.localize(key);
+    const tab = this.activeTab;
+    const right = {
+      sheet: actor ? this.adapter.kicker(actor) : "",
+      actions: loc(this.diceEnabled ? "FCP.Hint.ActionsDice" : "FCP.Hint.Actions"),
+      inventory: loc("FCP.Hint.Inventory"),
+      chat: game.i18n.format("FCP.Hint.Chat", { n: getSetting(SETTINGS.CHAT_LIMIT) }),
+      map: ""
+    }[tab] ?? "";
+    return {
+      left: tab === "sheet" ? loc("FCP.Title") : loc(`FCP.Tabs.${tab.capitalize()}`),
+      right,
+      summary: header?.summary?.[tab] ?? "",
+      pin: this.pin ?? ""
+    };
+  }
+
   async _preparePartContext(partId, context, options) {
     context = await super._preparePartContext(partId, context, options);
     const actor = this.actor;
     switch (partId) {
+      case "header":
+        context.chat = {
+          quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"],
+          formulaDraft: this.#draft("formula")
+        };
+        break;
       case "sheet":
         context.sheet = actor ? await this.adapter.prepareSheet(actor) : { sections: [], rests: [] };
         context.hpDraft = this.#draft("hpAmount");
         if (!this.diceEnabled) this.#stripRolls(context.sheet);
+        for (const section of context.sheet.sections ?? []) {
+          for (const tile of section.tiles ?? []) tile.zero = /^[+−-]?0$/.test(String(tile.value).trim());
+        }
         break;
       case "actions":
         context.tabId = "actions";
@@ -162,11 +193,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         await this.#decorateItems(actor, context.groups);
         break;
       case "chat":
-        context.chat = {
-          quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"],
-          messageDraft: this.#draft("message"),
-          formulaDraft: this.#draft("formula")
-        };
+        context.chat = { messageDraft: this.#draft("message") };
         break;
       case "map":
         context.map = this.#prepareMap();
@@ -186,6 +213,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const section of sheet.sections ?? []) {
       for (const tile of section.tiles ?? []) {
         if (tile.action !== "roll") continue;
+        if (tile.pin) {
+          // Reference mode: tapping a trait pins its dice recipe in the header instead of rolling.
+          tile.action = "pin";
+          tile.data = { pin: tile.pin };
+          continue;
+        }
         tile.action = "noop";
         if (tile.data?.kind === "experience") { tile.sub = null; tile.prof = false; }
       }
@@ -259,7 +292,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       hasScene: true,
       sceneName: scene.navName || scene.name,
       hasToken: !!token,
-      aspect: `${d.sceneWidth} / ${d.sceneHeight}`,
+      ratio: (d.sceneWidth / d.sceneHeight).toFixed(4),
+      initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
       background,
       tokens,
       tokenChoices: choices.map(t => ({ id: t.id, name: t.name, selected: t.id === token?.id })),
@@ -361,6 +395,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.refreshChatLog();
     }
     if (tab === "map") this.markDirty("map");
+    this.markDirty("header");
+  }
+
+  static #onPin(event, target) {
+    const text = target.dataset.pin;
+    this.pin = this.pin === text ? null : text;
+    this.markDirty("header");
   }
 
   static #onTab(event, target) {

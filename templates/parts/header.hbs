@@ -1,34 +1,33 @@
-<header class="fcp-header">
-  {{#if actor}}
-  <img class="fcp-portrait" src="{{actor.img}}" alt="">
-  <div class="fcp-name">{{actor.name}}<small>{{actor.subtitle}}</small></div>
-  {{else}}
-  <img class="fcp-portrait" src="icons/svg/mystery-man.svg" alt="">
-  <div class="fcp-name">{{localize "FCP.Title"}}</div>
-  {{/if}}
-  <div class="fcp-menu">
-    <button type="button" data-action="refresh" title="{{localize 'FCP.Reload'}}"><i class="fas fa-rotate"></i></button>
-    <button type="button" data-action="exitCompanion" title="{{localize 'FCP.ExitCompanion'}}"><i class="fas fa-desktop"></i></button>
+<header class="fcp-header {{#if (eq activeTab 'sheet')}}big{{/if}} {{#if (eq activeTab 'map')}}fcp-hidden{{/if}}">
+  <div class="fcp-kicker"><span>{{headerInfo.left}}</span><span>{{headerInfo.right}}</span></div>
+  <div class="fcp-rule"></div>
+  {{#if (eq activeTab 'chat')}}
+  {{#if dice}}
+  <div class="fcp-label">{{localize "FCP.QuickDice"}}</div>
+  <div class="fcp-dicebar">
+    {{#each chat.quickDice}}<button type="button" data-action="quickRoll" data-formula="{{this}}">{{this}}</button>{{/each}}
   </div>
-  {{#if actor}}
-  <div class="fcp-stats">
-    {{#if header.hp}}
-    <div class="fcp-hp">
-      <button type="button" data-action="hpDelta" data-delta="-1">−</button>
-      <div class="fcp-hp-value">{{header.hp.value}} / {{header.hp.max}}{{#if header.hp.temp}}<small> +{{header.hp.temp}}</small>{{/if}}</div>
-      <button type="button" data-action="hpDelta" data-delta="1">+</button>
+  <div class="fcp-customroll">
+    <input type="text" name="formula" placeholder="{{localize 'FCP.CustomRoll'}}" autocomplete="off" autocapitalize="off" data-enter="customRoll" value="{{chat.formulaDraft}}">
+    <button type="button" class="fcp-primary" data-action="customRoll">{{localize "FCP.Roll"}}</button>
+  </div>
+  {{/if}}
+  {{else}}
+  <div class="fcp-identity">
+    {{#if actor}}
+    <img class="fcp-portrait" src="{{actor.img}}" alt="">
+    <div class="fcp-name"><b>{{actor.name}}</b><small>{{#if (eq activeTab 'sheet')}}{{actor.subtitle}}{{else}}{{headerInfo.summary}}{{/if}}</small></div>
+    {{else}}
+    <img class="fcp-portrait" src="icons/svg/mystery-man.svg" alt="">
+    <div class="fcp-name"><b>{{localize "FCP.Title"}}</b></div>
+    {{/if}}
+    {{#if (eq activeTab 'sheet')}}
+    <div class="fcp-menu">
+      <button type="button" data-action="refresh" title="{{localize 'FCP.Reload'}}"><i class="ph-duotone ph-arrows-clockwise"></i></button>
+      <button type="button" data-action="exitCompanion" title="{{localize 'FCP.ExitCompanion'}}"><i class="ph-duotone ph-desktop"></i></button>
     </div>
     {{/if}}
-    {{#each header.counters}}
-    <div class="fcp-hp fcp-counter">
-      <button type="button" data-action="counter" data-key="{{this.key}}" data-delta="-1">−</button>
-      <div class="fcp-hp-value"><small>{{this.label}}</small><br>{{this.value}}{{#if this.max}} / {{this.max}}{{/if}}</div>
-      <button type="button" data-action="counter" data-key="{{this.key}}" data-delta="1">+</button>
-    </div>
-    {{/each}}
-    {{#each header.stats}}
-    <div class="fcp-stat"><span class="fcp-stat-label">{{this.label}}</span><span class="fcp-stat-value">{{this.value}}</span></div>
-    {{/each}}
   </div>
+  {{#if (eq activeTab 'sheet')}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
   {{/if}}
 </header>

@@ -12,11 +12,20 @@ export function signed(n) {
 
 /** Toggle descriptor for an equippable item row. */
 export function equipToggle(item) {
+  const on = !!item.system.equipped;
   return {
     action: "toggleItem",
-    label: game.i18n.localize("FCP.Equipped"),
-    icon: item.system.equipped ? "fas fa-check-circle" : "far fa-circle"
+    label: game.i18n.localize(on ? "FCP.Unequip" : "FCP.Equip"),
+    icon: "ph-duotone ph-shield-check"
   };
+}
+
+/** Plain text of an HTML description, cut at a word boundary. */
+export function plainText(html, max = 180) {
+  const text = String(html ?? "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 30))}…`;
 }
 
 /**
@@ -48,6 +57,11 @@ export class SystemAdapter {
   }
 
   subtitle(actor) {
+    return "";
+  }
+
+  /** Right side of the header kicker on the sheet tab, e.g. "Daggerheart · Lv. 4". */
+  kicker(actor) {
     return "";
   }
 

@@ -259,7 +259,7 @@ export class Dnd5eAdapter extends SystemAdapter {
             id: sp.id, name: sp.name, img: sp.img,
             meta: [CONFIG.DND5E.spellLevels?.[sp.system.level], CONFIG.DND5E.spellSchools?.[sp.system.school]?.label].filter(Boolean).join(" · "),
             inactive: !prepared,
-            toggle: canPrepare ? { action: "toggleItem", label: game.i18n.localize("FCP.Prepared"), icon: prepared ? "fas fa-check-circle" : "far fa-circle" } : null
+            toggle: canPrepare ? { action: "toggleItem", label: game.i18n.localize("FCP.Prepared"), icon: prepared ? "ph-duotone ph-check-circle" : "ph-duotone ph-circle" } : null
           };
         })
       });

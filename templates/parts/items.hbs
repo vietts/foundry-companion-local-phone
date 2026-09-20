@@ -4,28 +4,37 @@
   {{else}}
   {{#unless groups.length}}<div class="fcp-empty">{{localize "FCP.Empty"}}</div>{{/unless}}
   {{#each groups}}
-  <div class="fcp-section">
-    <h3>{{this.title}}</h3>
-    <div class="fcp-list">
-      {{#each this.items}}
-      <div class="fcp-item {{#if this.expanded}}expanded{{/if}}">
-        <div class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{/if}}>
-          <img src="{{this.img}}" alt="">
-          <div class="fcp-row-main">
-            <div class="fcp-row-title">{{this.name}}</div>
-            {{#if this.meta}}<div class="fcp-row-meta">{{this.meta}}</div>{{/if}}
-          </div>
-          <div class="fcp-row-right">
-            {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}}/{{this.uses.max}}</span>{{/if}}
-            {{#if this.toggle}}<button type="button" data-action="{{this.toggle.action}}" data-item-id="{{this.id}}" title="{{this.toggle.label}}"><i class="{{this.toggle.icon}}"></i></button>{{/if}}
-            {{#if this.action}}<button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button>{{/if}}
-            {{#if this.id}}<i class="fas fa-chevron-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
-          </div>
+  <div class="fcp-group">
+    <div class="fcp-label">{{this.title}}</div>
+    {{#each this.items}}
+    <div class="fcp-item {{#if this.expanded}}expanded{{/if}}">
+      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{else}}data-action="noop"{{/if}}>
+        <img src="{{this.img}}" alt="">
+        <span class="fcp-row-main">
+          <span class="fcp-row-title">{{this.name}}</span>
+          {{#if this.meta}}<span class="fcp-row-meta">{{this.meta}}</span>{{/if}}
+        </span>
+        <span class="fcp-row-right">
+          {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}} / {{this.uses.max}}</span>{{/if}}
+          {{#if this.id}}<i class="ph-duotone ph-caret-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
+        </span>
+      </button>
+      {{#if this.action}}
+      <div class="fcp-use-row"><button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button></div>
+      {{/if}}
+      {{#if this.expanded}}
+      <div class="fcp-item-body">
+        <div class="fcp-item-desc">{{{this.description}}}</div>
+        {{#if this.toggle}}
+        <div class="fcp-item-actions">
+          <button type="button" class="fcp-btn small" data-action="{{this.toggle.action}}" data-item-id="{{this.id}}"><i class="{{this.toggle.icon}}"></i>{{this.toggle.label}}</button>
+          {{#each this.extra}}<button type="button" class="fcp-btn small" data-action="{{this.action}}" data-item-id="{{../id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}><i class="{{this.icon}}"></i>{{this.label}}</button>{{/each}}
         </div>
-        {{#if this.expanded}}<div class="fcp-item-desc">{{{this.description}}}</div>{{/if}}
+        {{/if}}
       </div>
-      {{/each}}
+      {{/if}}
     </div>
+    {{/each}}
   </div>
   {{/each}}
   {{/unless}}

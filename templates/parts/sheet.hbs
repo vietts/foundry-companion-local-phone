@@ -1,5 +1,4 @@
 <section class="fcp-tab {{#if (eq activeTab 'sheet')}}active{{/if}}" data-tab="sheet">
-  {{#if actors.length}}
   {{#if (gt actors.length 1)}}
   <div class="fcp-actorpicker">
     {{#each actors}}
@@ -7,17 +6,49 @@
     {{/each}}
   </div>
   {{/if}}
-  {{/if}}
 
   {{#unless actor}}
   <div class="fcp-empty">{{localize "FCP.NoActor"}}</div>
   {{else}}
 
-  {{#if header.hp}}
-  <div class="fcp-hp-editor">
-    <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}">
-    <button type="button" class="fcp-dmg" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
-    <button type="button" class="fcp-heal" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
+  {{#if header.meters}}
+  <div class="fcp-section" style="margin-bottom: 0">
+    {{#each header.meters}}
+    <div class="fcp-meter tone-{{this.tone}}">
+      <div class="fcp-meter-head">
+        <span class="fcp-label">{{this.label}}</span>
+        <span class="fcp-meter-count">{{this.value}} <small>/ {{this.max}}</small></span>
+      </div>
+      <div class="fcp-boxes">
+        {{#each this.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../key}}" data-delta="{{this.delta}}"></button>{{/each}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <div class="fcp-section">
+    {{#if header.hp}}
+    <div class="fcp-stepper">
+      <button type="button" data-action="hpDelta" data-delta="-1">−</button>
+      <div><small>{{localize "FCP.HP"}}</small>{{header.hp.value}} / {{header.hp.max}}{{#if header.hp.temp}}<small> +{{header.hp.temp}}</small>{{/if}}</div>
+      <button type="button" data-action="hpDelta" data-delta="1">+</button>
+    </div>
+    <div class="fcp-hp-editor" style="display:flex; gap:6px; padding:8px 0">
+      <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}">
+      <button type="button" class="fcp-btn" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
+      <button type="button" class="fcp-btn" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
+    </div>
+    {{/if}}
+    {{#each header.counters}}
+    <div class="fcp-stepper">
+      <button type="button" data-action="counter" data-key="{{this.key}}" data-delta="-1">−</button>
+      <div><small>{{this.label}}</small>{{this.value}}{{#if this.max}} / {{this.max}}{{/if}}</div>
+      <button type="button" data-action="counter" data-key="{{this.key}}" data-delta="1">+</button>
+    </div>
+    {{/each}}
+    {{#if header.stats.length}}
+    <div class="fcp-quickstats">{{#each header.stats}}<span>{{this.label}}<b>{{this.value}}</b></span>{{/each}}</div>
+    {{/if}}
   </div>
   {{/if}}
 
@@ -31,21 +62,60 @@
 
   {{#each sheet.sections}}
   <div class="fcp-section">
-    <h3>{{this.title}}</h3>
-    {{#if (eq this.layout "list")}}
-    <div class="fcp-list">
+    {{#if (eq this.layout "thresholds")}}
+    <div class="fcp-headrow"><span class="fcp-label">{{this.title}}</span>{{#if this.note}}<span class="fcp-section-note">{{this.note}}</span>{{/if}}</div>
+    <div class="fcp-thresholds">
+      {{#each this.bands}}
+      {{#if this.cut}}<div class="cut"><span>{{this.cut}}</span></div>{{/if}}
+      <div class="band"><b>{{this.range}}</b><small>{{this.sub}}</small></div>
+      {{/each}}
+    </div>
+
+    {{else if (eq this.layout "conditions")}}
+    {{#if ../conditions.length}}
+    <div class="fcp-label">{{this.title}}</div>
+    <div class="fcp-chips">
+      {{#each ../conditions}}
+      <button type="button" class="fcp-chip {{#if this.active}}active{{/if}}" data-action="toggleStatus" data-status-id="{{this.id}}">{{#if this.img}}<img src="{{this.img}}" alt="">{{/if}}{{this.name}}</button>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{else if (eq this.layout "notes")}}
+    <div class="fcp-label">{{this.title}}</div>
+    <div class="fcp-lines soft">
+      {{#each this.lines}}<div class="fcp-line"><b>{{this.label}}</b>{{#if this.note}}<span>{{this.note}}</span>{{/if}}</div>{{/each}}
+    </div>
+
+    {{else if (eq this.layout "passives")}}
+    <div class="fcp-label">{{this.title}}</div>
+    {{#each this.entries}}
+    <div class="fcp-passive"><b>{{this.name}}</b>{{#if this.text}}<p>{{this.text}}</p>{{/if}}</div>
+    {{/each}}
+
+    {{else if (eq this.layout "about")}}
+    <div class="fcp-label">{{this.title}}</div>
+    <div class="fcp-about">
+      {{#if this.headline}}<div class="fcp-headline"><b>{{this.headline}}</b><span>{{this.note}}</span></div>{{/if}}
+      {{#if this.text}}<p>{{this.text}}</p>{{/if}}
+    </div>
+
+    {{else if (eq this.layout "list")}}
+    <div class="fcp-label">{{this.title}}</div>
+    <div class="fcp-lines">
       {{#each this.tiles}}
-      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
-        {{#if this.img}}<img src="{{this.img}}" alt="">{{else}}<span></span>{{/if}}
-        <div class="fcp-row-main"><div class="fcp-row-title">{{this.label}}</div>{{#if this.sub}}<div class="fcp-row-meta">{{this.sub}}</div>{{/if}}</div>
-        <div class="fcp-row-right">{{this.value}}</div>
+      <button type="button" class="fcp-line {{#if this.inactive}}inactive{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+        <b>{{this.label}}{{#if this.sub}}<br><small style="font: italic 12px var(--font-body); color: var(--color-neutral-600)">{{this.sub}}</small>{{/if}}</b>
+        <span>{{this.value}}</span>
       </button>
       {{/each}}
     </div>
+
     {{else}}
+    <div class="fcp-label">{{this.title}}</div>
     <div class="fcp-grid {{#if this.cols}}cols-{{this.cols}}{{/if}}">
       {{#each this.tiles}}
-      <button type="button" class="fcp-tile {{#if this.prof}}fcp-prof{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+      <button type="button" class="fcp-tile {{#if this.prof}}fcp-prof{{/if}} {{#if this.zero}}fcp-zero{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
         <span class="fcp-tile-label">{{this.label}}</span>
         <span class="fcp-tile-value">{{this.value}}</span>
         {{#if this.sub}}<span class="fcp-tile-sub">{{this.sub}}</span>{{/if}}
@@ -56,9 +126,10 @@
   </div>
   {{/each}}
 
+  {{#unless sheet.conditionsInline}}
   {{#if conditions.length}}
   <div class="fcp-section">
-    <h3>{{localize "FCP.Conditions"}}</h3>
+    <div class="fcp-label">{{localize "FCP.Conditions"}}</div>
     <div class="fcp-chips">
       {{#each conditions}}
       <button type="button" class="fcp-chip {{#if this.active}}active{{/if}}" data-action="toggleStatus" data-status-id="{{this.id}}">{{#if this.img}}<img src="{{this.img}}" alt="">{{/if}}{{this.name}}</button>
@@ -66,14 +137,13 @@
     </div>
   </div>
   {{/if}}
+  {{/unless}}
 
   {{#if sheet.rests.length}}
-  <div class="fcp-section">
-    <div class="fcp-grid cols-2">
-      {{#each sheet.rests}}
-      <button type="button" data-action="rest" data-kind="{{this.kind}}">{{this.label}}</button>
-      {{/each}}
-    </div>
+  <div class="fcp-rests">
+    {{#each sheet.rests}}
+    <button type="button" data-action="rest" data-kind="{{this.kind}}">{{this.label}}</button>
+    {{/each}}
   </div>
   {{/if}}
   {{/unless}}

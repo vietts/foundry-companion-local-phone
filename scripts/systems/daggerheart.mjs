@@ -1,4 +1,4 @@
-import { SystemAdapter, loc, signed, equipToggle } from "./base.mjs";
+import { SystemAdapter, loc, signed, equipToggle, plainText } from "./base.mjs";
 import { SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
 
@@ -9,7 +9,7 @@ function labelToText(label) {
   if (typeof label === "string") return label;
   if (!label?.value) return "";
   const icons = label.icons ?? [];
-  if (icons.includes("fa-bolt")) return `⚡${label.value}`;
+  if (icons.includes("fa-bolt")) return `⚡\uFE0E${label.value}`;
   const types = Object.values(CONFIG.DH?.GENERAL?.damageTypes ?? {}).filter(t => icons.includes(t.icon));
   const abbr = types.map(t => game.i18n.localize(t.abbreviation ?? t.label)).join("/");
   return abbr ? `${label.value} ${abbr}` : label.value;
@@ -39,46 +39,86 @@ export class DaggerheartAdapter extends SystemAdapter {
 
   subtitle(actor) {
     const s = actor.system;
-    const parts = [];
     const cls = s.class?.value?.name;
     const sub = s.class?.subclass?.name;
-    if (cls) parts.push(sub ? `${cls} (${sub})` : cls);
-    const anc = s.ancestry?.name;
-    if (anc) parts.push(anc);
-    const lvl = s.levelData?.level?.current;
-    if (lvl) parts.push(`${game.i18n.localize("FCP.Level")} ${lvl}`);
+    const parts = [];
+    if (cls) parts.push(sub ? `${cls}, ${sub}` : cls);
+    if (s.ancestry?.name) parts.push(s.ancestry.name);
+    if (s.community?.name) parts.push(s.community.name);
     return parts.join(" · ");
+  }
+
+  kicker(actor) {
+    const lvl = actor.system.levelData?.level?.current;
+    return ["Daggerheart", lvl ? `${game.i18n.localize("FCP.LevelShort")} ${lvl}` : null].filter(Boolean).join(" · ");
   }
 
   /* ---------------- Header ---------------- */
 
   async prepareHeader(actor) {
     const r = actor.system.resources;
-    const hp = r.hitPoints;
-    const stats = [
-      { label: loc("DAGGERHEART.GENERAL.evasion"), value: actor.system.evasion },
-      { label: loc("DAGGERHEART.GENERAL.armor"), value: `${r.armor?.value ?? 0}/${r.armor?.max ?? 0}` },
-      { label: loc("DAGGERHEART.GENERAL.DamageThresholds.major", "Major"), value: actor.system.damageThresholds?.major ?? "—" },
-      { label: loc("DAGGERHEART.GENERAL.DamageThresholds.severe", "Severe"), value: actor.system.damageThresholds?.severe ?? "—" }
-    ];
+    const t = key => game.i18n.localize(key);
+    const defs = [
+      { key: "hp", label: t("FCP.DH.HPMarked"), tone: "hp", res: r.hitPoints },
+      { key: "hope", label: t("FCP.DH.Hope"), tone: "hope", res: r.hope },
+      { key: "stress", label: t("FCP.DH.Stress"), tone: "stress", res: r.stress },
+      { key: "armor", label: t("FCP.DH.ArmorLabel"), tone: "armor", res: r.armor }
+    ].filter(d => d.res && d.res.max > 0);
 
-    const counters = [
-      { key: "hope", label: loc("DAGGERHEART.GENERAL.hope"), value: r.hope.value, max: r.hope.max },
-      { key: "stress", label: loc("DAGGERHEART.GENERAL.stress"), value: r.stress.value, max: r.stress.max },
-      { key: "armor", label: loc("DAGGERHEART.GENERAL.armor"), value: r.armor?.value ?? 0, max: r.armor?.max ?? 0 }
-    ];
+    // Tap box n: fill up to n, or clear it when it is already the last filled one.
+    const meters = defs.map(({ key, label, tone, res }) => {
+      const value = res.value ?? 0;
+      const max = res.max ?? 0;
+      return {
+        key, label, tone, value, max,
+        boxes: Array.from({ length: max }, (_, i) => ({ on: i < value, delta: i + 1 === value ? -1 : i + 1 - value }))
+      };
+    });
+    const by = key => meters.find(m => m.key === key);
+    const fmt = key => (by(key) ? `${by(key).value}/${by(key).max}` : "—");
+
     return {
-      // Marked boxes, as on the desktop sheet (same convention as Stress).
-      hp: { value: hp.value ?? 0, max: hp.max ?? 0, temp: 0 },
-      stats,
-      counters
+      meters,
+      stats: [],
+      summary: {
+        actions: `${t("FCP.DH.HPShort")} ${fmt("hp")} · ${t("FCP.DH.Hope")} ${fmt("hope")} · ${t("FCP.DH.Stress")} ${fmt("stress")}`,
+        inventory: [`${t("FCP.DH.ArmorLabel")} ${fmt("armor")}`, this.#goldText(actor)].filter(Boolean).join(" · ")
+      }
     };
+  }
+
+  /** Enabled currencies as "1 bag, 7 coins" (empty ones left out). */
+  #goldText(actor) {
+    const g = actor.system.gold;
+    if (!g) return "";
+    return this.#currencies(actor)
+      .filter(c => c.value > 0)
+      .map(c => `${c.value} ${c.name}`)
+      .join(", ");
+  }
+
+  /** Currencies the world has enabled, in the order of the desktop sheet. */
+  #currencies(actor) {
+    const g = actor.system.gold ?? {};
+    let enabled = null;
+    try {
+      const { title, ...rest } = game.settings.get(CONFIG.DH.id, CONFIG.DH.SETTINGS.gameSettings.Homebrew).currency;
+      enabled = Object.entries(rest).filter(([, c]) => c?.enabled).map(([k]) => k);
+    } catch (err) { /* fall back to all four */ }
+    return ["chests", "bags", "handfuls", "coins"]
+      .filter(k => !enabled || enabled.includes(k))
+      .map(k => {
+        const value = Number(g[k] ?? 0);
+        const [one, many] = game.i18n.localize(`FCP.DH.Currency.${k}`).split("|");
+        return { key: k, value, name: value === 1 ? one : many };
+      });
   }
 
   /* ---------------- Sheet ---------------- */
 
   async prepareSheet(actor) {
     const s = actor.system;
+    const t = key => game.i18n.localize(key);
     const traitLabel = key => {
       const cfg = CONFIG.DH?.ACTOR?.abilities?.[key];
       return cfg?.label ? game.i18n.localize(cfg.label) : key;
@@ -89,19 +129,40 @@ export class DaggerheartAdapter extends SystemAdapter {
         title: loc("DAGGERHEART.GENERAL.Trait.plural", "Traits"),
         layout: "grid",
         cols: 3,
-        tiles: TRAITS.map(key => ({
-          label: traitLabel(key),
-          value: signed(s.traits?.[key]?.value),
-          action: "roll",
-          data: { kind: "trait", key }
-        }))
+        tiles: TRAITS.map(key => {
+          const label = traitLabel(key);
+          const mod = signed(s.traits?.[key]?.value);
+          return {
+            label,
+            value: mod,
+            action: "roll",
+            data: { kind: "trait", key },
+            // Reference mode: what to roll at the table, pinned in the header.
+            pin: game.i18n.format("FCP.DH.DiceRecipe", { trait: label, mod })
+          };
+        })
       }
     ];
+
+    const th = s.damageThresholds;
+    if (th?.major && th?.severe) {
+      const hp = t("FCP.DH.HPShort");
+      sections.push({
+        title: loc("DAGGERHEART.GENERAL.DamageThresholds.plural", t("FCP.DH.Thresholds")),
+        layout: "thresholds",
+        note: s.evasion !== undefined ? `${loc("DAGGERHEART.GENERAL.evasion")} ${s.evasion}` : "",
+        bands: [
+          { range: `1 – ${th.major - 1}`, sub: `1 ${hp}` },
+          { cut: th.major, range: `${th.major} – ${th.severe - 1}`, sub: `2 ${hp}` },
+          { cut: th.severe, range: `${th.severe} +`, sub: `3 ${hp}` }
+        ]
+      });
+    }
 
     const experiences = Object.entries(s.experiences ?? {}).map(([id, e]) => ({
       label: e.name || "—",
       value: signed(e.value),
-      sub: this.selectedExperiences.has(id) ? game.i18n.localize("FCP.DH.ExperienceSelected") : game.i18n.localize("FCP.DH.ExperienceHint"),
+      sub: this.selectedExperiences.has(id) ? t("FCP.DH.ExperienceSelected") : null,
       prof: this.selectedExperiences.has(id),
       action: "roll",
       data: { kind: "experience", key: id }
@@ -110,22 +171,51 @@ export class DaggerheartAdapter extends SystemAdapter {
       sections.push({ title: loc("DAGGERHEART.GENERAL.Experience.plural", "Experiences"), layout: "list", tiles: experiences });
     }
 
+    // Conditions are rendered here by the template, between experiences and effects.
+    sections.push({ title: t("FCP.Conditions"), layout: "conditions" });
+
+    const effects = actor.effects
+      .filter(e => e.name && !e.disabled && !e.isSuppressed && !e.statuses?.size)
+      .map(e => ({ label: e.name, note: e.duration?.label ?? "" }));
+    if (effects.length) sections.push({ title: t("FCP.DH.ActiveEffects"), layout: "notes", lines: effects });
+
+    const passives = actor.items
+      .filter(i => i.type === "feature" && !i.system.actionsList?.length && this.#isAvailable(actor, i))
+      .map(i => ({ name: i.name, text: plainText(i.system.description, 200) }));
+    if (passives.length) sections.push({ title: t("FCP.DH.Passives"), layout: "passives", entries: passives });
+
+    const community = s.community?.name;
+    const bio = plainText(s.biography?.background, 420);
+    if (community || bio) {
+      sections.push({ title: t("FCP.DH.AboutTitle"), layout: "about", headline: community ?? "", note: community ? t("FCP.DH.Community") : "", text: bio });
+    }
+
     const rests = [
-      { kind: "short", label: game.i18n.localize("FCP.Rest.Short") },
-      { kind: "long", label: game.i18n.localize("FCP.Rest.Long") }
+      { kind: "short", label: t("FCP.Rest.Short") },
+      { kind: "long", label: t("FCP.Rest.Long") }
     ];
-    if (s.deathMoveViable) rests.push({ kind: "deathMove", label: game.i18n.localize("FCP.DH.DeathMove") });
+    if (s.deathMoveViable) rests.push({ kind: "deathMove", label: t("FCP.DH.DeathMove") });
 
     return {
       modes: [
-        { key: "action", label: game.i18n.localize("FCP.DH.Action"), active: this.mode === "action" },
-        { key: "reaction", label: game.i18n.localize("FCP.DH.Reaction"), active: this.mode === "reaction" },
-        { key: "advantage", label: game.i18n.localize("FCP.Advantage"), active: this.mode === "advantage" },
-        { key: "disadvantage", label: game.i18n.localize("FCP.Disadvantage"), active: this.mode === "disadvantage" }
+        { key: "action", label: t("FCP.DH.Action"), active: this.mode === "action" },
+        { key: "reaction", label: t("FCP.DH.Reaction"), active: this.mode === "reaction" },
+        { key: "advantage", label: t("FCP.Advantage"), active: this.mode === "advantage" },
+        { key: "disadvantage", label: t("FCP.Disadvantage"), active: this.mode === "disadvantage" }
       ],
       sections,
-      rests
+      rests,
+      conditionsInline: true
     };
+  }
+
+  /** Whether a feature applies to the character (e.g. subclass features not yet unlocked are hidden). */
+  #isAvailable(actor, item) {
+    try {
+      return actor.system.isItemAvailable ? !!actor.system.isItemAvailable(item) : true;
+    } catch (err) {
+      return true;
+    }
   }
 
   /* ---------------- Actions ---------------- */
@@ -209,7 +299,7 @@ export class DaggerheartAdapter extends SystemAdapter {
 
     // Domain cards in loadout.
     const loadout = s.domainCards?.loadout ?? actor.items.filter(i => i.type === "domainCard" && !i.system.inVault);
-    const toVault = { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToVault"), icon: "fas fa-box-archive" };
+    const toVault = { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToVault"), icon: "ph-duotone ph-archive" };
     const cards = [];
     for (const c of loadout) {
       const rows = this.#actionRows(c);
@@ -260,29 +350,27 @@ export class DaggerheartAdapter extends SystemAdapter {
     }));
     if (armor.length) groups.push({ title: game.i18n.localize("FCP.DH.Armor"), items: armor });
 
+    const withQty = i => [labelsToText(i) || game.i18n.localize(`FCP.DH.Kind.${i.type}`), i.system.quantity > 1 ? `×${i.system.quantity}` : ""].filter(Boolean).join(" · ");
     const consumables = actor.items.filter(i => i.type === "consumable").map(i => ({
-      id: i.id, name: i.name, img: i.img, meta: labelsToText(i), uses: this.#itemResource(i),
+      id: i.id, name: i.name, img: i.img, meta: withQty(i), uses: this.#itemResource(i),
       action: i.system.actionsList?.length ? "useItem" : null, actionLabel: game.i18n.localize("FCP.Use"), data: {}
     }));
     if (consumables.length) groups.push({ title: game.i18n.localize("FCP.DH.Consumables"), items: consumables });
 
-    const loot = actor.items.filter(i => i.type === "loot").map(i => ({ id: i.id, name: i.name, img: i.img, meta: labelsToText(i) }));
+    const loot = actor.items.filter(i => i.type === "loot").map(i => ({ id: i.id, name: i.name, img: i.img, meta: withQty(i) }));
     if (loot.length) groups.push({ title: game.i18n.localize("FCP.DH.Loot"), items: loot });
 
     const vault = (actor.system.domainCards?.vault ?? actor.items.filter(i => i.type === "domainCard" && i.system.inVault)).map(c => ({
       id: c.id, name: c.name, img: c.img, meta: labelsToText(c), inactive: true,
       // Two distinct moves, like the desktop sheet: a free move (downtime) and a recall that costs Stress.
-      toggle: { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToLoadout"), icon: "fas fa-arrow-up-from-bracket" },
-      action: "toggleItem", actionLabel: game.i18n.localize("FCP.DH.Recall"), data: { mode: "recall" }
+      toggle: { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToLoadout"), icon: "ph-duotone ph-arrow-up-right" },
+      extra: [{ action: "toggleItem", label: game.i18n.localize("FCP.DH.Recall"), icon: "ph-duotone ph-lightning", data: { mode: "recall" } }]
     }));
     if (vault.length) groups.push({ title: game.i18n.localize("FCP.DH.Vault"), items: vault });
 
-    const g = actor.system.gold;
-    if (g) {
-      groups.push({
-        title: game.i18n.localize("FCP.DH.Gold"),
-        items: [{ id: "", name: `${g.chests ?? 0} 🧰 · ${g.bags ?? 0} 👝 · ${g.handfuls ?? 0} ✋ · ${g.coins ?? 0} 🪙`, img: "icons/commodities/currency/coins-plain-stack-gold.webp" }]
-      });
+    if (actor.system.gold) {
+      const line = this.#currencies(actor).map(c => `${c.value} ${c.name}`).join(" · ");
+      if (line) groups.push({ title: game.i18n.localize("FCP.DH.Gold"), items: [{ id: "", name: line, img: "icons/commodities/currency/coins-plain-stack-gold.webp" }] });
     }
     return { groups };
   }
@@ -308,6 +396,7 @@ export class DaggerheartAdapter extends SystemAdapter {
   }
 
   async counter(actor, key, delta) {
+    if (key === "hp") return this.modifyHP(actor, delta);
     if (key === "armor") return actor.system.updateArmorValue({ value: delta });
     return actor.modifyResource([{ key, value: delta }]);
   }

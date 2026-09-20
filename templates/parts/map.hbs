@@ -1,9 +1,11 @@
 <section class="fcp-tab {{#if (eq activeTab 'map')}}active{{/if}}" data-tab="map">
   {{#unless map.hasScene}}
-  <div class="fcp-empty">{{localize "FCP.NoScene"}}</div>
+  <div class="fcp-map-title"><div class="fcp-kicker"><span>{{localize "FCP.Tabs.Map"}}</span><span></span></div></div>
+  <div class="fcp-empty" style="padding: 16px 20px">{{localize "FCP.NoScene"}}</div>
   {{else}}
-  <div class="fcp-mapinfo">
-    <span>{{map.sceneName}}</span>
+  <div class="fcp-map-title">
+    <div class="fcp-kicker"><span>{{localize "FCP.ActiveScene"}}</span><span></span></div>
+    <h1>{{map.sceneName}}</h1>
     {{#if (gt map.tokenChoices.length 1)}}
     <select name="tokenId" data-action="selectToken">
       {{#each map.tokenChoices}}<option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>{{/each}}
@@ -11,27 +13,34 @@
     {{/if}}
   </div>
 
-  <div class="fcp-minimap" data-action="mapTap" style="aspect-ratio: {{map.aspect}}; {{#if map.background}}background-image: url('{{map.background}}');{{/if}}">
-    {{#each map.tokens}}
-    <div class="fcp-mm-token {{this.cls}}" style="left: {{this.left}}%; top: {{this.top}}%; width: {{this.size}}%; aspect-ratio: 1; background-image: url('{{this.img}}');" title="{{this.name}}"></div>
-    {{/each}}
-    {{#if map.target}}<div class="fcp-mm-target" style="left: {{map.target.left}}%; top: {{map.target.top}}%;"></div>{{/if}}
+  <div class="fcp-mapwrap">
+    <div class="fcp-minimap" data-action="mapTap" style="--fcp-ratio: {{map.ratio}}; {{#if map.background}}background-image: url('{{map.background}}');{{/if}}">
+      {{#each map.tokens}}
+      <div class="fcp-mm-token {{this.cls}}" style="left: {{this.left}}%; top: {{this.top}}%; width: {{this.size}}%; aspect-ratio: 1; background-image: url('{{this.img}}');" title="{{this.name}}"></div>
+      {{/each}}
+      {{#if map.target}}<div class="fcp-mm-target" style="left: {{map.target.left}}%; top: {{map.target.top}}%;"></div>{{/if}}
+    </div>
   </div>
 
   {{#unless map.hasToken}}
-  <div class="fcp-notice">{{localize "FCP.NoToken"}}</div>
+  <div class="fcp-padpanel"><div class="fcp-notice">{{localize "FCP.NoToken"}}</div></div>
   {{else}}
-  <p class="fcp-mapinfo"><span>{{localize "FCP.Move.Hint"}}</span></p>
-  <div class="fcp-dpad">
-    <button type="button" data-action="move" data-dx="-1" data-dy="-1"><i class="fas fa-arrow-up-left"></i></button>
-    <button type="button" data-action="move" data-dx="0" data-dy="-1"><i class="fas fa-arrow-up"></i></button>
-    <button type="button" data-action="move" data-dx="1" data-dy="-1"><i class="fas fa-arrow-up-right"></i></button>
-    <button type="button" data-action="move" data-dx="-1" data-dy="0"><i class="fas fa-arrow-left"></i></button>
-    <button type="button" class="fcp-center" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{map.step}}</button>
-    <button type="button" data-action="move" data-dx="1" data-dy="0"><i class="fas fa-arrow-right"></i></button>
-    <button type="button" data-action="move" data-dx="-1" data-dy="1"><i class="fas fa-arrow-down-left"></i></button>
-    <button type="button" data-action="move" data-dx="0" data-dy="1"><i class="fas fa-arrow-down"></i></button>
-    <button type="button" data-action="move" data-dx="1" data-dy="1"><i class="fas fa-arrow-down-right"></i></button>
+  <div class="fcp-mapbar">
+    <span>{{localize "FCP.Move.Hint"}}</span>
+    <button type="button" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{map.step}}</button>
+  </div>
+  <div class="fcp-padpanel">
+    <div class="fcp-dpad">
+      <button type="button" data-action="move" data-dx="-1" data-dy="-1"><i class="ph-duotone ph-arrow-up-left"></i></button>
+      <button type="button" data-action="move" data-dx="0" data-dy="-1"><i class="ph-duotone ph-arrow-up"></i></button>
+      <button type="button" data-action="move" data-dx="1" data-dy="-1"><i class="ph-duotone ph-arrow-up-right"></i></button>
+      <button type="button" data-action="move" data-dx="-1" data-dy="0"><i class="ph-duotone ph-arrow-left"></i></button>
+      <div class="fcp-center">{{map.initial}}</div>
+      <button type="button" data-action="move" data-dx="1" data-dy="0"><i class="ph-duotone ph-arrow-right"></i></button>
+      <button type="button" data-action="move" data-dx="-1" data-dy="1"><i class="ph-duotone ph-arrow-down-left"></i></button>
+      <button type="button" data-action="move" data-dx="0" data-dy="1"><i class="ph-duotone ph-arrow-down"></i></button>
+      <button type="button" data-action="move" data-dx="1" data-dy="1"><i class="ph-duotone ph-arrow-down-right"></i></button>
+    </div>
   </div>
   {{/unless}}
   {{/unless}}
