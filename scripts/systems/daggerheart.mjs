@@ -1,13 +1,8 @@
-import { SystemAdapter, loc } from "./base.mjs";
+import { SystemAdapter, loc, signed, equipToggle } from "./base.mjs";
 import { SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
 
 const TRAITS = ["agility", "strength", "finesse", "instinct", "presence", "knowledge"];
-
-function signed(n) {
-  n = Number(n) || 0;
-  return n >= 0 ? `+${n}` : `${n}`;
-}
 
 function labelsToText(item) {
   try {
@@ -198,12 +193,6 @@ export class DaggerheartAdapter extends SystemAdapter {
 
   async prepareInventory(actor) {
     const groups = [];
-    const equipToggle = item => ({
-      action: "toggleItem",
-      label: game.i18n.localize("FCP.Equipped"),
-      icon: item.system.equipped ? "fas fa-check-circle" : "far fa-circle"
-    });
-
     const weapons = actor.items.filter(i => i.type === "weapon").map(i => ({
       id: i.id, name: i.name, img: i.img, meta: labelsToText(i), inactive: !i.system.equipped, toggle: equipToggle(i)
     }));
@@ -296,9 +285,7 @@ export class DaggerheartAdapter extends SystemAdapter {
     if (kind === "experience") {
       if (this.selectedExperiences.has(key)) this.selectedExperiences.delete(key);
       else this.selectedExperiences.add(key);
-      // Re-render the sheet part so the selection shows.
-      game.modules.get("foundry-companion-local-phone")?.api?.getApp()?.markDirty("sheet");
-      return true;
+      return { rerender: ["sheet"] };
     }
     if (kind !== "trait") return false;
 
@@ -321,7 +308,7 @@ export class DaggerheartAdapter extends SystemAdapter {
       await result.resourceUpdates.updateResources();
     }
     this.selectedExperiences.clear();
-    return true;
+    return { rerender: ["sheet"] };
   }
 
   async #useItem(actor, { itemId, actionId }) {

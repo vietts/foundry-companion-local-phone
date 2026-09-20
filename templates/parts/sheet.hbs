@@ -15,7 +15,7 @@
 
   {{#if header.hp}}
   <div class="fcp-hp-editor">
-    <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0">
+    <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}">
     <button type="button" class="fcp-dmg" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
     <button type="button" class="fcp-heal" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
   </div>

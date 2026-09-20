@@ -86,5 +86,6 @@
   "FCP.Settings.DigitalDice.Name": "Dadi digitali",
   "FCP.Settings.DigitalDice.Hint": "Off (default, per giocare al tavolo con i dadi veri): la scheda è un riferimento, toccando un oggetto si legge il suo testo. On: toccando caratteristiche, attacchi e incantesimi si tira tramite Foundry, e la chat ha la barra dei dadi rapidi.",
   "FCP.Details": "Dettagli",
-  "FCP.Collapse": "Chiudi"
+  "FCP.Collapse": "Chiudi",
+  "FCP.MoveUnchecked": "Mosso senza controllo dei muri (il GM sta guardando un'altra scena)."
 }

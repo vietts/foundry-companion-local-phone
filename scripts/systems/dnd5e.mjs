@@ -1,11 +1,6 @@
-import { SystemAdapter, loc } from "./base.mjs";
+import { SystemAdapter, loc, signed, equipToggle } from "./base.mjs";
 import { SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
-
-function signed(n) {
-  n = Number(n) || 0;
-  return n >= 0 ? `+${n}` : `${n}`;
-}
 
 function damageText(item) {
   const damages = item.labels?.damages ?? [];
@@ -231,11 +226,6 @@ export class Dnd5eAdapter extends SystemAdapter {
 
   async prepareInventory(actor) {
     const groups = [];
-    const equipToggle = item => ({
-      action: "toggleItem",
-      label: game.i18n.localize("FCP.Equipped"),
-      icon: item.system.equipped ? "fas fa-check-circle" : "far fa-circle"
-    });
     const invRow = (i, extra = {}) => ({
       id: i.id, name: i.name, img: i.img,
       meta: [i.system.quantity > 1 ? `×${i.system.quantity}` : null, i.system.weight?.value ? `${i.system.weight.value} ${i.system.weight.units ?? ""}`.trim() : null].filter(Boolean).join(" · "),

@@ -4,6 +4,21 @@ export function loc(key, fallback) {
   return fallback ?? key.split(".").pop();
 }
 
+/** "+3" / "-1" formatting for modifiers. */
+export function signed(n) {
+  n = Number(n) || 0;
+  return n >= 0 ? `+${n}` : `${n}`;
+}
+
+/** Toggle descriptor for an equippable item row. */
+export function equipToggle(item) {
+  return {
+    action: "toggleItem",
+    label: game.i18n.localize("FCP.Equipped"),
+    icon: item.system.equipped ? "fas fa-check-circle" : "far fa-circle"
+  };
+}
+
 /**
  * Base adapter. Every system adapter returns the same context shapes so the
  * templates stay system-agnostic.

@@ -104,9 +104,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Re-render only some parts, coalescing bursts of updates. */
   refreshParts = foundry.utils.debounce(() => {
+    if (!this.rendered || !this._dirty.size) return; // keep the set: flushed after the first render
     const parts = Array.from(this._dirty);
     this._dirty.clear();
-    if (!this.rendered || !parts.length) return;
     this.render({ parts });
   }, 80);
 
@@ -148,6 +148,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     switch (partId) {
       case "sheet":
         context.sheet = actor ? await this.adapter.prepareSheet(actor) : { sections: [], rests: [] };
+        context.hpDraft = this.#draft("hpAmount");
         if (!this.diceEnabled) this.#stripRolls(context.sheet);
         break;
       case "actions":
@@ -161,13 +162,22 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         await this.#decorateItems(actor, context.groups);
         break;
       case "chat":
-        context.chat = { quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"] };
+        context.chat = {
+          quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"],
+          messageDraft: this.#draft("message"),
+          formulaDraft: this.#draft("formula")
+        };
         break;
       case "map":
         context.map = this.#prepareMap();
         break;
     }
     return context;
+  }
+
+  /** Current value of a text input, so a re-render does not wipe what the player is typing. */
+  #draft(name) {
+    return this.rendered ? (this.element?.querySelector(`input[name=${name}]`)?.value ?? "") : "";
   }
 
   /** Reference mode: tiles stay informative but do not roll; no advantage/reaction bar. */
@@ -281,6 +291,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (log && (options.isFirstRender || options.parts?.includes("chat") || !options.parts)) {
       await this.#fillChat(log);
     }
+
+    if (options.isFirstRender && this._dirty.size) this.refreshParts();
   }
 
   async #fillChat(log) {
@@ -307,9 +319,19 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Called by hooks when a chat message changes. */
   onChatChanged(message, { deleted = false } = {}) {
     this._chatCache.delete(message.id);
-    if (this.activeTab !== "chat" && !deleted) this.unreadChat++;
-    this.markDirty("chat", "nav");
+    if (!deleted && !message.visible) return;
+    if (this.activeTab !== "chat" && !deleted) {
+      this.unreadChat++;
+      this.markDirty("nav");
+    }
+    this.refreshChatLog();
   }
+
+  /** Refill the chat log without re-templating the part (keeps the inputs and their drafts). */
+  refreshChatLog = foundry.utils.debounce(() => {
+    const log = this.element?.querySelector(".fcp-chat-log");
+    if (log) this.#fillChat(log);
+  }, 80);
 
   /* -------------------------------------------- */
   /*  Tabs / actor                                 */
@@ -327,7 +349,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (tab === "chat") {
       this.unreadChat = 0;
-      this.markDirty("chat", "nav");
+      this.markDirty("nav");
+      this.refreshChatLog();
     }
     if (tab === "map") this.markDirty("map");
   }
@@ -351,7 +374,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onExit() {
     await setSetting(SETTINGS.MOBILE_MODE, "off");
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.delete("companion");
+    window.location.replace(url.toString());
   }
 
   /* -------------------------------------------- */
@@ -388,7 +413,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const action = target.dataset.action;
     target.disabled = true;
     try {
-      await this.adapter.handle(actor, action, { ...target.dataset }, event);
+      const result = await this.adapter.handle(actor, action, { ...target.dataset }, event);
+      if (result?.rerender?.length) this.markDirty(...result.rerender);
     } catch (err) {
       warn(`action ${action} failed`, err);
       ui.notifications.error(String(err.message ?? err));
@@ -458,21 +484,44 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /*  Map                                          */
   /* -------------------------------------------- */
 
-  async #moveTo(position) {
-    const token = this.token;
-    if (!token) return;
-    const result = await requestMove(token, position);
-    this.mapTarget = null;
-    if (result?.constrained) ui.notifications.warn(game.i18n.localize("FCP.MoveBlocked"));
-    this.markDirty("map");
+  _moveChain = Promise.resolve();
+
+  /**
+   * Queue a move. `computePosition(token)` runs when the move actually starts, so taps queued
+   * while a relay round-trip is pending build on the token's updated position.
+   */
+  #moveTo(computePosition) {
+    const run = async () => {
+      const token = this.token;
+      if (!token) return;
+      const position = computePosition(token);
+      if (!position) return;
+      this.#setPadEnabled(false);
+      try {
+        const result = await requestMove(token, position);
+        if (result?.constrained) ui.notifications.warn(game.i18n.localize("FCP.MoveBlocked"));
+        else if (result?.validated === false) ui.notifications.info(game.i18n.localize("FCP.MoveUnchecked"));
+      } catch (err) {
+        warn("move failed", err);
+      } finally {
+        this.mapTarget = null;
+        this.#setPadEnabled(true);
+        this.markDirty("map");
+      }
+    };
+    this._moveChain = this._moveChain.then(run, run);
+    return this._moveChain;
+  }
+
+  #setPadEnabled(enabled) {
+    for (const btn of this.element?.querySelectorAll(".fcp-dpad button[data-action=move]") ?? []) btn.disabled = !enabled;
   }
 
   static async #onMove(event, target) {
-    const token = this.token;
-    if (!token) return;
     const dx = Number(target.dataset.dx);
     const dy = Number(target.dataset.dy);
-    await this.#moveTo(shiftedPosition(token, dx, dy, this.step));
+    const steps = this.step;
+    await this.#moveTo(token => shiftedPosition(token, dx, dy, steps));
   }
 
   static async #onMapTap(event, target) {
@@ -486,7 +535,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const d = scene.dimensions;
     const center = { x: d.sceneX + px * d.sceneWidth, y: d.sceneY + py * d.sceneHeight };
     this.mapTarget = { left: (px * 100).toFixed(2), top: (py * 100).toFixed(2) };
-    await this.#moveTo(positionAtCenter(token, center));
+    await this.#moveTo(t => positionAtCenter(t, center));
   }
 
   static #onStepToggle() {

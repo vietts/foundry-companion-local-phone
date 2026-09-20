@@ -42,7 +42,7 @@ Per forzare la modalità da desktop (per esempio per provarla): `Impostazioni �
 Mondo (GM):
 
 - **Token mostrati sulla minimappa**: solo i propri, propri + amichevoli, tutti i non nascosti.
-- **Valida i movimenti sul client del GM**: attivo di default. Il telefono invia la richiesta, il client del GM esegue lo spostamento con controllo dei muri. Se nessun GM è connesso il telefono muove il token direttamente.
+- **Valida i movimenti sul client del GM**: attivo di default. Il telefono invia la richiesta, il client del GM esegue lo spostamento con controllo dei muri. Il controllo funziona solo se il GM sta guardando la scena attiva; se guarda un'altra scena, o se nessun GM è connesso, il token viene mosso senza controllo e il giocatore riceve un avviso.
 
 Dispositivo (ogni giocatore):
 

@@ -67,18 +67,20 @@ export function positionAtCenter(tokenDoc, center) {
 
 /**
  * Execute a move on this client. On a client that renders the scene (the GM), the Token object
- * constrains the path against walls; without a canvas the position is simply updated.
- * @returns {Promise<{ok: boolean, x: number, y: number, constrained: boolean}>}
+ * constrains the path against walls; without a canvas (or when the executing client is viewing
+ * another scene) the position is simply updated and `validated` is false.
+ * @returns {Promise<{ok: boolean, x: number, y: number, constrained: boolean, validated: boolean}>}
  */
 export async function executeMove(tokenDoc, { x, y }) {
   const from = { x: tokenDoc.x, y: tokenDoc.y };
-  if (tokenDoc.object && typeof tokenDoc.move === "function") {
+  const validated = !!tokenDoc.object && typeof tokenDoc.move === "function";
+  if (validated) {
     await tokenDoc.move({ x, y }, { animate: true });
   } else {
     await tokenDoc.update({ x, y });
   }
   const arrived = tokenDoc.x === x && tokenDoc.y === y;
   const moved = tokenDoc.x !== from.x || tokenDoc.y !== from.y;
-  log(`move ${tokenDoc.name} → ${x},${y} (arrived: ${arrived}, moved: ${moved})`);
-  return { ok: moved, x: tokenDoc.x, y: tokenDoc.y, constrained: !arrived };
+  log(`move ${tokenDoc.name} → ${x},${y} (arrived: ${arrived}, moved: ${moved}, walls checked: ${validated})`);
+  return { ok: moved, x: tokenDoc.x, y: tokenDoc.y, constrained: !arrived, validated };
 }

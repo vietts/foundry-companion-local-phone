@@ -68,7 +68,9 @@ export async function requestMove(tokenDoc, { x, y }) {
 
   if (game.user.isActiveGM || !relay || !gm) {
     if (!gm && relay) ui.notifications.info(game.i18n.localize("FCP.NoGM"));
-    return executeMove(tokenDoc, { x, y });
+    const result = await executeMove(tokenDoc, { x, y });
+    if (!relay) result.validated = true; // relay off: the user chose unchecked moves, do not nag
+    return result;
   }
 
   const requestId = foundry.utils.randomID();

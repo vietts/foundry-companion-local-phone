@@ -10,17 +10,13 @@
   "readme": "https://github.com/vietts/foundry-companion-local-phone#readme",
   "license": "MIT",
   "authors": [
-    { "name": "vietts" }
+    {
+      "name": "vietts"
+    }
   ],
   "compatibility": {
     "minimum": "14",
     "verified": "14"
-  },
-  "relationships": {
-    "systems": [
-      { "id": "dnd5e", "type": "system", "compatibility": { "minimum": "5.0.0" } },
-      { "id": "daggerheart", "type": "system", "compatibility": { "minimum": "2.0.0" } }
-    ]
   },
   "esmodules": [
     "scripts/main.mjs"
@@ -29,8 +25,16 @@
     "styles/companion.css"
   ],
   "languages": [
-    { "lang": "en", "name": "English", "path": "lang/en.json" },
-    { "lang": "it", "name": "Italiano", "path": "lang/it.json" }
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "it",
+      "name": "Italiano",
+      "path": "lang/it.json"
+    }
   ],
   "socket": true
 }

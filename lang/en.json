@@ -86,5 +86,6 @@
   "FCP.Settings.DigitalDice.Name": "Digital dice",
   "FCP.Settings.DigitalDice.Hint": "Off (default, for playing at the table with real dice): the sheet is a reference, tapping an item shows its text. On: tapping abilities, attacks and spells rolls through Foundry, and the chat gets a quick dice bar.",
   "FCP.Details": "Details",
-  "FCP.Collapse": "Collapse"
+  "FCP.Collapse": "Collapse",
+  "FCP.MoveUnchecked": "Moved without wall check (the GM is viewing another scene)."
 }
