@@ -4,10 +4,20 @@ import { getSetting } from "../settings.mjs";
 
 const TRAITS = ["agility", "strength", "finesse", "instinct", "presence", "knowledge"];
 
+/** Text for one system label; icon-only information (recall cost, damage type) is rendered as text. */
+function labelToText(label) {
+  if (typeof label === "string") return label;
+  if (!label?.value) return "";
+  const icons = label.icons ?? [];
+  if (icons.includes("fa-bolt")) return `⚡${label.value}`;
+  const types = Object.values(CONFIG.DH?.GENERAL?.damageTypes ?? {}).filter(t => icons.includes(t.icon));
+  const abbr = types.map(t => game.i18n.localize(t.abbreviation ?? t.label)).join("/");
+  return abbr ? `${label.value} ${abbr}` : label.value;
+}
+
 function labelsToText(item) {
   try {
-    const labels = item._getLabels?.() ?? [];
-    return labels.map(l => (typeof l === "string" ? l : l?.value)).filter(Boolean).join(" · ");
+    return (item._getLabels?.() ?? []).map(labelToText).filter(Boolean).join(" · ");
   } catch (err) {
     return "";
   }
@@ -15,7 +25,7 @@ function labelsToText(item) {
 
 /**
  * Daggerheart (Foundryborne system, 2.x).
- * HP and Stress are "reversed" resources: value = boxes marked. The companion shows remaining HP.
+ * HP and Stress are "reversed" resources: value = boxes marked. The companion shows marked boxes, like the desktop sheet.
  */
 export class DaggerheartAdapter extends SystemAdapter {
   static id = "daggerheart";
@@ -58,7 +68,8 @@ export class DaggerheartAdapter extends SystemAdapter {
       { key: "armor", label: loc("DAGGERHEART.GENERAL.armor"), value: r.armor?.value ?? 0, max: r.armor?.max ?? 0 }
     ];
     return {
-      hp: { value: Math.max(0, (hp.max ?? 0) - (hp.value ?? 0)), max: hp.max ?? 0, temp: 0 },
+      // Marked boxes, as on the desktop sheet (same convention as Stress).
+      hp: { value: hp.value ?? 0, max: hp.max ?? 0, temp: 0 },
       stats,
       counters
     };
@@ -124,18 +135,55 @@ export class DaggerheartAdapter extends SystemAdapter {
     const rows = [];
     for (const action of list) {
       const isAttack = action === item.system.attack;
+      const base = isAttack ? labelsToText(item) : (action.name && list.length <= 1 ? "" : action.name ?? "");
       rows.push({
         id: item.id,
         name: list.length > 1 && action.name && action.name !== item.name ? `${item.name}: ${action.name}` : item.name,
         img: action.img || item.img,
-        meta: isAttack ? labelsToText(item) : (action.name && list.length <= 1 ? "" : action.name ?? ""),
-        uses: action.uses?.max ? { value: action.remainingUses ?? action.uses.value, max: action.uses.max } : null,
+        meta: [base, this.#costText(action)].filter(Boolean).join(" · "),
+        uses: this.#actionUses(action, item),
         action: "useItem",
         actionLabel: actionLabel ?? game.i18n.localize("FCP.Use"),
         data: { "action-id": isAttack ? "attack" : action.id }
       });
     }
     return rows;
+  }
+
+  /** Same substitution rules as the system's itemAbleRollParse ("item.@x" reads the item, "@x" the actor). */
+  #evalFormula(value, actor, item) {
+    if (value === null || value === undefined || value === "") return null;
+    if (typeof value === "number") return value;
+    const str = String(value);
+    const onItem = /item\.@/i.test(str);
+    const source = onItem ? item : actor;
+    try {
+      const data = source?.getRollData?.() ?? {};
+      const n = Roll.safeEval(Roll.replaceFormulaData(onItem ? str.replaceAll(/item\.@/gi, "@") : str, data));
+      return Number.isFinite(n) ? n : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  /** Remaining/max uses. action.remainingUses is NaN for formula maxima, so it is computed here. */
+  #actionUses(action, item) {
+    const uses = action.uses;
+    if (!uses?.max) return null;
+    const max = this.#evalFormula(uses.max, action.actor ?? item.actor, item);
+    if (max === null) return { value: "?", max: String(uses.max) };
+    return { value: Math.max(max - (uses.value ?? 0), 0), max };
+  }
+
+  /** "2 Stress · 1 Hope" for the action's costs. */
+  #costText(action) {
+    const costs = action.cost ?? [];
+    return costs.filter(c => c?.value).map(c => {
+      const cfg = CONFIG.DH?.GENERAL?.abilityCosts?.[c.key];
+      const fromItem = c.key === "resource" ? action.actor?.items.get(c.itemId)?.name : null;
+      const label = fromItem ?? (cfg?.label ? game.i18n.localize(cfg.label) : c.key);
+      return `${c.value}${c.scalable ? "+" : ""} ${label}`;
+    }).join(" · ");
   }
 
   async prepareActions(actor) {
@@ -161,13 +209,17 @@ export class DaggerheartAdapter extends SystemAdapter {
 
     // Domain cards in loadout.
     const loadout = s.domainCards?.loadout ?? actor.items.filter(i => i.type === "domainCard" && !i.system.inVault);
+    const toVault = { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToVault"), icon: "fas fa-box-archive" };
     const cards = [];
     for (const c of loadout) {
       const rows = this.#actionRows(c);
-      if (rows.length) cards.push(...rows.map(r => ({ ...r, meta: [labelsToText(c), r.meta].filter(Boolean).join(" · "), uses: r.uses ?? this.#itemResource(c) })));
-      else cards.push({ id: c.id, name: c.name, img: c.img, meta: labelsToText(c), uses: this.#itemResource(c), toggle: { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToVault"), icon: "fas fa-box-archive" } });
+      if (rows.length) {
+        rows.forEach((r, i) => cards.push({ ...r, meta: [labelsToText(c), r.meta].filter(Boolean).join(" · "), uses: r.uses ?? this.#itemResource(c), toggle: i === 0 ? toVault : null }));
+      } else {
+        cards.push({ id: c.id, name: c.name, img: c.img, meta: labelsToText(c), uses: this.#itemResource(c), toggle: toVault });
+      }
     }
-    if (cards.length) groups.push({ title: game.i18n.localize("FCP.DH.Loadout"), items: cards });
+    if (cards.length) groups.push({ title: `${game.i18n.localize("FCP.DH.Loadout")} ${loadout.length}${this.#loadoutMax(actor)}`, items: cards });
 
     // Features with actions (class, subclass, ancestry, community, beastform...).
     const featureRows = [];
@@ -179,14 +231,18 @@ export class DaggerheartAdapter extends SystemAdapter {
     return { groups };
   }
 
+  /** " / max" suffix for the loadout title, empty when the limit cannot be read. */
+  #loadoutMax(actor) {
+    const max = (game.system.settings?.homebrew?.maxLoadout ?? null);
+    const bonus = actor.system.bonuses?.maxLoadout ?? 0;
+    return typeof max === "number" ? ` / ${max + bonus}` : "";
+  }
+
   #itemResource(item) {
     const res = item.system.resource;
     if (!res || (!res.max && !res.value)) return null;
-    let max = res.max;
-    if (typeof max === "string") {
-      try { max = Roll.safeEval(Roll.replaceFormulaData(max, item.actor?.getRollData() ?? {})); } catch (err) { max = "?"; }
-    }
-    return { value: res.value ?? 0, max: max ?? "∞" };
+    const max = this.#evalFormula(res.max, item.actor, item);
+    return { value: res.value ?? 0, max: max ?? (res.max ? "?" : "∞") };
   }
 
   /* ---------------- Inventory ---------------- */
@@ -215,7 +271,9 @@ export class DaggerheartAdapter extends SystemAdapter {
 
     const vault = (actor.system.domainCards?.vault ?? actor.items.filter(i => i.type === "domainCard" && i.system.inVault)).map(c => ({
       id: c.id, name: c.name, img: c.img, meta: labelsToText(c), inactive: true,
-      toggle: { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToLoadout"), icon: "fas fa-arrow-up-from-bracket" }
+      // Two distinct moves, like the desktop sheet: a free move (downtime) and a recall that costs Stress.
+      toggle: { action: "toggleItem", label: game.i18n.localize("FCP.DH.ToLoadout"), icon: "fas fa-arrow-up-from-bracket" },
+      action: "toggleItem", actionLabel: game.i18n.localize("FCP.DH.Recall"), data: { mode: "recall" }
     }));
     if (vault.length) groups.push({ title: game.i18n.localize("FCP.DH.Vault"), items: vault });
 
@@ -236,8 +294,8 @@ export class DaggerheartAdapter extends SystemAdapter {
   }
 
   async modifyHP(actor, delta) {
-    // Reversed resource: damage marks boxes (positive), healing clears them (negative).
-    return actor.modifyResource([{ key: "hitPoints", value: -delta }]);
+    // The header shows marked boxes: "+" marks one (damage), "−" clears one (healing).
+    return actor.modifyResource([{ key: "hitPoints", value: delta }]);
   }
 
   async applyDamage(actor, amount) {
@@ -313,27 +371,59 @@ export class DaggerheartAdapter extends SystemAdapter {
 
   async #useItem(actor, { itemId, actionId }) {
     const opts = this.#rollOptions();
-    const useOpts = { dialog: opts.dialog, event: {} };
-    if (actionId === "unarmed") return actor.system.attack.use({}, useOpts);
+    const useOpts = { dialog: opts.dialog, event: {}, ...(opts.actionType === "reaction" ? { actionType: "reaction" } : {}) };
+    if (actionId === "unarmed") return this.#useAction(actor.system.attack, useOpts, opts.roll.advantage);
     const item = actor.items.get(itemId);
     if (!item) return false;
-    if (actionId === "attack") return item.system.attack.use({}, useOpts);
+    if (actionId === "attack") return this.#useAction(item.system.attack, useOpts, opts.roll.advantage);
+    if (item.type === "domainCard" && item.system.isDomainTouchedSuppressed) {
+      // Same check as Item#use on the desktop, which we skip by calling the action directly.
+      const domain = game.i18n.localize(CONFIG.DH.DOMAIN.allDomains()[item.system.domain]?.label ?? "");
+      return ui.notifications.warn(game.i18n.format("DAGGERHEART.UI.Notifications.domainTouchRequirement", { nr: item.system.domainTouched, domain }));
+    }
     if (actionId) {
       const action = item.system.actions?.get(actionId);
-      if (action) return action.use({}, useOpts);
+      if (action) return this.#useAction(action, useOpts, opts.roll.advantage);
     }
     return item.use({});
   }
 
-  async #toggleItem(actor, { itemId }) {
+  /**
+   * Use an action with the phone's advantage/disadvantage. The system rebuilds `config.roll` from the
+   * action itself, so options cannot carry it: it is set in preUseAction, only for this action.
+   */
+  async #useAction(action, useOpts, advantage) {
+    let hook = null;
+    if (advantage) {
+      hook = Hooks.on(`${CONFIG.DH.id}.preUseAction`, (a, config) => {
+        if (a === action && config.roll) config.roll.advantage = advantage;
+      });
+    }
+    try {
+      return await action.use({}, useOpts);
+    } finally {
+      if (hook !== null) Hooks.off(`${CONFIG.DH.id}.preUseAction`, hook);
+    }
+  }
+
+  async #toggleItem(actor, { itemId, mode }) {
     const item = actor.items.get(itemId);
     if (!item) return false;
-    if (item.type === "domainCard") return item.system.toggleVault({}, !item.system.inVault, item.system.inVault);
+    // Vault -> loadout is free unless the player asked for a recall (which pays the Stress cost).
+    if (item.type === "domainCard") return item.system.toggleVault({}, !item.system.inVault, mode === "recall");
     if (item.type === "weapon" || item.type === "armor") {
-      if (!item.system.equipped && typeof actor.system.unequipBeforeEquip === "function") {
-        await actor.system.unequipBeforeEquip(item);
+      if (item.system.equipped) return item.update({ "system.equipped": false });
+      // Same rules as the desktop sheet's equip button (#toggleEquipItem).
+      if (item.type === "armor") {
+        await actor.system.armor?.update({ "system.equipped": false });
+      } else {
+        if (actor.effects.find(e => !e.disabled && e.type === "beastform")) {
+          return ui.notifications.warn(game.i18n.localize("DAGGERHEART.UI.Notifications.beastformEquipWeapon"));
+        }
+        // unequipBeforeEquip is a static method that expects the system as `this`.
+        await actor.system.constructor.unequipBeforeEquip.call(actor.system, item);
       }
-      return item.update({ "system.equipped": !item.system.equipped });
+      return item.update({ "system.equipped": true });
     }
     return false;
   }

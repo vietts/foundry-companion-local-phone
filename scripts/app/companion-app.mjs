@@ -214,6 +214,14 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /** Token art, falling back to the actor portrait when it is a video (webm/mp4 cannot be a CSS background). */
+  #tokenImage(token) {
+    const src = token.texture?.src;
+    if (src && !VIDEO_RE.test(src)) return src;
+    const portrait = token.actor?.img;
+    return portrait && !VIDEO_RE.test(portrait) ? portrait : "icons/svg/mystery-man.svg";
+  }
+
   #prepareMap() {
     const scene = activeScene();
     if (!scene) return { hasScene: false };
@@ -239,7 +247,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       return {
         id: t.id,
         name: t.name,
-        img: t.texture?.src ?? "",
+        img: this.#tokenImage(t),
         left: ((cx - d.sceneX) / d.sceneWidth * 100).toFixed(2),
         top: ((cy - d.sceneY) / d.sceneHeight * 100).toFixed(2),
         size: Math.max(2.5, w / d.sceneWidth * 100).toFixed(2),
