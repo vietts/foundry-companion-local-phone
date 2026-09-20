@@ -1,0 +1,36 @@
+{
+  "id": "foundry-companion-local-phone",
+  "title": "Phone Companion",
+  "description": "Interfaccia mobile per i giocatori al tavolo: scheda, tiri di dado, chat e movimento del token dal telefono, senza caricare la mappa. Supporta D&D 5e e Daggerheart.",
+  "version": "0.1.0",
+  "url": "https://github.com/vietts/foundry-companion-local-phone",
+  "manifest": "https://github.com/vietts/foundry-companion-local-phone/releases/latest/download/module.json",
+  "download": "https://github.com/vietts/foundry-companion-local-phone/releases/latest/download/module.zip",
+  "bugs": "https://github.com/vietts/foundry-companion-local-phone/issues",
+  "readme": "https://github.com/vietts/foundry-companion-local-phone#readme",
+  "license": "MIT",
+  "authors": [
+    { "name": "vietts" }
+  ],
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "relationships": {
+    "systems": [
+      { "id": "dnd5e", "type": "system", "compatibility": { "minimum": "5.0.0" } },
+      { "id": "daggerheart", "type": "system", "compatibility": { "minimum": "2.0.0" } }
+    ]
+  },
+  "esmodules": [
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/companion.css"
+  ],
+  "languages": [
+    { "lang": "en", "name": "English", "path": "lang/en.json" },
+    { "lang": "it", "name": "Italiano", "path": "lang/it.json" }
+  ],
+  "socket": true
+}

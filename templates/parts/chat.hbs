@@ -1,0 +1,19 @@
+<section class="fcp-tab {{#if (eq activeTab 'chat')}}active{{/if}}" data-tab="chat">
+  <div class="fcp-section">
+    <h3>{{localize "FCP.QuickDice"}}</h3>
+    <div class="fcp-dicebar">
+      {{#each chat.quickDice}}<button type="button" data-action="quickRoll" data-formula="{{this}}">{{this}}</button>{{/each}}
+    </div>
+    <form class="fcp-customroll" data-action="customRoll">
+      <input type="text" name="formula" placeholder="{{localize 'FCP.CustomRoll'}}" autocomplete="off" autocapitalize="off">
+      <button type="submit" class="fcp-primary">{{localize "FCP.Roll"}}</button>
+    </form>
+  </div>
+  <div class="fcp-chat-log">
+    {{#each chat.messages}}{{{this}}}{{/each}}
+  </div>
+  <form class="fcp-chat-compose" data-action="sendChat">
+    <input type="text" name="message" placeholder="{{localize 'FCP.ChatPlaceholder'}}" autocomplete="off">
+    <button type="submit" class="fcp-primary">{{localize "FCP.Send"}}</button>
+  </form>
+</section>
