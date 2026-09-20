@@ -4,16 +4,14 @@
     <div class="fcp-dicebar">
       {{#each chat.quickDice}}<button type="button" data-action="quickRoll" data-formula="{{this}}">{{this}}</button>{{/each}}
     </div>
-    <form class="fcp-customroll" data-action="customRoll">
-      <input type="text" name="formula" placeholder="{{localize 'FCP.CustomRoll'}}" autocomplete="off" autocapitalize="off">
-      <button type="submit" class="fcp-primary">{{localize "FCP.Roll"}}</button>
-    </form>
+    <div class="fcp-customroll">
+      <input type="text" name="formula" placeholder="{{localize 'FCP.CustomRoll'}}" autocomplete="off" autocapitalize="off" data-enter="customRoll">
+      <button type="button" class="fcp-primary" data-action="customRoll">{{localize "FCP.Roll"}}</button>
+    </div>
   </div>
-  <div class="fcp-chat-log">
-    {{#each chat.messages}}{{{this}}}{{/each}}
+  <div class="fcp-chat-log"></div>
+  <div class="fcp-chat-compose">
+    <input type="text" name="message" placeholder="{{localize 'FCP.ChatPlaceholder'}}" autocomplete="off" data-enter="sendChat">
+    <button type="button" class="fcp-primary" data-action="sendChat">{{localize "FCP.Send"}}</button>
   </div>
-  <form class="fcp-chat-compose" data-action="sendChat">
-    <input type="text" name="message" placeholder="{{localize 'FCP.ChatPlaceholder'}}" autocomplete="off">
-    <button type="submit" class="fcp-primary">{{localize "FCP.Send"}}</button>
-  </form>
 </section>

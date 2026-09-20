@@ -19,6 +19,13 @@
       <button type="button" data-action="hpDelta" data-delta="1">+</button>
     </div>
     {{/if}}
+    {{#each header.counters}}
+    <div class="fcp-hp fcp-counter">
+      <button type="button" data-action="counter" data-key="{{this.key}}" data-delta="-1">−</button>
+      <div class="fcp-hp-value"><small>{{this.label}}</small><br>{{this.value}}{{#if this.max}} / {{this.max}}{{/if}}</div>
+      <button type="button" data-action="counter" data-key="{{this.key}}" data-delta="1">+</button>
+    </div>
+    {{/each}}
     {{#each header.stats}}
     <div class="fcp-stat"><span class="fcp-stat-label">{{this.label}}</span><span class="fcp-stat-value">{{this.value}}</span></div>
     {{/each}}

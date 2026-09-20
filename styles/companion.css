@@ -44,7 +44,7 @@ body.fcp-active #notifications {
 #fcp-app {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   background: var(--fcp-bg);
@@ -215,14 +215,23 @@ body.fcp-active #notifications {
   color: var(--fcp-muted);
 }
 
-/* ---------- Body / tabs ---------- */
-
-.fcp-body {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 10px 12px calc(var(--fcp-safe-bottom) + 12px);
+.fcp-counter {
+  border-color: var(--fcp-line);
 }
+
+.fcp-counter .fcp-hp-value {
+  min-width: 48px;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.fcp-counter .fcp-hp-value small {
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Body / tabs ---------- */
 
 .fcp-tab {
   display: none;
@@ -230,6 +239,11 @@ body.fcp-active #notifications {
 
 .fcp-tab.active {
   display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 12px 12px;
 }
 
 .fcp-nav {
@@ -441,7 +455,8 @@ body.fcp-active #notifications {
 
 .fcp-modebar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 6px;
   margin-bottom: 10px;
 }
@@ -713,7 +728,7 @@ body.fcp-active #notifications {
   .fcp-grid.cols-2 {
     grid-template-columns: repeat(4, 1fr);
   }
-  .fcp-body {
+  .fcp-tab.active {
     padding-left: 24px;
     padding-right: 24px;
   }

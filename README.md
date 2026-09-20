@@ -34,10 +34,28 @@ Oppure copia questa cartella in `Data/modules/foundry-companion-local-phone`.
 
 Per forzare la modalità da desktop (per esempio per provarla): `Impostazioni → Phone Companion → Modalità companion = Sempre attiva`, oppure aggiungi `?companion=1` all'URL. Dal companion il pulsante con il monitor riporta all'interfaccia Foundry completa.
 
-## Impostazioni (GM)
+## Impostazioni
+
+Mondo (GM):
 
 - **Token mostrati sulla minimappa**: solo i propri, propri + amichevoli, tutti i non nascosti.
 - **Valida i movimenti sul client del GM**: attivo di default. Il telefono invia la richiesta, il client del GM esegue lo spostamento con controllo dei muri. Se nessun GM è connesso il telefono muove il token direttamente.
+
+Dispositivo (ogni giocatore):
+
+- **Modalità companion**: auto / sempre / off.
+- **Tiri rapidi**: tira subito con la modalità scelta sul telefono (vantaggio, svantaggio, reazione) senza aprire il dialog del sistema. Disattivala se vuoi il dialog completo (per esempio per lanciare un incantesimo a livello più alto in D&D 5e).
+- **Messaggi di chat tenuti sul telefono**.
+
+## Cosa fa per ogni sistema
+
+**D&D 5e** (scheda Tira): caratteristiche, tiri salvezza, abilità con passiva, iniziativa, dadi vita, tiri salvezza contro morte a 0 PF, concentrazione se attiva, slot incantesimo. Azioni: attacchi con bonus e danno, incantesimi preparati per livello con gli slot, privilegi e consumabili attivabili. Oggetti: equipaggia/togli, libro incantesimi con preparazione, monete. Danno e cura passano da `applyDamage` del sistema (PF temporanei compresi).
+
+**Daggerheart**: tratti con tiro Speranza/Paura (`rollTrait`), modalità azione/reazione/vantaggio/svantaggio, esperienze selezionabili per il tiro successivo (costano 1 Speranza), contatori Speranza/Stress/Armatura, soglie di danno. Il danno inserito passa da `takeDamage`, quindi applica soglie e slot armatura come dal foglio. Azioni: attacchi con le armi equipaggiate (o disarmato), carte dominio nel loadout, privilegi con azioni. Oggetti: armi e armature con equipaggiamento, consumabili, vault delle carte dominio con recall, oro. Riposi e mossa di morte aprono i dialog del sistema.
+
+## Stato
+
+Prima versione, scritta contro i sorgenti di dnd5e 6.0 e daggerheart 2.10 su Foundry v14 ma **non ancora provata in un mondo reale**. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli), quindi le cose da verificare al primo avvio sono soprattutto layout e rendering della chat sul telefono.
 
 ## Struttura
 

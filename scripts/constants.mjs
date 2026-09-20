@@ -8,6 +8,7 @@ export const SETTINGS = {
   MINIMAP_TOKENS: "minimapTokens",
   MOVE_RELAY: "moveRelay",
   CHAT_LIMIT: "chatLimit",
+  QUICK_ROLLS: "quickRolls",
   LAST_ACTOR: "lastActor",
   LAST_TAB: "lastTab"
 };

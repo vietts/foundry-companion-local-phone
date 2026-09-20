@@ -1,3 +1,9 @@
+/** Localize `key`, falling back to `fallback` (or the last key segment) when the key is unknown. */
+export function loc(key, fallback) {
+  if (game.i18n.has(key)) return game.i18n.localize(key);
+  return fallback ?? key.split(".").pop();
+}
+
 /**
  * Base adapter. Every system adapter returns the same context shapes so the
  * templates stay system-agnostic.
@@ -72,6 +78,20 @@ export class SystemAdapter {
 
   hpPath(actor) {
     return null;
+  }
+
+  /** Damage of a given amount (from the "Damage" box). Systems may route through their own pipeline. */
+  async applyDamage(actor, amount) {
+    return this.modifyHP(actor, -Math.abs(amount));
+  }
+
+  async applyHealing(actor, amount) {
+    return this.modifyHP(actor, Math.abs(amount));
+  }
+
+  /** Header counters (e.g. Hope/Stress): [{key,label,value,max}] shown with +/- buttons. */
+  async counter(actor, key, delta) {
+    return false;
   }
 
   /** Dispatch an action coming from the UI. `data` is the element dataset. */
