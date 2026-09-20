@@ -9,11 +9,12 @@ export const SETTINGS = {
   MOVE_RELAY: "moveRelay",
   CHAT_LIMIT: "chatLimit",
   QUICK_ROLLS: "quickRolls",
+  DIGITAL_DICE: "digitalDice",
   LAST_ACTOR: "lastActor",
   LAST_TAB: "lastTab"
 };
 
-export const TABS = ["sheet", "actions", "inventory", "chat", "map"];
+export const TABS = ["sheet", "map", "actions", "inventory", "chat"];
 
 export function log(...args) {
   console.log(`${MODULE_ID} |`, ...args);

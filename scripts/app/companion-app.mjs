@@ -26,6 +26,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.unreadChat = 0;
     this._chatCache = new Map();
     this._actorId = getSetting(SETTINGS.LAST_ACTOR) || null;
+    this.expandedItems = new Set();
+  }
+
+  /** Digital dice off = reference mode: nothing rolls, items open their text. */
+  get diceEnabled() {
+    return !!getSetting(SETTINGS.DIGITAL_DICE);
   }
 
   static DEFAULT_OPTIONS = {
@@ -123,6 +129,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       actor: actor ? { id: actor.id, name: actor.name, img: actor.img, subtitle: this.adapter.subtitle(actor) } : null,
       actors,
       header,
+      dice: this.diceEnabled,
       conditions: actor ? this.adapter.conditions(actor) : [],
       activeTab: this.activeTab,
       tabs: TABS.map(id => ({
@@ -141,14 +148,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     switch (partId) {
       case "sheet":
         context.sheet = actor ? await this.adapter.prepareSheet(actor) : { sections: [], rests: [] };
+        if (!this.diceEnabled) this.#stripRolls(context.sheet);
         break;
       case "actions":
         context.tabId = "actions";
         context.groups = actor ? (await this.adapter.prepareActions(actor)).groups : [];
+        await this.#decorateItems(actor, context.groups);
         break;
       case "inventory":
         context.tabId = "inventory";
         context.groups = actor ? (await this.adapter.prepareInventory(actor)).groups : [];
+        await this.#decorateItems(actor, context.groups);
         break;
       case "chat":
         context.chat = { quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"] };
@@ -158,6 +168,40 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
     }
     return context;
+  }
+
+  /** Reference mode: tiles stay informative but do not roll; no advantage/reaction bar. */
+  #stripRolls(sheet) {
+    sheet.modes = null;
+    for (const section of sheet.sections ?? []) {
+      for (const tile of section.tiles ?? []) {
+        if (tile.action !== "roll") continue;
+        tile.action = "noop";
+        if (tile.data?.kind === "experience") { tile.sub = null; tile.prof = false; }
+      }
+    }
+  }
+
+  /** Hide "use" buttons in reference mode and inline the enriched text of expanded items. */
+  async #decorateItems(actor, groups) {
+    const dice = this.diceEnabled;
+    const TextEditor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+    for (const group of groups) {
+      for (const row of group.items) {
+        if (!dice && row.action === "useItem") row.action = null;
+        if (!row.id || !this.expandedItems.has(row.id)) continue;
+        const item = actor?.items.get(row.id);
+        if (!item) continue;
+        const raw = item.system?.description?.value ?? item.system?.description ?? "";
+        try {
+          row.description = await TextEditor.enrichHTML(typeof raw === "string" ? raw : "", { relativeTo: item, secrets: false });
+        } catch (err) {
+          row.description = "";
+        }
+        row.expanded = true;
+        if (!row.description) row.description = `<p>${game.i18n.localize("FCP.Empty")}</p>`;
+      }
+    }
   }
 
   #prepareMap() {
@@ -353,20 +397,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  static async #onExpandItem(event, target) {
-    const actor = this.actor;
-    const item = actor?.items.get(target.dataset.itemId);
-    if (!item) return;
-    const raw = item.system?.description?.value ?? item.system?.description ?? "";
-    const TextEditor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
-    const content = await TextEditor.enrichHTML(typeof raw === "string" ? raw : "", { relativeTo: item, secrets: false });
-    await foundry.applications.api.DialogV2.prompt({
-      window: { title: item.name },
-      classes: ["fcp-dialog"],
-      content: `<div class="fcp-item-desc">${content || `<p>${game.i18n.localize("FCP.Empty")}</p>`}</div>`,
-      ok: { label: "OK" },
-      rejectClose: false
-    });
+  static #onExpandItem(event, target) {
+    const id = target.dataset.itemId;
+    if (!id) return;
+    if (this.expandedItems.has(id)) this.expandedItems.delete(id);
+    else this.expandedItems.add(id);
+    const part = target.closest("[data-application-part]")?.dataset.applicationPart;
+    this.markDirty(part ?? "actions");
   }
 
   static async #onToggleStatus(event, target) {

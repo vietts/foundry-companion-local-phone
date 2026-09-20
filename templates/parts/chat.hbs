@@ -1,4 +1,5 @@
 <section class="fcp-tab {{#if (eq activeTab 'chat')}}active{{/if}}" data-tab="chat">
+  {{#if dice}}
   <div class="fcp-section">
     <h3>{{localize "FCP.QuickDice"}}</h3>
     <div class="fcp-dicebar">
@@ -9,6 +10,7 @@
       <button type="button" class="fcp-primary" data-action="customRoll">{{localize "FCP.Roll"}}</button>
     </div>
   </div>
+  {{/if}}
   <div class="fcp-chat-log"></div>
   <div class="fcp-chat-compose">
     <input type="text" name="message" placeholder="{{localize 'FCP.ChatPlaceholder'}}" autocomplete="off" data-enter="sendChat">

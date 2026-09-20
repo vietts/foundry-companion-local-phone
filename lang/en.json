@@ -82,5 +82,9 @@
   "FCP.DH.ExperienceSelected": "Added to the next roll",
   "FCP.Cast": "Cast",
   "FCP.SpellSlots": "Spell slots",
-  "FCP.Other": "Other"
+  "FCP.Other": "Other",
+  "FCP.Settings.DigitalDice.Name": "Digital dice",
+  "FCP.Settings.DigitalDice.Hint": "Off (default, for playing at the table with real dice): the sheet is a reference, tapping an item shows its text. On: tapping abilities, attacks and spells rolls through Foundry, and the chat gets a quick dice bar.",
+  "FCP.Details": "Details",
+  "FCP.Collapse": "Collapse"
 }

@@ -8,17 +8,21 @@
     <h3>{{this.title}}</h3>
     <div class="fcp-list">
       {{#each this.items}}
-      <div class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}">
-        <img src="{{this.img}}" alt="">
-        <div class="fcp-row-main" data-action="expandItem" data-item-id="{{this.id}}">
-          <div class="fcp-row-title">{{this.name}}</div>
-          {{#if this.meta}}<div class="fcp-row-meta">{{this.meta}}</div>{{/if}}
+      <div class="fcp-item {{#if this.expanded}}expanded{{/if}}">
+        <div class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{/if}}>
+          <img src="{{this.img}}" alt="">
+          <div class="fcp-row-main">
+            <div class="fcp-row-title">{{this.name}}</div>
+            {{#if this.meta}}<div class="fcp-row-meta">{{this.meta}}</div>{{/if}}
+          </div>
+          <div class="fcp-row-right">
+            {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}}/{{this.uses.max}}</span>{{/if}}
+            {{#if this.toggle}}<button type="button" data-action="{{this.toggle.action}}" data-item-id="{{this.id}}" title="{{this.toggle.label}}"><i class="{{this.toggle.icon}}"></i></button>{{/if}}
+            {{#if this.action}}<button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button>{{/if}}
+            {{#if this.id}}<i class="fas fa-chevron-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
+          </div>
         </div>
-        <div class="fcp-row-right">
-          {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}}/{{this.uses.max}}</span>{{/if}}
-          {{#if this.toggle}}<button type="button" data-action="{{this.toggle.action}}" data-item-id="{{this.id}}" title="{{this.toggle.label}}"><i class="{{this.toggle.icon}}"></i></button>{{/if}}
-          {{#if this.action}}<button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button>{{/if}}
-        </div>
+        {{#if this.expanded}}<div class="fcp-item-desc">{{{this.description}}}</div>{{/if}}
       </div>
       {{/each}}
     </div>

@@ -57,6 +57,16 @@ export function registerSettings() {
     default: 40
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.DIGITAL_DICE, {
+    name: "FCP.Settings.DigitalDice.Name",
+    hint: "FCP.Settings.DigitalDice.Hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => game.modules.get(MODULE_ID)?.api?.getApp()?.render({ force: true })
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.QUICK_ROLLS, {
     name: "FCP.Settings.QuickRolls.Name",
     hint: "FCP.Settings.QuickRolls.Hint",

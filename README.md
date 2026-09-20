@@ -1,12 +1,15 @@
 # Phone Companion per Foundry VTT
 
-Interfaccia mobile per i giocatori seduti al tavolo. Il GM tiene Foundry sul suo computer; i giocatori aprono lo stesso mondo dal telefono e trovano, al posto dell'interfaccia standard, una schermata pensata per il touch:
+Interfaccia mobile per giocare **dal vivo, al tavolo, con Foundry sullo schermo del GM**. I giocatori aprono lo stesso mondo dal telefono e trovano, al posto dell'interfaccia standard, una schermata pensata per il touch. Il telefono sostituisce la scheda cartacea e serve a muovere il proprio token; i dadi restano quelli veri, a meno che non si attivino i dadi digitali.
 
-- **Scheda**: punti ferita, caratteristiche, abilità, tiri salvezza (D&D 5e) o tratti, Speranza, Stress, soglie di danno (Daggerheart). Tocca un valore per tirare.
-- **Azioni**: attacchi, incantesimi, carte dominio e privilegi con un pulsante "Usa" che passa dal sistema, quindi il risultato finisce nella chat di Foundry come se fosse stato tirato dal PC.
-- **Oggetti**: inventario con usi e stato equipaggiato/preparato.
-- **Chat**: messaggi recenti, dadi rapidi e formule libere.
-- **Mappa**: minimappa leggera (senza canvas) con i token e un pad direzionale per muovere il proprio token di una casella alla volta, oppure toccando un punto della minimappa. I movimenti vengono validati dal client del GM, che controlla i muri.
+Priorità, in ordine:
+
+1. **Scheda**: punti ferita con danno/cura, caratteristiche, abilità, tiri salvezza (D&D 5e) o tratti, Speranza, Stress, Armatura, soglie di danno (Daggerheart), condizioni, riposi. È il riferimento da tenere sotto mano.
+2. **Mappa**: minimappa leggera (senza canvas) con i token e un pad direzionale per muovere il proprio token di una casella alla volta, oppure toccando un punto della minimappa. I movimenti vengono validati dal client del GM, che controlla i muri.
+3. **Azioni** e **Oggetti**: attacchi, incantesimi, carte dominio, privilegi e inventario. Toccando una riga si apre il testo dell'oggetto, per leggere cosa fa. Equipaggia, prepara, sposta nel vault.
+4. **Chat**: in secondo piano, per le regole o gli appunti che il GM manda in chat. Con un badge sui messaggi non letti.
+
+Con **Dadi digitali** attivi (impostazione del dispositivo, spenta di default) toccare caratteristiche, attacchi e incantesimi tira tramite il sistema, con il risultato nella chat di Foundry, e la chat guadagna dadi rapidi e formule libere.
 
 Il modulo non usa un server esterno: gira dentro il normale client Foundry. Sul telefono si può disattivare il canvas (il modulo lo propone al primo avvio), così non vengono scaricate le immagini delle scene e il caricamento resta leggero.
 
@@ -44,6 +47,7 @@ Mondo (GM):
 Dispositivo (ogni giocatore):
 
 - **Modalità companion**: auto / sempre / off.
+- **Dadi digitali**: spenti di default. Accesi, le caratteristiche e gli oggetti diventano tirabili.
 - **Tiri rapidi**: tira subito con la modalità scelta sul telefono (vantaggio, svantaggio, reazione) senza aprire il dialog del sistema. Disattivala se vuoi il dialog completo (per esempio per lanciare un incantesimo a livello più alto in D&D 5e).
 - **Messaggi di chat tenuti sul telefono**.
 

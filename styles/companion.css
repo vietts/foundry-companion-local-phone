@@ -424,6 +424,53 @@ body.fcp-active #notifications {
   border-radius: 8px;
 }
 
+.fcp-item .fcp-row {
+  width: 100%;
+}
+
+.fcp-item.expanded .fcp-row {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.fcp-chevron {
+  color: var(--fcp-muted);
+  font-size: 12px;
+  padding-left: 4px;
+}
+
+.fcp-item-desc {
+  background: var(--fcp-bg-3);
+  border: 1px solid var(--fcp-line);
+  border-top: none;
+  border-radius: 0 0 var(--fcp-radius) var(--fcp-radius);
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.fcp-item-desc p {
+  margin: 0 0 8px;
+}
+
+.fcp-item-desc p:last-child {
+  margin-bottom: 0;
+}
+
+.fcp-item-desc table {
+  width: 100%;
+  font-size: 13px;
+}
+
+.fcp-item-desc a.content-link,
+.fcp-item-desc a.inline-roll {
+  color: var(--fcp-accent-2);
+  background: transparent;
+  border: none;
+}
+
 .fcp-chips {
   display: flex;
   flex-wrap: wrap;
