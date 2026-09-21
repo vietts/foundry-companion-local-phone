@@ -63,12 +63,16 @@ body.fcp-active #notifications {
   --color-neutral-700: #605d5d;
   --color-neutral-800: #444141;
   --color-accent-100: #e9f8ff;
+  --color-accent-200: #cbeeff;
+  --color-accent-500: #38a6cf;
   --color-accent-600: #1186ac;
   --color-accent-700: #006786;
   --color-accent-800: #004961;
+  --color-accent-2-100: #fff1f4;
   --color-accent-2-200: #ffdee6;
   --color-accent-2-700: #aa0b56;
   --color-accent-2-800: #790e3d;
+  --color-accent-2-900: #4b1528;
   --font-heading: "Source Serif 4", Georgia, "Times New Roman", serif;
   --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
   --radius-sm: 1px;
@@ -1326,4 +1330,520 @@ body.fcp-active #notifications {
     padding-left: 24px;
     padding-right: 24px;
   }
+}
+
+/* ---------- D&D 5e ---------- */
+
+/* Component classes set their own display, so the hidden attribute needs to win explicitly. */
+#fcp-app [hidden] {
+  display: none !important;
+}
+
+/* Header: sub-tabs of the sheet and the advantage bar. */
+.fcp-panes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-top: 6px;
+  border-bottom: 1.5px solid var(--color-text);
+}
+
+.fcp-panes button {
+  min-height: 40px;
+  padding: 0 0 7px;
+  text-align: center;
+  font: 600 13.5px var(--font-heading);
+  letter-spacing: 0.04em;
+  color: var(--color-neutral-600);
+  border-bottom: 3px solid transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fcp-panes button.active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.fcp-modebar.fcp-modebar-head {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 4px 0 0;
+}
+
+.fcp-modebar.fcp-modebar-head button {
+  border: 1.5px solid var(--color-text);
+  font: 600 12px var(--font-heading);
+  justify-content: center;
+}
+
+.fcp-modebar.fcp-modebar-head button.active {
+  background: var(--color-text);
+  color: var(--color-bg);
+  border-color: var(--color-text);
+}
+
+/* Hit points */
+.fcp-hpblock {
+  margin-top: 14px;
+}
+
+.fcp-hpblock .fcp-headrow {
+  margin-bottom: 2px;
+}
+
+.fcp-hpblock .fcp-section-note {
+  font-style: italic;
+  font-size: 11.5px;
+}
+
+.fcp-hpbig {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fcp-hpbig b {
+  font: 600 38px/1 var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.fcp-hpbig span {
+  font: 400 17px/1.45 var(--font-body);
+  color: var(--color-neutral-600);
+}
+
+.fcp-hpbig em {
+  margin-left: auto;
+  font: 600 12.5px var(--font-heading);
+  padding: 4px 9px;
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+  border-radius: var(--radius-sm);
+}
+
+.fcp-hpbar {
+  height: 8px;
+  display: flex;
+  overflow: hidden;
+  background: var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  margin-bottom: 9px;
+}
+
+.fcp-hpbar i {
+  background: var(--color-text);
+  transition: width 0.18s ease;
+}
+
+.fcp-hpbar i.temp {
+  background: var(--color-accent-500);
+}
+
+.fcp-hpcontrols {
+  display: grid;
+  grid-template-columns: 44px 58px 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+
+.fcp-hpcontrols button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-neutral-500);
+  border-radius: var(--radius-sm);
+  font: 600 19px var(--font-heading);
+}
+
+.fcp-hpcontrols button.dmg,
+.fcp-hpcontrols button.heal {
+  font-size: 14px;
+}
+
+.fcp-hpcontrols button.dmg {
+  border-color: var(--color-accent-2-700);
+  color: var(--color-accent-2-800);
+}
+
+.fcp-hpcontrols button.heal {
+  border-color: var(--color-accent-700);
+  color: var(--color-accent-800);
+}
+
+.fcp-hpcontrols input {
+  padding: 8px 4px;
+  text-align: center;
+  font: 600 16px var(--font-heading);
+}
+
+/* Death saving throws, shown at 0 HP. */
+.fcp-death {
+  --fcp-tone: var(--color-accent-2-700);
+  border: 2px solid var(--color-accent-2-700);
+  background: var(--color-accent-2-100);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px 14px;
+  margin-bottom: 20px;
+}
+
+.fcp-death-title {
+  font: 700 11.5px/1 var(--font-heading);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-2-800);
+  margin-bottom: 3px;
+}
+
+.fcp-death p {
+  margin: 0 0 10px;
+  font: 400 12.5px/1.45 var(--font-body);
+  color: var(--color-accent-2-900);
+}
+
+.fcp-death-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.fcp-death-row span {
+  flex: none;
+  width: 70px;
+  font: 600 13px var(--font-heading);
+  color: var(--color-accent-2-900);
+}
+
+.fcp-death-row .fcp-box {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 17px var(--font-heading);
+  color: var(--color-bg);
+}
+
+/* AC, proficiency, initiative, speed or spell DC */
+.fcp-statrow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1.5px solid var(--color-text);
+  border-bottom: 1.5px solid var(--color-text);
+  margin-bottom: 22px;
+}
+
+.fcp-statrow div {
+  padding: 9px 0;
+}
+
+.fcp-statrow b {
+  display: block;
+  font: 600 20px/1.1 var(--font-heading);
+}
+
+.fcp-statrow span {
+  font: 400 11px/1.2 var(--font-body);
+  color: var(--color-neutral-700);
+}
+
+/* Abilities: modifier over "STR · 18". */
+.fcp-grid.stack {
+  gap: 14px 10px;
+}
+
+.fcp-grid.stack .fcp-tile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.fcp-grid.stack .fcp-tile-value {
+  font-size: 23px;
+}
+
+.fcp-grid.stack .fcp-tile-label {
+  font-size: 11px;
+}
+
+/* Pinned roll in reference mode */
+.fcp-line.pinned,
+.fcp-grid.stack .fcp-tile.pinned {
+  background: var(--color-neutral-200);
+}
+
+/* Row lists: saves, skills, resources */
+.fcp-lines.compact,
+.fcp-lines.feature {
+  gap: 0;
+}
+
+.fcp-lines.compact .fcp-line,
+.fcp-lines.feature .fcp-line {
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 6px 9px 0;
+  border-top: 1px solid var(--color-neutral-300);
+}
+
+.fcp-lines.compact .fcp-line b {
+  flex: 1;
+  min-width: 0;
+  font: 400 14.5px/1.3 var(--font-body);
+}
+
+.fcp-lines.feature .fcp-line {
+  padding-block: 10px;
+}
+
+.fcp-lines.feature .fcp-line b {
+  flex: 1;
+  min-width: 0;
+  font: 600 15.5px/1.25 var(--font-heading);
+}
+
+.fcp-lines.compact .fcp-line > span {
+  width: 40px;
+  text-align: right;
+  font: 600 16.5px var(--font-heading);
+}
+
+.fcp-lines.feature .fcp-line > span {
+  width: 40px;
+  text-align: right;
+  font: 600 19px var(--font-heading);
+}
+
+.fcp-lines.compact .fcp-line.inactive b {
+  color: var(--color-neutral-700);
+}
+
+.fcp-line b small {
+  display: block;
+  margin-top: 1px;
+  font: 400 11px/1.3 var(--font-body);
+  color: var(--color-neutral-600);
+}
+
+.fcp-marker {
+  flex: none;
+  font: 600 11.5px var(--font-heading);
+  font-style: normal;
+  color: var(--color-accent-700);
+}
+
+.fcp-line.fcp-conc {
+  align-items: center;
+}
+
+.fcp-line.fcp-conc .fcp-btn.small {
+  flex: none;
+  font-size: 12px;
+}
+
+.fcp-section-roll {
+  margin-top: -12px;
+}
+
+.fcp-btn.small.danger {
+  flex: none;
+  border-color: var(--color-accent-2-700);
+  color: var(--color-accent-2-800);
+  font-size: 12px;
+}
+
+.fcp-lines.compact .fcp-resource {
+  align-items: center;
+  padding-block: 10px;
+}
+
+.fcp-lines.compact .fcp-resource b {
+  font: 600 15px/1.25 var(--font-heading);
+}
+
+.fcp-lines.compact .fcp-resource b small {
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.fcp-lines.compact .fcp-line > span.fcp-count {
+  width: auto;
+  font: 600 13px var(--font-heading);
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-800);
+}
+
+.fcp-lines.compact .fcp-line > span.fcp-count.spent {
+  background: var(--color-accent-2-200);
+  color: var(--color-accent-2-800);
+}
+
+/* Spell slots and hit dice */
+.fcp-meter.tone-slot { --fcp-tone: var(--color-accent-700); }
+.fcp-meter.tone-pact { --fcp-tone: var(--color-accent-2-700); }
+.fcp-meter.tone-hd { --fcp-tone: var(--color-neutral-700); }
+.fcp-meter.tone-hd .fcp-box { height: 28px; }
+.fcp-meter.tone-slot .fcp-boxes,
+.fcp-meter.tone-pact .fcp-boxes { margin-bottom: 11px; }
+.fcp-group-slots .fcp-box { height: 26px; }
+.fcp-group-slots .fcp-boxes { margin-bottom: 9px; }
+
+.fcp-meter-head b {
+  font: 600 13.5px var(--font-heading);
+}
+
+.fcp-meter.tone-pact .fcp-meter-head b,
+.fcp-meter.tone-pact .fcp-meter-count {
+  color: var(--color-accent-2-800);
+}
+
+.fcp-meter.tone-slot .fcp-meter-count,
+.fcp-meter.tone-pact .fcp-meter-count {
+  font-size: 12.5px;
+  color: var(--color-neutral-700);
+}
+
+.fcp-meter.tone-slot .fcp-meter-head,
+.fcp-meter.tone-pact .fcp-meter-head {
+  margin: 0 0 5px;
+}
+
+/* Conditions: active chips, then a picker with all of them. */
+.fcp-chip i {
+  font-size: 12px;
+}
+
+.fcp-chip-none {
+  align-self: center;
+  font: italic 12.5px var(--font-body);
+  color: var(--color-neutral-700);
+}
+
+.fcp-chip.add {
+  border: 1.5px dashed var(--color-neutral-500);
+  font: 600 12.5px var(--font-heading);
+}
+
+.fcp-chips.fcp-picker {
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.fcp-picker .fcp-chip {
+  font-size: 12px;
+}
+
+.fcp-picker .fcp-chip.on {
+  border-color: var(--color-accent-2-700);
+  color: var(--color-accent-2-800);
+}
+
+/* Action rows */
+.fcp-row.big .fcp-row-title {
+  font-size: 17px;
+}
+
+#fcp-app button.fcp-primary.fcp-use-full {
+  width: 100%;
+}
+
+/* Spellbook */
+.fcp-spellbook input[name=spellQuery] {
+  margin-bottom: 8px;
+}
+
+.fcp-segmented {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fcp-segmented button {
+  flex: 1;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-text);
+  border-radius: var(--radius-sm);
+  font: 600 12.5px var(--font-heading);
+}
+
+.fcp-segmented button.active {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.fcp-spell-level {
+  margin-bottom: 14px;
+}
+
+.fcp-sublabel {
+  font: 600 11.5px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-700);
+  margin-bottom: 4px;
+}
+
+.fcp-spell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--color-neutral-300);
+}
+
+.fcp-spell-name {
+  display: block;
+  font: 400 14.5px/1.25 var(--font-body);
+}
+
+.fcp-spell small {
+  display: block;
+  margin-top: 1px;
+  font: 400 11px/1.3 var(--font-body);
+  color: var(--color-neutral-600);
+}
+
+.fcp-spell em {
+  flex: none;
+  font: italic 11px var(--font-body);
+  color: var(--color-neutral-600);
+}
+
+.fcp-switch {
+  flex: none;
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border: 1.5px solid var(--color-text);
+  border-radius: 14px;
+  background: var(--color-neutral-300);
+  transition: background 0.14s ease;
+}
+
+.fcp-switch i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-text);
+  transition: left 0.14s ease;
+}
+
+.fcp-switch.on {
+  background: var(--color-accent-700);
+}
+
+.fcp-switch.on i {
+  left: 20px;
 }

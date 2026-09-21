@@ -29,5 +29,16 @@
     {{/if}}
   </div>
   {{#if (eq activeTab 'sheet')}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
+  {{#if (eq activeTab 'actions')}}{{#if headerInfo.pin}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}{{/if}}
+  {{#if dice}}{{#if header.modes}}{{#unless (eq activeTab 'inventory')}}
+  <div class="fcp-modebar fcp-modebar-head">
+    {{#each header.modes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="setMode" data-mode="{{this.key}}">{{this.label}}</button>{{/each}}
+  </div>
+  {{/unless}}{{/if}}{{/if}}
+  {{#if (eq activeTab 'sheet')}}{{#if panes}}
+  <div class="fcp-panes">
+    {{#each panes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="switchPane" data-pane="{{this.key}}">{{this.label}}</button>{{/each}}
+  </div>
+  {{/if}}{{/if}}
   {{/if}}
 </header>

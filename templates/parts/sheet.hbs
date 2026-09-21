@@ -32,6 +32,37 @@
     <button type="button" class="fcp-btn" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
   </div>
   {{/if}}
+  {{else if header.hpBar}}
+  <div class="fcp-hpblock">
+    <div class="fcp-headrow"><span class="fcp-label">{{localize "FCP.D5.HP"}}</span><span class="fcp-section-note">{{localize "FCP.D5.HPLeft"}}</span></div>
+    <div class="fcp-hpbig">
+      <b>{{header.hpBar.value}}</b><span>/ {{header.hpBar.max}}</span>
+      {{#if header.hpBar.temp}}<em>+{{header.hpBar.temp}} {{localize "FCP.D5.TempShort"}}</em>{{/if}}
+    </div>
+    <div class="fcp-hpbar"><i style="width: {{header.hpBar.hpPct}}"></i><i class="temp" style="width: {{header.hpBar.tempPct}}"></i></div>
+    <div class="fcp-hpcontrols">
+      <button type="button" data-action="hpDelta" data-delta="-1" aria-label="{{localize 'FCP.Damage'}} 1">−</button>
+      <input type="number" inputmode="numeric" name="hpAmount" placeholder="0" min="0" value="{{hpDraft}}" aria-label="{{localize 'FCP.HP'}}">
+      <button type="button" class="dmg" data-action="hpApply" data-sign="-1">{{localize "FCP.Damage"}}</button>
+      <button type="button" class="heal" data-action="hpApply" data-sign="1">{{localize "FCP.Heal"}}</button>
+    </div>
+  </div>
+  {{#if header.death}}
+  <div class="fcp-death">
+    <div class="fcp-death-title">{{localize "FCP.D5.Down"}}</div>
+    <p>{{localize "FCP.D5.DeathHint"}}</p>
+    {{#each header.death.rows}}
+    <div class="fcp-death-row">
+      <span>{{this.label}}</span>
+      {{#each this.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../key}}" data-box="{{this.n}}" aria-label="{{../label}} {{this.n}}">{{#if this.on}}×{{/if}}</button>{{/each}}
+    </div>
+    {{/each}}
+    {{#if dice}}<button type="button" class="fcp-btn small" data-action="roll" data-kind="deathSave">{{localize "FCP.Roll"}}</button>{{/if}}
+  </div>
+  {{/if}}
+  {{#if header.stats.length}}
+  <div class="fcp-statrow">{{#each header.stats}}<div><b>{{this.value}}</b><span>{{this.label}}</span></div>{{/each}}</div>
+  {{/if}}
   {{else}}
   <div class="fcp-section">
     {{#if header.hp}}
@@ -78,6 +109,44 @@
       {{/each}}
     </div>
 
+    {{else if (eq this.layout "boxes")}}
+    <div class="fcp-headrow"><span class="fcp-label">{{this.title}}</span>{{#if this.note}}<span class="fcp-section-note">{{this.note}}</span>{{/if}}</div>
+    {{#each this.rows}}
+    <div class="fcp-meter tone-{{this.tone}}">
+      {{#if this.label}}<div class="fcp-meter-head"><b>{{this.label}}</b><span class="fcp-meter-count">{{this.count}}</span></div>{{/if}}
+      <div class="fcp-boxes">
+        {{#each this.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../key}}" data-box="{{this.n}}" aria-label="{{../label}} {{this.n}}"></button>{{/each}}
+      </div>
+    </div>
+    {{/each}}
+    {{#if ../dice}}{{#if this.roll}}<button type="button" class="fcp-btn small fcp-section-roll" data-action="roll" data-kind="{{this.roll.kind}}">{{this.roll.label}}</button>{{/if}}{{/if}}
+
+    {{else if (eq this.layout "resources")}}
+    <div class="fcp-headrow"><span class="fcp-label">{{this.title}}</span>{{#if this.note}}<span class="fcp-section-note">{{this.note}}</span>{{/if}}</div>
+    <div class="fcp-lines compact">
+      {{#each this.entries}}
+      <button type="button" class="fcp-line fcp-resource" data-action="spendUse" data-item-id="{{this.id}}">
+        <b>{{this.name}}{{#if this.recharge}}<small>{{this.recharge}}</small>{{/if}}</b>
+        <span class="fcp-count {{#if this.spent}}spent{{/if}}">{{this.count}}</span>
+      </button>
+      {{/each}}
+    </div>
+
+    {{else if (eq this.layout "picker")}}
+    <div class="fcp-label">{{this.title}}</div>
+    <div class="fcp-chips">
+      {{#each ../conditions}}{{#if this.active}}
+      <button type="button" class="fcp-chip active" data-action="toggleStatus" data-status-id="{{this.id}}">{{this.name}}<i class="ph-duotone ph-x"></i></button>
+      {{/if}}{{/each}}
+      {{#unless ../conditionsActive}}<span class="fcp-chip-none">{{localize "FCP.D5.None"}}</span>{{/unless}}
+      <button type="button" class="fcp-chip add" data-action="togglePicker"><i class="ph-duotone ph-{{#if ../condPicker}}minus{{else}}plus{{/if}}"></i>{{#if ../condPicker}}{{localize "FCP.D5.Close"}}{{else}}{{localize "FCP.D5.Add"}}{{/if}}</button>
+    </div>
+    {{#if ../condPicker}}
+    <div class="fcp-chips fcp-picker">
+      {{#each ../conditions}}<button type="button" class="fcp-chip {{#if this.active}}on{{/if}}" data-action="toggleStatus" data-status-id="{{this.id}}">{{this.name}}</button>{{/each}}
+    </div>
+    {{/if}}
+
     {{else if (eq this.layout "conditions")}}
     {{#if ../conditions.length}}
     <div class="fcp-label">{{this.title}}</div>
@@ -108,21 +177,33 @@
     </div>
 
     {{else if (eq this.layout "list")}}
-    <div class="fcp-label">{{this.title}}</div>
-    <div class="fcp-lines">
+    {{#if this.note}}<div class="fcp-headrow"><span class="fcp-label">{{this.title}}</span><span class="fcp-section-note">{{this.note}}</span></div>{{else}}<div class="fcp-label">{{this.title}}</div>{{/if}}
+    <div class="fcp-lines {{this.variant}}">
       {{#each this.tiles}}
-      <button type="button" class="fcp-line {{#if this.inactive}}inactive{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+      <button type="button" class="fcp-line {{#if this.inactive}}inactive{{/if}} {{#if this.pinned}}pinned{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+        {{#if ../variant}}
+        <b>{{this.label}}{{#if this.sub}}<small>{{this.sub}}</small>{{/if}}</b>
+        {{#if this.marker}}<i class="fcp-marker">{{this.marker}}</i>{{/if}}
+        {{else}}
         <b>{{this.label}}{{#if this.sub}}<br><small style="font: italic 12px var(--font-body); color: var(--color-neutral-600)">{{this.sub}}</small>{{/if}}</b>
+        {{/if}}
         <span>{{this.value}}</span>
       </button>
       {{/each}}
+      {{#if this.concentration}}
+      <div class="fcp-line fcp-conc">
+        <b>{{localize "FCP.D5.Concentration"}}<small>{{this.concentration.name}}</small></b>
+        {{#if ../dice}}<button type="button" class="fcp-btn small" data-action="roll" data-kind="concentration">{{this.concentration.rollLabel}}</button>{{/if}}
+        <button type="button" class="fcp-btn small danger" data-action="endConcentration">{{localize "FCP.D5.EndConc"}}</button>
+      </div>
+      {{/if}}
     </div>
 
     {{else}}
     <div class="fcp-label">{{this.title}}</div>
-    <div class="fcp-grid {{#if this.cols}}cols-{{this.cols}}{{/if}}">
+    <div class="fcp-grid {{#if this.cols}}cols-{{this.cols}}{{/if}} {{#if this.stack}}stack{{/if}}">
       {{#each this.tiles}}
-      <button type="button" class="fcp-tile {{#if this.prof}}fcp-prof{{/if}} {{#if this.zero}}fcp-zero{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
+      <button type="button" class="fcp-tile {{#if this.prof}}fcp-prof{{/if}} {{#if this.zero}}fcp-zero{{/if}} {{#if this.pinned}}pinned{{/if}}" data-action="{{this.action}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>
         <span class="fcp-tile-label">{{this.label}}</span>
         <span class="fcp-tile-value">{{this.value}}</span>
         {{#if this.sub}}<span class="fcp-tile-sub">{{this.sub}}</span>{{/if}}

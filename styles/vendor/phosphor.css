@@ -198,3 +198,27 @@
   content: "\e137";
   margin-left: -1em;
 }
+.ph-duotone.ph-minus:before {
+  content: "\e32a";
+  opacity: 0.2;
+}
+.ph-duotone.ph-minus:after {
+  content: "\e32b";
+  margin-left: -1em;
+}
+.ph-duotone.ph-plus:before {
+  content: "\e3d4";
+  opacity: 0.2;
+}
+.ph-duotone.ph-plus:after {
+  content: "\e3d5";
+  margin-left: -1em;
+}
+.ph-duotone.ph-x:before {
+  content: "\e4f6";
+  opacity: 0.2;
+}
+.ph-duotone.ph-x:after {
+  content: "\e4f7";
+  margin-left: -1em;
+}

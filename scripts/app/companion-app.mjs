@@ -28,6 +28,10 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this._actorId = getSetting(SETTINGS.LAST_ACTOR) || null;
     this.expandedItems = new Set();
     this.pin = null;
+    this.sheetPane = "stats";
+    this.condPicker = false;
+    this.spellQuery = "";
+    this.spellFilter = "all";
   }
 
   /** Digital dice off = reference mode: nothing rolls, items open their text. */
@@ -55,6 +59,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       useItem: CompanionApp.#onAdapterAction,
       toggleItem: CompanionApp.#onAdapterAction,
       rest: CompanionApp.#onAdapterAction,
+      spendUse: CompanionApp.#onAdapterAction,
+      endConcentration: CompanionApp.#onAdapterAction,
+      switchPane: CompanionApp.#onSwitchPane,
+      togglePicker: CompanionApp.#onTogglePicker,
+      spellFilter: CompanionApp.#onSpellFilter,
       expandItem: CompanionApp.#onExpandItem,
       toggleStatus: CompanionApp.#onToggleStatus,
       quickRoll: CompanionApp.#onQuickRoll,
@@ -133,13 +142,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = this.actor;
     const actors = this.actors.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === actor?.id }));
     const header = actor ? await this.adapter.prepareHeader(actor) : { hp: null, stats: [] };
+    const panes = actor ? (this.adapter.sheetPanes?.() ?? null) : null;
+    const conditions = actor ? this.adapter.conditions(actor) : [];
+    if (panes && !panes.some(p => p.key === this.sheetPane)) this.sheetPane = panes[0]?.key;
     return {
+      panes: panes?.map(p => ({ ...p, active: p.key === this.sheetPane })) ?? null,
       actor: actor ? { id: actor.id, name: actor.name, img: actor.img, subtitle: this.adapter.subtitle(actor) } : null,
       actors,
       header,
       headerInfo: this.#headerInfo(actor, header),
       dice: this.diceEnabled,
-      conditions: actor ? this.adapter.conditions(actor) : [],
+      conditions,
+      conditionsActive: conditions.some(c => c.active),
       activeTab: this.activeTab,
       tabs: TABS.map(id => ({
         id,
@@ -172,7 +186,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       left: tab === "sheet" ? loc("FCP.Title") : loc(`FCP.Tabs.${tab.capitalize()}`),
       right,
       summary: header?.summary?.[tab] ?? "",
-      pin: this.#pinText(actor)
+      // Actions show the pin only where opening an item sets it (dnd5e); elsewhere it belongs to the sheet.
+      pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : ""
     };
   }
 
@@ -190,18 +205,33 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         context.sheet = actor ? await this.adapter.prepareSheet(actor) : { sections: [], rests: [] };
         context.hpDraft = this.#draft("hpAmount");
         if (!this.diceEnabled) this.#stripRolls(context.sheet);
-        for (const section of context.sheet.sections ?? []) {
-          for (const tile of section.tiles ?? []) tile.zero = /^[+−-]?0$/.test(String(tile.value).trim());
+        if (context.panes) {
+          // Sections tagged with a pane show only under their sub-tab; untagged ones always.
+          context.sheet.sections = (context.sheet.sections ?? []).filter(s => !s.pane || s.pane === this.sheetPane);
+          if (context.sheet.restsPane && context.sheet.restsPane !== this.sheetPane) context.sheet.rests = [];
         }
+        for (const section of context.sheet.sections ?? []) {
+          for (const tile of section.tiles ?? []) {
+            tile.zero ??= /^[+−-]?0$/.test(String(tile.value).trim());
+            tile.pinned = tile.action === "pin" && this.pin?.actorId === actor?.id && this.pin?.key === tile.data?.key;
+          }
+        }
+        context.condPicker = this.condPicker;
         break;
       case "actions":
         context.tabId = "actions";
-        context.groups = actor ? (await this.adapter.prepareActions(actor)).groups : [];
+        {
+          const prepared = actor ? await this.adapter.prepareActions(actor) : { groups: [] };
+          context.groups = prepared.groups;
+          context.useInBody = !!prepared.useInBody;
+        }
         await this.#decorateItems(actor, context.groups);
         break;
       case "inventory":
         context.tabId = "inventory";
         context.groups = actor ? (await this.adapter.prepareInventory(actor)).groups : [];
+        context.spellQuery = this.spellQuery;
+        context.spellFilter = this.spellFilter;
         await this.#decorateItems(actor, context.groups);
         break;
       case "chat":
@@ -226,6 +256,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const section of sheet.sections ?? []) {
       for (const tile of section.tiles ?? []) {
         if (tile.action !== "roll") continue;
+        if (tile.data?.pin && this.adapter.pinText) {
+          // Reference mode: tapping pins what to roll at the table in the header.
+          tile.action = "pin";
+          tile.data = { key: tile.data.pin };
+          continue;
+        }
         if (tile.data?.kind === "trait" && this.adapter.pinText) {
           // Reference mode: tapping a trait pins its dice recipe in the header instead of rolling.
           tile.action = "pin";
@@ -341,12 +377,44 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
+    const search = el.querySelector("input[name=spellQuery]");
+    if (search && !search.dataset.bound) {
+      search.dataset.bound = "1";
+      search.addEventListener("input", () => {
+        this.spellQuery = search.value;
+        this.#applySpellFilter();
+      });
+    }
+    this.#applySpellFilter();
+
     const log = el.querySelector(".fcp-chat-log");
     if (log && (options.isFirstRender || options.parts?.includes("chat") || !options.parts)) {
       await this.#fillChat(log);
     }
 
     if (options.isFirstRender && this._dirty.size) this.refreshParts();
+  }
+
+  /** Spellbook search and "prepared only" filter, applied in place so typing never re-renders. */
+  #applySpellFilter() {
+    const book = this.element?.querySelector(".fcp-spellbook");
+    if (!book) return;
+    const q = this.spellQuery.trim().toLowerCase();
+    const onlyPrepared = this.spellFilter === "prepared";
+    let shown = 0;
+    for (const level of book.querySelectorAll(".fcp-spell-level")) {
+      let visible = 0;
+      for (const row of level.querySelectorAll(".fcp-spell")) {
+        const hide = (q && !row.dataset.name.includes(q)) || (onlyPrepared && row.dataset.prepared !== "1");
+        row.hidden = !!hide;
+        if (!hide) visible++;
+      }
+      level.hidden = !visible;
+      shown += visible;
+    }
+    const empty = book.querySelector(".fcp-spell-empty");
+    if (empty) empty.hidden = !!shown;
+    for (const btn of book.querySelectorAll("[data-action=spellFilter]")) btn.classList.toggle("active", btn.dataset.filter === this.spellFilter);
   }
 
   async #fillChat(log) {
@@ -413,7 +481,22 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const key = target.dataset.key;
     const same = this.pin?.key === key && this.pin?.actorId === this.actor?.id;
     this.pin = same ? null : { actorId: this.actor?.id, key };
-    this.markDirty("header");
+    this.markDirty("header", "sheet");
+  }
+
+  static #onSwitchPane(event, target) {
+    this.sheetPane = target.dataset.pane;
+    this.markDirty("header", "sheet");
+  }
+
+  static #onTogglePicker() {
+    this.condPicker = !this.condPicker;
+    this.markDirty("sheet");
+  }
+
+  static #onSpellFilter(event, target) {
+    this.spellFilter = target.dataset.filter;
+    this.#applySpellFilter();
   }
 
   static #onTab(event, target) {
@@ -488,9 +571,15 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onExpandItem(event, target) {
     const id = target.dataset.itemId;
     if (!id) return;
-    if (this.expandedItems.has(id)) this.expandedItems.delete(id);
-    else this.expandedItems.add(id);
+    const opening = !this.expandedItems.has(id);
+    if (opening) this.expandedItems.add(id);
+    else this.expandedItems.delete(id);
     const part = target.closest("[data-application-part]")?.dataset.applicationPart;
+    // Reference mode: opening an action pins its to-hit and damage in the header, like a trait.
+    if (opening && part === "actions" && !this.diceEnabled && this.adapter.pinOnExpand) {
+      this.pin = { actorId: this.actor?.id, key: `item:${id}` };
+      this.markDirty("header", "sheet");
+    }
     this.markDirty(part ?? "actions");
   }
 

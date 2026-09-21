@@ -1,11 +1,26 @@
-import { SystemAdapter, loc, signed, equipToggle } from "./base.mjs";
+import { SystemAdapter, signed, equipToggle, plainText } from "./base.mjs";
 import { SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
+
+const t = key => game.i18n.localize(key);
+const f = (key, data) => game.i18n.format(key, data);
 
 function damageText(item) {
   const damages = item.labels?.damages ?? [];
   return damages.map(d => [d.formula, d.damageType ?? d.label].filter(Boolean).join(" ")).join(", ");
 }
+
+/** Boxes for a meter: box n is filled when n <= filled. */
+function boxes(max, filled) {
+  return Array.from({ length: max }, (_, i) => ({ on: i < filled, n: i + 1 }));
+}
+
+/** Number in the user's locale ("7,5" in Italian). */
+function num(n) {
+  return new Intl.NumberFormat(game.i18n.lang).format(n);
+}
+
+const MARKERS = { 0.5: "◇", 1: "◆", 2: "◆◆" };
 
 /**
  * D&D 5e (dnd5e 5.x / 6.x). Uses the system's own roll pipeline so results land in chat
@@ -16,6 +31,9 @@ export class Dnd5eAdapter extends SystemAdapter {
 
   mode = "normal"; // normal | advantage | disadvantage
 
+  /** Opening an item with digital dice off pins its to-hit and damage in the header. */
+  pinOnExpand = true;
+
   isPlayable(actor) {
     return actor.type === "character";
   }
@@ -24,106 +42,234 @@ export class Dnd5eAdapter extends SystemAdapter {
     const s = actor.system;
     const classes = Object.values(actor.classes ?? {}).map(c => `${c.name} ${c.system.levels}`).join(" / ");
     const race = s.details?.race?.name ?? (typeof s.details?.race === "string" ? s.details.race : "");
-    return [race, classes || `${game.i18n.localize("FCP.Level")} ${s.details?.level ?? ""}`].filter(Boolean).join(" · ");
+    return [race, classes || `${t("FCP.Level")} ${s.details?.level ?? ""}`].filter(Boolean).join(" · ");
+  }
+
+  kicker(actor) {
+    const lvl = actor.system.details?.level;
+    return ["D&D 5e", lvl ? `${t("FCP.LevelShort")} ${lvl}` : null].filter(Boolean).join(" · ");
+  }
+
+  sheetPanes() {
+    return [{ key: "stats", label: t("FCP.D5.PaneStats") }, { key: "skills", label: t("FCP.D5.PaneSkills") }];
   }
 
   /* ---------------- Header ---------------- */
 
+  /** Spell slot pools with a maximum, in level order, pact slots last. */
+  #slots(actor) {
+    const spells = actor.system.spells ?? {};
+    const out = [];
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      const s = spells[`spell${lvl}`];
+      if (s?.max) out.push({ key: `spell${lvl}`, level: lvl, value: s.value ?? 0, max: s.max, pact: false });
+    }
+    const p = spells.pact;
+    if (p?.max) out.push({ key: "pact", level: p.level ?? 1, value: p.value ?? 0, max: p.max, pact: true });
+    return out;
+  }
+
+  #weightUnits() {
+    try {
+      const unit = dnd5e.utils?.defaultUnits?.("weight");
+      return CONFIG.DND5E.weightUnits?.[unit]?.abbreviation ?? unit ?? "";
+    } catch (err) {
+      return "";
+    }
+  }
+
+  #coins(actor) {
+    const c = actor.system.currency ?? {};
+    return Object.entries(c).filter(([, v]) => v).map(([k, v]) => `${v} ${CONFIG.DND5E.currencies?.[k]?.abbreviation ?? k}`).join(" · ");
+  }
+
   async prepareHeader(actor) {
     const a = actor.system.attributes;
+    const hp = a.hp;
+    const max = hp.effectiveMax ?? hp.max ?? 0;
+    const value = Math.max(hp.value ?? 0, 0);
+    const temp = hp.temp || 0;
+    const total = Math.max(max + temp, 1);
+
+    const move = a.movement ?? {};
+    const walk = move.walk ?? move.speeds?.walk;
+    const speed = walk ? `${num(walk)} ${move.units ?? ""}`.trim() : "—";
+    const caster = !!(a.spellcasting && a.spell?.dc);
     const stats = [
-      { label: loc("DND5E.AC"), value: a.ac?.value ?? "—" },
-      { label: loc("DND5E.Proficiency"), value: signed(a.prof) },
-      { label: loc("DND5E.Initiative"), value: signed(a.init?.total) },
-      { label: loc("DND5E.Speed"), value: a.movement?.speeds?.walk ?? a.movement?.walk ?? "—" }
+      { label: t("FCP.D5.AC"), value: a.ac?.value ?? "—" },
+      { label: t("FCP.D5.Prof"), value: signed(a.prof) },
+      { label: t("FCP.D5.Init"), value: signed(a.init?.total) },
+      caster ? { label: t("FCP.D5.SpellDC"), value: a.spell.dc } : { label: t("FCP.D5.Speed"), value: speed }
     ];
-    if (a.spellcasting && a.spell?.dc) stats.push({ label: loc("DND5E.SpellDC"), value: a.spell.dc });
+
+    const d = a.death ?? {};
+    const slots = this.#slots(actor);
+    const slotText = slots.length ? `${t("FCP.D5.Slot")} ${slots.map(s => `${s.value}/${s.max}`).join(" · ")}` : null;
+    const enc = a.encumbrance;
+    const weight = enc?.value ? f("FCP.D5.Carried", { w: `${num(enc.value)} ${this.#weightUnits()}`.trim() }) : null;
+
     return {
-      hp: { value: a.hp.value, max: a.hp.effectiveMax ?? a.hp.max, temp: a.hp.temp || 0 },
+      hpBar: {
+        value, max, temp,
+        hpPct: `${Math.round(value / total * 100)}%`,
+        tempPct: `${Math.round(temp / total * 100)}%`
+      },
+      death: value <= 0 ? {
+        rows: [
+          { key: "death.success", label: t("FCP.D5.Successes"), boxes: boxes(3, d.success ?? 0) },
+          { key: "death.failure", label: t("FCP.D5.Failures"), boxes: boxes(3, d.failure ?? 0) }
+        ]
+      } : null,
       stats,
-      counters: []
+      modes: [
+        { key: "normal", label: t("FCP.Normal"), active: this.mode === "normal" },
+        { key: "advantage", label: t("FCP.Advantage"), active: this.mode === "advantage" },
+        { key: "disadvantage", label: t("FCP.D5.DisadvantageShort"), active: this.mode === "disadvantage" }
+      ],
+      summary: {
+        actions: [`${t("FCP.HP")} ${value}/${max}`, `${t("FCP.D5.AC")} ${a.ac?.value ?? "—"}`, slotText].filter(Boolean).join(" · "),
+        inventory: [this.#coins(actor), weight].filter(Boolean).join(" · ")
+      }
     };
   }
 
   /* ---------------- Sheet ---------------- */
 
+  #skillLabel(key) {
+    return CONFIG.DND5E.skills[key]?.label ?? key;
+  }
+
+  #abbr(key) {
+    return String(CONFIG.DND5E.abilities[key]?.abbreviation ?? key).toUpperCase();
+  }
+
+  #skillTile(key, sk, { feature = false } = {}) {
+    const mult = Number(sk.value ?? sk.proficient ?? 0);
+    const sub = [`${this.#abbr(sk.ability)} · ${t("FCP.D5.Passive")} ${sk.passive}`];
+    if (feature && mult === 2) sub.push(t("FCP.D5.Expertise"));
+    return {
+      label: this.#skillLabel(key),
+      sub: sub.join(" · "),
+      value: signed(sk.total),
+      marker: MARKERS[mult] ?? "",
+      inactive: !feature && !mult,
+      action: "roll",
+      data: { kind: "skill", key, pin: `skill:${key}` }
+    };
+  }
+
+  /** Features with limited uses: the "Resources" block. */
+  #resources(actor) {
+    return actor.items
+      .filter(i => i.type === "feat" && i.system.uses?.max)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(i => {
+        const { value = 0, max } = i.system.uses;
+        return {
+          id: i.id,
+          name: i.name,
+          recharge: [i.labels?.recovery, i.labels?.activation].filter(Boolean).join(" · "),
+          count: `${value} / ${max}`,
+          spent: value < max
+        };
+      });
+  }
+
   async prepareSheet(actor) {
     const s = actor.system;
-    const abilities = CONFIG.DND5E.abilities;
-    const skills = CONFIG.DND5E.skills;
+    const a = s.attributes;
+    const sections = [];
 
-    const abilityTiles = Object.entries(s.abilities).map(([key, ab]) => ({
-      label: abilities[key]?.abbreviation ?? key,
-      value: signed(ab.mod),
-      sub: String(ab.value),
-      action: "roll",
-      data: { kind: "ability", key }
-    }));
-
-    const saveTiles = Object.entries(s.abilities).map(([key, ab]) => ({
-      label: abilities[key]?.abbreviation ?? key,
-      value: signed(ab.save?.value ?? ab.save),
-      prof: (ab.proficient ?? 0) > 0,
-      action: "roll",
-      data: { kind: "save", key }
-    }));
-
-    const skillTiles = Object.entries(s.skills)
-      .map(([key, sk]) => ({
-        label: skills[key]?.label ?? key,
-        sub: `${abilities[sk.ability]?.abbreviation ?? sk.ability} · ${loc("DND5E.Passive")} ${sk.passive}`,
-        value: signed(sk.total),
-        prof: (sk.proficient ?? sk.value ?? 0) > 0,
+    sections.push({
+      pane: "stats", title: t("FCP.D5.Abilities"), layout: "grid", cols: 3, stack: true,
+      tiles: Object.entries(s.abilities).map(([key, ab]) => ({
+        label: `${this.#abbr(key)} · ${ab.value}`,
+        value: signed(ab.mod),
+        zero: ab.mod <= 0,
         action: "roll",
-        data: { kind: "skill", key }
+        data: { kind: "ability", key, pin: `ability:${key}` }
       }))
-      .sort((x, y) => x.label.localeCompare(y.label));
+    });
 
-    const other = [
-      { label: loc("DND5E.Initiative"), value: signed(s.attributes.init?.total), action: "roll", data: { kind: "initiative" } }
-    ];
-    const hd = s.attributes.hd;
-    if (hd && typeof hd === "object") {
-      other.push({ label: loc("DND5E.HitDice"), value: `${hd.value ?? 0}/${hd.max ?? 0}`, action: "roll", data: { kind: "hitDie" } });
-    }
-    if (s.attributes.hp.value <= 0) {
-      const d = s.attributes.death ?? {};
-      other.push({
-        label: loc("DND5E.DeathSave"),
-        value: `✓${d.success ?? 0} ✗${d.failure ?? 0}`,
+    sections.push({
+      pane: "stats", title: t("FCP.D5.Saves"), layout: "list", variant: "compact",
+      tiles: Object.entries(s.abilities).map(([key, ab]) => ({
+        label: CONFIG.DND5E.abilities[key]?.label ?? key,
+        value: signed(ab.save?.value ?? ab.save),
+        marker: (ab.proficient ?? 0) > 0 ? "◆" : "",
         action: "roll",
-        data: { kind: "deathSave" }
+        data: { kind: "save", key, pin: `save:${key}` }
+      }))
+    });
+
+    const slots = this.#slots(actor);
+    if (slots.length) {
+      sections.push({
+        pane: "stats", title: t("FCP.D5.Slots"), note: t("FCP.D5.SlotsHint"), layout: "boxes",
+        rows: slots.map(sl => ({
+          key: `slot:${sl.key}`,
+          label: sl.pact ? f("FCP.D5.PactLevel", { n: sl.level }) : f("FCP.D5.SlotLevel", { n: sl.level }),
+          count: `${sl.value} / ${sl.max}`,
+          tone: sl.pact ? "pact" : "slot",
+          boxes: boxes(sl.max, sl.max - sl.value)
+        }))
       });
     }
-    const concentrating = actor.statuses?.has(CONFIG.specialStatusEffects?.CONCENTRATING ?? "concentrating");
-    if (concentrating) {
-      other.push({ label: loc("DND5E.Concentration"), value: "d20", action: "roll", data: { kind: "concentration" } });
+
+    const resources = this.#resources(actor);
+    if (resources.length) {
+      sections.push({ pane: "stats", title: t("FCP.D5.Resources"), note: t("FCP.D5.ResourcesHint"), layout: "resources", entries: resources });
     }
 
-    const slotTiles = [];
-    for (const [key, slot] of Object.entries(s.spells ?? {})) {
-      if (!slot?.max) continue;
-      slotTiles.push({ label: slot.label ?? key, value: `${slot.value}/${slot.max}`, action: "noop", data: {} });
+    const hd = a.hd;
+    if (hd?.max) {
+      const dice = Array.from(hd.sizes ?? []).sort((x, y) => y - x).map(n => `d${n}`).join(" / ");
+      sections.push({
+        pane: "stats", title: t("FCP.D5.HitDice"), note: [`${hd.value} / ${hd.max}`, dice].filter(Boolean).join(" · "), layout: "boxes",
+        rows: [{ key: "hd", tone: "hd", boxes: boxes(hd.max, hd.value) }],
+        roll: hd.value > 0 ? { kind: "hitDie", label: t("FCP.D5.RollHitDie") } : null
+      });
     }
 
-    const sections = [
-      { title: loc("DND5E.Abilities"), layout: "grid", cols: 3, tiles: abilityTiles },
-      { title: loc("DND5E.ClassSaves"), layout: "grid", cols: 3, tiles: saveTiles },
-      { title: loc("DND5E.Skills"), layout: "list", tiles: skillTiles },
-      { title: game.i18n.localize("FCP.Other"), layout: "grid", cols: 2, tiles: other }
-    ];
-    if (slotTiles.length) sections.push({ title: game.i18n.localize("FCP.SpellSlots"), layout: "grid", cols: 3, tiles: slotTiles });
+    const conc = actor.concentration;
+    const concItem = Array.from(conc?.items ?? [])[0];
+    const concEffect = Array.from(conc?.effects ?? [])[0];
+    sections.push({
+      pane: "stats", title: t("FCP.D5.Other"), layout: "list", variant: "compact",
+      tiles: [{ label: t("FCP.D5.Initiative"), value: signed(a.init?.total), action: "roll", data: { kind: "initiative", pin: "init" } }],
+      concentration: concEffect ? { name: concItem?.name ?? concEffect.name, rollLabel: t("FCP.D5.ConcSave") } : null
+    });
+
+    const passives = actor.items
+      .filter(i => i.type === "feat" && !(i.system.activities?.size) && !i.system.uses?.max)
+      .sort((x, y) => x.name.localeCompare(y.name))
+      .map(i => ({ name: i.name, text: plainText(i.system.description?.value, 160) }));
+    if (passives.length) sections.push({ pane: "stats", title: t("FCP.D5.Passives"), layout: "passives", entries: passives });
+
+    sections.push({ pane: "stats", title: t("FCP.Conditions"), layout: "picker" });
+
+    // Skills pane: expertise first, then the best proficient skills, as the highlight.
+    const skills = Object.entries(s.skills ?? {});
+    const top = skills
+      .filter(([, sk]) => Number(sk.value ?? 0) > 0)
+      .sort(([, x], [, y]) => (Number(y.value) - Number(x.value)) || (y.total - x.total))
+      .slice(0, 2);
+    if (top.length) {
+      sections.push({ pane: "skills", title: t("FCP.D5.Highlight"), layout: "list", variant: "feature", tiles: top.map(([k, sk]) => this.#skillTile(k, sk, { feature: true })) });
+    }
+    sections.push({
+      pane: "skills", title: f("FCP.D5.AllSkills", { n: skills.length }), note: t("FCP.D5.SkillLegend"), layout: "list", variant: "compact",
+      tiles: skills.map(([k, sk]) => this.#skillTile(k, sk)).sort((x, y) => x.label.localeCompare(y.label))
+    });
 
     return {
-      modes: [
-        { key: "normal", label: game.i18n.localize("FCP.Normal"), active: this.mode === "normal" },
-        { key: "advantage", label: game.i18n.localize("FCP.Advantage"), active: this.mode === "advantage" },
-        { key: "disadvantage", label: game.i18n.localize("FCP.Disadvantage"), active: this.mode === "disadvantage" }
-      ],
+      modes: null,
       sections,
+      conditionsInline: true,
+      restsPane: "stats",
       rests: [
-        { kind: "short", label: game.i18n.localize("FCP.Rest.Short") },
-        { kind: "long", label: game.i18n.localize("FCP.Rest.Long") }
+        { kind: "short", label: t("FCP.Rest.Short") },
+        { kind: "long", label: t("FCP.Rest.Long") }
       ]
     };
   }
@@ -134,7 +280,8 @@ export class Dnd5eAdapter extends SystemAdapter {
     if (!types) return super.conditions(actor);
     return Object.entries(types)
       .filter(([, c]) => !c.pseudo)
-      .map(([id, c]) => ({ id, name: game.i18n.localize(c.name ?? c.label ?? id), img: c.img ?? c.icon, active: active.has(id) }));
+      .map(([id, c]) => ({ id, name: game.i18n.localize(c.name ?? c.label ?? id), img: c.img ?? c.icon, active: active.has(id) }))
+      .sort((x, y) => x.name.localeCompare(y.name));
   }
 
   /* ---------------- Actions ---------------- */
@@ -145,15 +292,27 @@ export class Dnd5eAdapter extends SystemAdapter {
     return { value: u.value ?? 0, max: u.max };
   }
 
-  #row(item, { meta, actionLabel } = {}) {
+  /** One-line summary of an item: to-hit, damage and range for attacks, casting data for spells. */
+  #meta(item) {
+    if (item.type === "spell") {
+      return [item.labels?.activation, item.labels?.range, item.labels?.components?.vsm,
+        item.system.method && item.system.method !== "spell" ? CONFIG.DND5E.spellcasting?.[item.system.method]?.label : null].filter(Boolean).join(" · ");
+    }
+    if (item.hasAttack) return [item.labels?.toHit, damageText(item), item.labels?.range].filter(Boolean).join(" · ");
+    if (item.type === "feat") return [item.labels?.activation, item.labels?.recovery].filter(Boolean).join(" · ");
+    return item.labels?.activation ?? "";
+  }
+
+  #row(item, { actionLabel, big = false } = {}) {
     return {
       id: item.id,
       name: item.name,
       img: item.img,
-      meta: meta ?? "",
+      meta: this.#meta(item),
       uses: this.#uses(item),
+      big,
       action: "useItem",
-      actionLabel: actionLabel ?? game.i18n.localize("FCP.Use"),
+      actionLabel: actionLabel ?? t("FCP.Use"),
       data: {}
     };
   }
@@ -164,15 +323,15 @@ export class Dnd5eAdapter extends SystemAdapter {
 
     // Attacks: anything with an attack activity; unequipped weapons shown dimmed.
     const attacks = actor.items
-      .filter(i => i.hasAttack && !i.system.isHidden)
+      .filter(i => i.hasAttack && i.type !== "spell" && !i.system.isHidden)
       .sort((a, b) => Number(b.system.equipped ?? true) - Number(a.system.equipped ?? true) || a.name.localeCompare(b.name))
       .map(i => ({
-        ...this.#row(i, { meta: [i.labels?.toHit, damageText(i), i.labels?.range].filter(Boolean).join(" · "), actionLabel: loc("DND5E.Attack") }),
+        ...this.#row(i, { actionLabel: t("FCP.D5.Attack"), big: true }),
         inactive: i.type === "weapon" && i.system.equipped === false
       }));
-    if (attacks.length) groups.push({ title: loc("DND5E.AttackPl", "Attacks"), items: attacks });
+    if (attacks.length) groups.push({ title: t("FCP.D5.Attacks"), items: attacks });
 
-    // Spells: only castable ones (prepared, always prepared, cantrips, innate/at-will/pact/ritual).
+    // Spells: only castable ones, by level, with the slots of that level to mark by hand.
     const spells = actor.items.filter(i => i.type === "spell" && this.#castable(i));
     const byLevel = new Map();
     for (const sp of spells) {
@@ -180,20 +339,17 @@ export class Dnd5eAdapter extends SystemAdapter {
       if (!byLevel.has(lvl)) byLevel.set(lvl, []);
       byLevel.get(lvl).push(sp);
     }
+    const slots = this.#slots(actor);
     for (const lvl of Array.from(byLevel.keys()).sort((a, b) => a - b)) {
-      const slot = lvl > 0 ? actor.system.spells?.[`spell${lvl}`] : null;
-      const pact = actor.system.spells?.pact;
-      let title = CONFIG.DND5E.spellLevels?.[lvl] ?? `Level ${lvl}`;
-      if (slot?.max) title += ` · ${slot.value}/${slot.max}`;
-      else if (pact?.max && byLevel.get(lvl).some(sp => sp.system.method === "pact")) title += ` · ${pact.label ?? "Pact"} ${pact.value}/${pact.max}`;
+      const list = byLevel.get(lvl);
+      const slot = slots.find(s => !s.pact && s.level === lvl)
+        ?? (list.some(sp => sp.system.method === "pact") ? slots.find(s => s.pact) : null);
       groups.push({
-        title,
-        items: byLevel.get(lvl)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map(sp => this.#row(sp, {
-            meta: [sp.labels?.activation, sp.labels?.range, sp.labels?.components?.vsm, sp.system.method && sp.system.method !== "spell" ? CONFIG.DND5E.spellcasting?.[sp.system.method]?.label : null].filter(Boolean).join(" · "),
-            actionLabel: game.i18n.localize("FCP.Cast")
-          }))
+        // Title by spell level; pact spells show the pact pool (cast at the pact level) as their slots.
+        title: lvl === 0 ? t("FCP.D5.Cantrips") : f("FCP.D5.SlotLevel", { n: lvl }),
+        count: slot ? f(slot.pact ? "FCP.D5.PactCount" : "FCP.D5.SlotCount", { v: slot.value, m: slot.max, n: slot.level }) : "",
+        slots: slot ? { key: `slot:${slot.key}`, tone: slot.pact ? "pact" : "slot", boxes: boxes(slot.max, slot.max - slot.value) } : null,
+        items: list.sort((a, b) => a.name.localeCompare(b.name)).map(sp => this.#row(sp, { actionLabel: t("FCP.D5.Cast") }))
       });
     }
 
@@ -201,75 +357,101 @@ export class Dnd5eAdapter extends SystemAdapter {
     const feats = actor.items
       .filter(i => i.type === "feat" && hasActivities(i) && !i.hasAttack)
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(i => this.#row(i, { meta: [i.labels?.activation, i.labels?.featType].filter(Boolean).join(" · ") }));
-    if (feats.length) groups.push({ title: loc("DND5E.Features"), items: feats });
+      .map(i => this.#row(i));
+    if (feats.length) groups.push({ title: t("FCP.D5.Features"), items: feats });
 
     // Consumables and other usable gear.
     const usable = actor.items
       .filter(i => ["consumable", "equipment", "tool"].includes(i.type) && hasActivities(i) && !i.hasAttack)
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(i => this.#row(i, { meta: i.labels?.activation ?? "" }));
-    if (usable.length) groups.push({ title: loc("TYPES.Item.consumablePl", "Consumables"), items: usable });
+      .map(i => this.#row(i));
+    if (usable.length) groups.push({ title: t("FCP.D5.Consumables"), items: usable });
 
-    return { groups };
+    return { groups, useInBody: true };
   }
 
   #castable(spell) {
     const sys = spell.system;
     if ((sys.level ?? 0) === 0) return true;
-    if (sys.method && sys.method !== "spell") return true; // pact, innate, atwill, ritual
+    if (sys.method && !(sys.canPrepare ?? sys.method === "spell")) return true; // pact, innate, atwill, ritual
     if (sys.preparation) return sys.preparation.mode !== "prepared" || !!sys.preparation.prepared; // dnd5e 4/5
-    return (sys.prepared ?? 0) > 0; // dnd5e 6
+    return (sys.prepared ?? 0) > 0; // dnd5e 6: 1 prepared, 2 always
+  }
+
+  #alwaysPrepared(spell) {
+    const sys = spell.system;
+    if ((sys.level ?? 0) === 0) return true;
+    if (sys.preparation) return sys.preparation.mode !== "prepared";
+    const always = CONFIG.DND5E.spellPreparationStates?.always?.value ?? 2;
+    return sys.prepared === always || (!!sys.method && !(sys.canPrepare ?? sys.method === "spell"));
   }
 
   /* ---------------- Inventory ---------------- */
 
   async prepareInventory(actor) {
     const groups = [];
+    const weight = i => (i.system.weight?.value ? `${num(i.system.weight.value)} ${i.system.weight.units ?? ""}`.trim() : null);
+    const detail = i => {
+      if (i.type === "weapon") return damageText(i);
+      if (i.type === "equipment" && i.system.armor?.value) return `${t("FCP.D5.AC")} ${i.system.armor.value}`;
+      if (i.type === "container") {
+        const n = actor.items.filter(x => x.system.container === i.id).length;
+        return n ? f("FCP.D5.Inside", { n }) : null;
+      }
+      return null;
+    };
     const invRow = (i, extra = {}) => ({
       id: i.id, name: i.name, img: i.img,
-      meta: [i.system.quantity > 1 ? `×${i.system.quantity}` : null, i.system.weight?.value ? `${i.system.weight.value} ${i.system.weight.units ?? ""}`.trim() : null].filter(Boolean).join(" · "),
+      meta: [detail(i), i.system.quantity > 1 ? `×${i.system.quantity}` : null, weight(i)].filter(Boolean).join(" · "),
       uses: this.#uses(i),
       ...extra
     });
 
     const sections = [
-      ["weapon", loc("TYPES.Item.weaponPl", "Weapons"), true],
-      ["equipment", loc("TYPES.Item.equipmentPl", "Equipment"), true],
-      ["consumable", loc("TYPES.Item.consumablePl", "Consumables"), false],
-      ["tool", loc("TYPES.Item.toolPl", "Tools"), false],
-      ["container", loc("TYPES.Item.containerPl", "Containers"), false],
-      ["loot", loc("TYPES.Item.lootPl", "Loot"), false]
+      ["weapon", "FCP.D5.Inv.Weapons", true],
+      ["equipment", "FCP.D5.Inv.Equipment", true],
+      ["consumable", "FCP.D5.Consumables", false],
+      ["tool", "FCP.D5.Inv.Tools", false],
+      ["container", "FCP.D5.Inv.Containers", false],
+      ["loot", "FCP.D5.Inv.Loot", false]
     ];
     for (const [type, title, equippable] of sections) {
       const items = actor.items.filter(i => i.type === type && !i.system.container).sort((a, b) => a.name.localeCompare(b.name))
         .map(i => invRow(i, equippable ? { inactive: !i.system.equipped, toggle: equipToggle(i) } : {}));
-      if (items.length) groups.push({ title, items });
+      if (items.length) groups.push({ title: t(title), items });
     }
 
-    // Spellbook: every spell, with a prepare toggle where it applies.
-    const spells = actor.items.filter(i => i.type === "spell").sort((a, b) => (a.system.level - b.system.level) || a.name.localeCompare(b.name));
+    // Coins: read only, one row.
+    const coins = this.#coins(actor);
+    if (coins) groups.push({ title: t("FCP.D5.Inv.Coins"), items: [{ id: "", name: coins, img: "icons/commodities/currency/coins-plain-stack-gold.webp" }] });
+
+    // Spellbook: every spell by level, with a "prepared" switch where the spell can be prepared.
+    const spells = actor.items.filter(i => i.type === "spell");
     if (spells.length) {
+      const levels = new Map();
+      for (const sp of spells) {
+        const lvl = sp.system.level ?? 0;
+        if (!levels.has(lvl)) levels.set(lvl, []);
+        levels.get(lvl).push(sp);
+      }
       groups.push({
-        title: loc("DND5E.Spellbook", "Spellbook"),
-        items: spells.map(sp => {
-          const canPrepare = sp.system.canPrepare ?? (sp.system.level > 0 && (!sp.system.method || sp.system.method === "spell"));
-          const prepared = this.#castable(sp);
-          return {
-            id: sp.id, name: sp.name, img: sp.img,
-            meta: [CONFIG.DND5E.spellLevels?.[sp.system.level], CONFIG.DND5E.spellSchools?.[sp.system.school]?.label].filter(Boolean).join(" · "),
-            inactive: !prepared,
-            toggle: canPrepare ? { action: "toggleItem", label: game.i18n.localize("FCP.Prepared"), icon: prepared ? "ph-duotone ph-check-circle" : "ph-duotone ph-circle" } : null
-          };
-        })
-      });
-    }
-
-    const c = actor.system.currency;
-    if (c) {
-      groups.push({
-        title: loc("DND5E.Currency"),
-        items: [{ id: "", name: Object.entries(c).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`).join(" · ") || "0", img: "icons/commodities/currency/coins-plain-stack-gold.webp" }]
+        title: t("FCP.D5.Spellbook"),
+        spellbook: true,
+        items: [],
+        levels: Array.from(levels.keys()).sort((a, b) => a - b).map(lvl => ({
+          title: lvl === 0 ? t("FCP.D5.Cantrips") : f("FCP.D5.SlotLevel", { n: lvl }),
+          spells: levels.get(lvl).sort((a, b) => a.name.localeCompare(b.name)).map(sp => {
+            const always = this.#alwaysPrepared(sp);
+            return {
+              id: sp.id,
+              name: sp.name,
+              search: sp.name.toLowerCase(),
+              school: CONFIG.DND5E.spellSchools?.[sp.system.school]?.label ?? "",
+              always,
+              prepared: always || this.#castable(sp)
+            };
+          })
+        }))
       });
     }
     return { groups };
@@ -293,6 +475,98 @@ export class Dnd5eAdapter extends SystemAdapter {
     return actor.applyDamage(-Math.abs(amount));
   }
 
+  /* ---------------- Boxes ---------------- */
+
+  /** Taps are applied one after the other, each reading the value the previous one left behind. */
+  #queue = Promise.resolve();
+
+  #enqueue(fn) {
+    const run = this.#queue.then(fn, fn);
+    this.#queue = run.catch(() => {});
+    return run;
+  }
+
+  /** Tap box n: filled up to n; tapping the last filled box empties it. Absolute values, so quick taps cannot add up wrongly. */
+  #next(filled, n) {
+    return filled === n ? n - 1 : n;
+  }
+
+  setBox(actor, key, n) {
+    return this.#enqueue(async () => {
+      const a = actor.system.attributes;
+      if (key === "death.success" || key === "death.failure") {
+        const field = key.split(".")[1];
+        return actor.update({ [`system.attributes.death.${field}`]: Math.clamp(this.#next(a.death?.[field] ?? 0, n), 0, 3) });
+      }
+      if (key.startsWith("slot:")) {
+        const slotKey = key.slice(5);
+        const slot = actor.system.spells?.[slotKey];
+        if (!slot?.max) return false;
+        const spent = this.#next(slot.max - (slot.value ?? 0), n);
+        return actor.update({ [`system.spells.${slotKey}.value`]: Math.clamp(slot.max - spent, 0, slot.max) });
+      }
+      if (key === "hd") return this.#setHitDice(actor, this.#next(a.hd?.value ?? 0, n));
+      return false;
+    });
+  }
+
+  /** Bring the remaining hit dice to `target`, spending the largest dice first and recovering the smallest first. */
+  async #setHitDice(actor, target) {
+    const classes = Object.values(actor.classes ?? {})
+      .map(c => ({ c, faces: parseInt(String(c.system.hd?.denomination ?? "d0").slice(1)) || 0 }));
+    let delta = (actor.system.attributes.hd?.value ?? 0) - target; // > 0: spend, < 0: recover
+    const updates = [];
+    classes.sort((x, y) => (delta > 0 ? y.faces - x.faces : x.faces - y.faces));
+    for (const { c } of classes) {
+      if (!delta) break;
+      const hd = c.system.hd;
+      const step = delta > 0 ? Math.min(delta, hd.value ?? 0) : -Math.min(-delta, hd.spent ?? 0);
+      if (!step) continue;
+      updates.push({ _id: c.id, "system.hd.spent": (hd.spent ?? 0) + step });
+      delta -= step;
+    }
+    if (updates.length) return actor.updateEmbeddedDocuments("Item", updates);
+    return false;
+  }
+
+  /** Mark one use of a limited feature; once none are left, the next tap refills it (manual tracking). */
+  async #spendUse(actor, { itemId }) {
+    const item = actor.items.get(itemId);
+    const uses = item?.system.uses;
+    if (!uses?.max) return false;
+    const value = uses.value ?? 0;
+    return item.update({ "system.uses.spent": value > 0 ? uses.max - value + 1 : 0 });
+  }
+
+  /** Text pinned in the header in reference mode: what to roll at the table. */
+  pinText(actor, key) {
+    const s = actor.system;
+    const [kind, id] = String(key).split(":");
+    switch (kind) {
+      case "ability": {
+        const ab = s.abilities?.[id];
+        return ab ? f("FCP.D5.PinCheck", { name: CONFIG.DND5E.abilities[id]?.label ?? id, mod: signed(ab.mod) }) : "";
+      }
+      case "save": {
+        const ab = s.abilities?.[id];
+        return ab ? f("FCP.D5.PinSave", { name: CONFIG.DND5E.abilities[id]?.label ?? id, mod: signed(ab.save?.value ?? ab.save) }) : "";
+      }
+      case "skill": {
+        const sk = s.skills?.[id];
+        return sk ? f("FCP.D5.PinD20", { name: this.#skillLabel(id), mod: signed(sk.total) }) : "";
+      }
+      case "init":
+        return f("FCP.D5.PinD20", { name: t("FCP.D5.Initiative"), mod: signed(s.attributes.init?.total) });
+      case "item": {
+        const item = actor.items.get(id);
+        if (!item) return "";
+        const meta = this.#meta(item);
+        return meta ? `${item.name} · ${meta}` : item.name;
+      }
+    }
+    return "";
+  }
+
   /* ---------------- Handlers ---------------- */
 
   #dialog() {
@@ -309,6 +583,9 @@ export class Dnd5eAdapter extends SystemAdapter {
       case "useItem": return this.#useItem(actor, data);
       case "toggleItem": return this.#toggleItem(actor, data);
       case "rest": return this.rest(actor, data.kind);
+      case "counter": return this.setBox(actor, data.key, Number(data.box));
+      case "spendUse": return this.#spendUse(actor, data);
+      case "endConcentration": return actor.endConcentration();
     }
     return false;
   }
@@ -323,8 +600,8 @@ export class Dnd5eAdapter extends SystemAdapter {
       case "initiative":
         if (dialog.configure) return actor.rollInitiativeDialog(adv);
         return actor.rollInitiative({ createCombatants: true }, adv);
-      case "hitDie": return actor.rollHitDie({}, dialog);
       case "deathSave": return actor.rollDeathSave({ ...adv }, dialog);
+      case "hitDie": return actor.rollHitDie({}, dialog);
       case "concentration": return actor.rollConcentration({ ...adv }, dialog);
     }
     return false;
@@ -341,7 +618,7 @@ export class Dnd5eAdapter extends SystemAdapter {
     if (!item) return false;
     if (item.type === "spell") {
       if (item.system.preparation) return item.update({ "system.preparation.prepared": !item.system.preparation.prepared });
-      return item.update({ "system.prepared": Number(!item.system.prepared) });
+      return item.update({ "system.prepared": item.system.prepared ? 0 : 1 });
     }
     if ("equipped" in item.system) return item.update({ "system.equipped": !item.system.equipped });
     return false;

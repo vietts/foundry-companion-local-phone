@@ -4,11 +4,45 @@
   {{else}}
   {{#unless groups.length}}<div class="fcp-empty">{{localize "FCP.Empty"}}</div>{{/unless}}
   {{#each groups}}
-  <div class="fcp-group">
+  <div class="fcp-group {{#if this.spellbook}}fcp-spellbook{{/if}}">
+    {{#if this.count}}
+    <div class="fcp-headrow"><span class="fcp-label">{{this.title}}</span><span class="fcp-section-note"><b>{{this.count}}</b></span></div>
+    {{else}}
     <div class="fcp-label">{{this.title}}</div>
+    {{/if}}
+    {{#if this.slots}}
+    <div class="fcp-meter tone-{{this.slots.tone}} fcp-group-slots">
+      <div class="fcp-boxes">
+        {{#each this.slots.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../slots.key}}" data-box="{{this.n}}" aria-label="{{../title}} {{this.n}}"></button>{{/each}}
+      </div>
+    </div>
+    {{/if}}
+    {{#if this.spellbook}}
+    <input type="search" name="spellQuery" placeholder="{{localize 'FCP.D5.Search'}}" value="{{../spellQuery}}" autocomplete="off" autocapitalize="off">
+    <div class="fcp-segmented">
+      <button type="button" class="{{#if (eq ../spellFilter 'all')}}active{{/if}}" data-action="spellFilter" data-filter="all">{{localize "FCP.D5.All"}}</button>
+      <button type="button" class="{{#if (eq ../spellFilter 'prepared')}}active{{/if}}" data-action="spellFilter" data-filter="prepared">{{localize "FCP.D5.OnlyPrepared"}}</button>
+    </div>
+    {{#each this.levels}}
+    <div class="fcp-spell-level">
+      <div class="fcp-sublabel">{{this.title}}</div>
+      {{#each this.spells}}
+      <div class="fcp-spell" data-name="{{this.search}}" data-prepared="{{#if this.prepared}}1{{else}}0{{/if}}">
+        <span class="fcp-row-main"><span class="fcp-spell-name">{{this.name}}</span>{{#if this.school}}<small>{{this.school}}</small>{{/if}}</span>
+        {{#if this.always}}
+        <em>{{localize "FCP.D5.Always"}}</em>
+        {{else}}
+        <button type="button" class="fcp-switch {{#if this.prepared}}on{{/if}}" role="switch" aria-checked="{{#if this.prepared}}true{{else}}false{{/if}}" data-action="toggleItem" data-item-id="{{this.id}}" title="{{localize 'FCP.Prepared'}}"><i></i></button>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{/each}}
+    <div class="fcp-empty fcp-spell-empty" hidden>{{localize "FCP.D5.NoSpells"}}</div>
+    {{/if}}
     {{#each this.items}}
     <div class="fcp-item {{#if this.expanded}}expanded{{/if}}">
-      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{else}}data-action="noop"{{/if}}>
+      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}} {{#if this.big}}big{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{else}}data-action="noop"{{/if}}>
         <img src="{{this.img}}" alt="">
         <span class="fcp-row-main">
           <span class="fcp-row-title">{{this.name}}</span>
@@ -19,12 +53,17 @@
           {{#if this.id}}<i class="ph-duotone ph-caret-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
         </span>
       </button>
+      {{#unless ../../useInBody}}
       {{#if this.action}}
       <div class="fcp-use-row"><button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button></div>
       {{/if}}
+      {{/unless}}
       {{#if this.expanded}}
       <div class="fcp-item-body">
         <div class="fcp-item-desc">{{{this.description}}}</div>
+        {{#if ../../useInBody}}{{#if this.action}}
+        <button type="button" class="fcp-primary fcp-use-full" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button>
+        {{/if}}{{/if}}
         {{#if this.toggle}}
         <div class="fcp-item-actions">
           <button type="button" class="fcp-btn small" data-action="{{this.toggle.action}}" data-item-id="{{this.id}}"><i class="{{this.toggle.icon}}"></i>{{this.toggle.label}}</button>
