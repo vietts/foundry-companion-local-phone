@@ -2,6 +2,7 @@ import { MODULE_ID, SETTINGS, TABS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
 import { requestMove } from "../socket.mjs";
+import { FOG_FLAG } from "../fog.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
 const T = `modules/${MODULE_ID}/templates/parts`;
@@ -313,7 +314,10 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const d = scene.dimensions;
     const grid = scene.grid;
     const src = scene.background?.src;
-    const background = (this.activeTab === "map" && src && !VIDEO_RE.test(src)) ? src : null;
+    // "schematic": white ground with the scene grid and the walls; "image": the scene background.
+    const schematic = getSetting(SETTINGS.MAP_STYLE) !== "image";
+    const background = (!schematic && this.activeTab === "map" && src && !VIDEO_RE.test(src)) ? src : null;
+    const cells = grid.isSquare ? { w: (grid.sizeX / d.sceneWidth * 100).toFixed(4), h: (grid.sizeY / d.sceneHeight * 100).toFixed(4) } : null;
 
     const myIds = choices.map(t => t.id);
     const tokens = visibleMinimapTokens(scene, myIds).map(t => {
@@ -332,9 +336,14 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         left: ((cx - d.sceneX) / d.sceneWidth * 100).toFixed(2),
         top: ((cy - d.sceneY) / d.sceneHeight * 100).toFixed(2),
         size: Math.max(2.5, w / d.sceneWidth * 100).toFixed(2),
-        cls
+        cls,
+        mine: cls === "mine"
       };
     });
+
+    // Fog of war: the explored area recorded by the GM's client masks background, walls and other tokens.
+    const fogOn = !!getSetting(SETTINGS.MAP_FOG);
+    const fogMask = fogOn ? scene.getFlag(MODULE_ID, FOG_FLAG) ?? null : null;
 
     return {
       hasScene: true,
@@ -344,10 +353,33 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
       background,
       tokens,
+      fog: { on: fogOn, mask: fogMask },
+      schematic,
+      cells,
+      walls: this.#mapWalls(scene),
+      viewBox: `0 0 ${d.sceneWidth} ${d.sceneHeight}`,
       tokenChoices: choices.map(t => ({ id: t.id, name: t.name, selected: t.id === token?.id })),
       step: this.step,
       target: this.mapTarget
     };
+  }
+
+  /** Walls as layout lines: only the ones that block sight normally ("building") or partially ("terrain"). */
+  #mapWalls(scene) {
+    const S = CONST.EDGE_SENSE_TYPES ?? { NONE: 0, LIMITED: 10, NORMAL: 20 };
+    const d = scene.dimensions;
+    return scene.walls
+      .filter(w => (w.sight === S.LIMITED || w.sight === S.NORMAL) && w.move !== S.NONE)
+      .map(w => {
+        const [x1, y1, x2, y2] = w.c;
+        return {
+          x1: Math.round(x1 - d.sceneX), y1: Math.round(y1 - d.sceneY),
+          x2: Math.round(x2 - d.sceneX), y2: Math.round(y2 - d.sceneY),
+          // Secret doors are drawn as plain walls, the way a player sees them.
+          door: w.door === CONST.WALL_DOOR_TYPES.DOOR,
+          terrain: w.sight === S.LIMITED
+        };
+      });
   }
 
   async _onRender(context, options) {

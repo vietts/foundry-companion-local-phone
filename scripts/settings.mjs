@@ -47,6 +47,28 @@ export function registerSettings() {
     default: true
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.MAP_FOG, {
+    name: "FCP.Settings.MapFog.Name",
+    hint: "FCP.Settings.MapFog.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.MAP_STYLE, {
+    name: "FCP.Settings.MapStyle.Name",
+    hint: "FCP.Settings.MapStyle.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      schematic: "FCP.Settings.MapStyle.Schematic",
+      image: "FCP.Settings.MapStyle.Image"
+    },
+    default: "schematic"
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.CHAT_LIMIT, {
     name: "FCP.Settings.ChatLimit.Name",
     hint: "FCP.Settings.ChatLimit.Hint",

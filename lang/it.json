@@ -178,5 +178,11 @@
   "FCP.D5.Inside": "{n} oggetti dentro",
   "FCP.D5.PactCount": "Patto {n}° · {v} / {m}",
   "FCP.D5.RollHitDie": "Tira un dado vita",
-  "FCP.D5.ConcSave": "TS"
+  "FCP.D5.ConcSave": "TS",
+  "FCP.Settings.MapFog.Name": "Nebbia di guerra sulla mappa del telefono",
+  "FCP.Settings.MapFog.Hint": "La mappa del telefono mostra sfondo, muri e token solo nelle zone esplorate dal gruppo. Le zone le registra il client del GM mentre i token dei giocatori si muovono: serve un GM connesso con la scena aperta. Spenta, la mappa mostra tutto lo sfondo.",
+  "FCP.Settings.MapStyle.Name": "Stile della mappa del telefono",
+  "FCP.Settings.MapStyle.Hint": "Schema: fondo bianco con la griglia della scena e i muri in nero, leggibile su qualsiasi mappa. Immagine: lo sfondo della scena sotto i muri.",
+  "FCP.Settings.MapStyle.Schematic": "Schema (bianco, griglia e muri)",
+  "FCP.Settings.MapStyle.Image": "Immagine della scena"
 }

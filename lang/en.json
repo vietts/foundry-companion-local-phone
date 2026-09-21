@@ -178,5 +178,11 @@
   "FCP.D5.Inside": "{n} items inside",
   "FCP.D5.PactCount": "Pact lvl {n} · {v} / {m}",
   "FCP.D5.RollHitDie": "Roll a hit die",
-  "FCP.D5.ConcSave": "Save"
+  "FCP.D5.ConcSave": "Save",
+  "FCP.Settings.MapFog.Name": "Fog of war on the phone map",
+  "FCP.Settings.MapFog.Hint": "The phone map shows background, walls and tokens only in the areas the party explored. The GM client records them as player tokens move: a GM must be connected with the scene open. Off, the map shows the whole background.",
+  "FCP.Settings.MapStyle.Name": "Phone map style",
+  "FCP.Settings.MapStyle.Hint": "Schematic: white ground with the scene grid and walls in black, readable on any map. Image: the scene background under the walls.",
+  "FCP.Settings.MapStyle.Schematic": "Schematic (white, grid and walls)",
+  "FCP.Settings.MapStyle.Image": "Scene image"
 }

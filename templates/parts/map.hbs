@@ -14,10 +14,20 @@
   </div>
 
   <div class="fcp-mapwrap">
-    <div class="fcp-minimap" data-action="mapTap" style="--fcp-ratio: {{map.ratio}}; {{#if map.background}}background-image: url('{{map.background}}');{{/if}}">
-      {{#each map.tokens}}
+    <div class="fcp-minimap {{#if map.fog.on}}fogged{{/if}}" data-action="mapTap" style="--fcp-ratio: {{map.ratio}};">
+      <div class="fcp-mm-layer {{#if map.background}}has-bg{{/if}} {{#if map.schematic}}schematic{{/if}} {{#if map.fog.on}}{{#unless map.fog.mask}}unexplored{{/unless}}{{/if}}" style="{{#if map.background}}background-image: url('{{map.background}}');{{/if}}{{#if map.fog.mask}} --fcp-fog: url('{{map.fog.mask}}');{{/if}}{{#if map.cells}} --fcp-cell-w: {{map.cells.w}}%; --fcp-cell-h: {{map.cells.h}}%;{{/if}}">
+        {{#if map.walls.length}}
+        <svg class="fcp-mm-walls" viewBox="{{map.viewBox}}" preserveAspectRatio="none" aria-hidden="true">
+          {{#each map.walls}}<line x1="{{this.x1}}" y1="{{this.y1}}" x2="{{this.x2}}" y2="{{this.y2}}" class="{{#if this.door}}door{{/if}} {{#if this.terrain}}terrain{{/if}}"/>{{/each}}
+        </svg>
+        {{/if}}
+        {{#each map.tokens}}{{#unless this.mine}}
+        <div class="fcp-mm-token {{this.cls}}" style="left: {{this.left}}%; top: {{this.top}}%; width: {{this.size}}%; aspect-ratio: 1; background-image: url('{{this.img}}');" title="{{this.name}}"></div>
+        {{/unless}}{{/each}}
+      </div>
+      {{#each map.tokens}}{{#if this.mine}}
       <div class="fcp-mm-token {{this.cls}}" style="left: {{this.left}}%; top: {{this.top}}%; width: {{this.size}}%; aspect-ratio: 1; background-image: url('{{this.img}}');" title="{{this.name}}"></div>
-      {{/each}}
+      {{/if}}{{/each}}
       {{#if map.target}}<div class="fcp-mm-target" style="left: {{map.target.left}}%; top: {{map.target.top}}%;"></div>{{/if}}
     </div>
   </div>

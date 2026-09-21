@@ -7,6 +7,8 @@ export const SETTINGS = {
   CANVAS_PROMPTED: "canvasPrompted",
   MINIMAP_TOKENS: "minimapTokens",
   MOVE_RELAY: "moveRelay",
+  MAP_FOG: "mapFog",
+  MAP_STYLE: "mapStyle",
   CHAT_LIMIT: "chatLimit",
   QUICK_ROLLS: "quickRolls",
   DIGITAL_DICE: "digitalDice",

@@ -7,6 +7,7 @@ import { getAdapter, registerAdapter } from "./systems/index.mjs";
 import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
 import { DaggerheartAdapter } from "./systems/daggerheart.mjs";
 import { activeScene } from "./movement.mjs";
+import { fogRecorder, registerFogHooks } from "./fog.mjs";
 
 let app = null;
 
@@ -15,7 +16,13 @@ Hooks.once("init", () => {
   registerAdapter(Dnd5eAdapter);
   registerAdapter(DaggerheartAdapter);
   registerSocket();
-  game.modules.get(MODULE_ID).api = { getApp: () => app, getAdapter, registerAdapter, CompanionApp };
+  // Runs on every client but only records on the active GM's (the one with a canvas).
+  registerFogHooks();
+  game.modules.get(MODULE_ID).api = {
+    getApp: () => app, getAdapter, registerAdapter, CompanionApp,
+    /** Forget what the party explored on a scene, e.g. from a macro: `game.modules.get("foundry-companion-local-phone").api.resetFog()` */
+    resetFog: scene => fogRecorder.reset(scene)
+  };
 });
 
 Hooks.once("ready", async () => {
