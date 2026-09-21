@@ -23,6 +23,10 @@ Il modulo non usa un server esterno e nemmeno CDN: gira dentro il normale client
 | **Daggerheart · Scheda** | **Daggerheart · Azioni** | **Daggerheart · Oggetti e vault** |
 | ![Scheda Daggerheart](docs/screenshots/dh-scheda.png) | ![Azioni Daggerheart](docs/screenshots/dh-azioni.png) | ![Oggetti Daggerheart](docs/screenshots/dh-oggetti.png) |
 
+**Tablet**: scheda sempre a sinistra, le altre sezioni a destra.
+
+![Tablet](docs/screenshots/tablet.png)
+
 Le schermate usano personaggi di prova.
 
 ## Requisiti
@@ -42,7 +46,7 @@ Se la repo è pubblica si può installare anche da *Moduli aggiuntivi → Instal
 
 1. Il GM crea un utente Foundry per ogni giocatore e gli assegna il personaggio (proprietà sull'attore).
 2. Il telefono apre lo stesso indirizzo che usa il GM: `http://<ip-del-pc>:30000` sulla stessa Wi‑Fi se Foundry gira sul computer del GM, oppure il dominio del server se Foundry è ospitato altrove. Se Foundry gira in Docker, il link "LAN" degli inviti mostra l'indirizzo interno del container e dal telefono non funziona.
-3. Il giocatore entra con il suo utente. Su telefono e tablet l'interfaccia companion parte da sola.
+3. Il giocatore entra con il suo utente. Su telefono e tablet l'interfaccia companion parte da sola. Sul tablet (da 740 px di larghezza) è su due colonne: la scheda sempre a sinistra, a destra Azioni, Oggetti, Chat o Mappa.
 4. Al primo avvio il modulo propone di disattivare il canvas su quel dispositivo: accetta.
 
 Per forzare la modalità da desktop (per esempio per provarla): `Impostazioni → Phone Companion → Modalità companion = Sempre attiva`, oppure aggiungi `?companion=1` all'URL. Dal companion il pulsante con il monitor riporta all'interfaccia Foundry completa.
@@ -71,7 +75,7 @@ Dispositivo (ogni giocatore):
 
 ## Stato
 
-Versione 0.2.0, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli).
+Versione 0.2.1, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli).
 
 ## Struttura
 

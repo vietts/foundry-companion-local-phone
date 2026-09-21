@@ -1,7 +1,7 @@
-<header class="fcp-header {{#if (eq activeTab 'sheet')}}big{{/if}} {{#if (eq activeTab 'map')}}fcp-hidden{{/if}}">
+<header class="fcp-header {{#if (eq headerTab 'sheet')}}big{{/if}} {{#if (eq headerTab 'map')}}fcp-hidden{{/if}}">
   <div class="fcp-kicker"><span>{{headerInfo.left}}</span><span>{{headerInfo.right}}</span></div>
   <div class="fcp-rule"></div>
-  {{#if (eq activeTab 'chat')}}
+  {{#if (eq headerTab 'chat')}}
   {{#if dice}}
   <div class="fcp-label">{{localize "FCP.QuickDice"}}</div>
   <div class="fcp-dicebar">
@@ -16,26 +16,26 @@
   <div class="fcp-identity">
     {{#if actor}}
     <img class="fcp-portrait" src="{{actor.img}}" alt="">
-    <div class="fcp-name"><b>{{actor.name}}</b><small>{{#if (eq activeTab 'sheet')}}{{actor.subtitle}}{{else}}{{headerInfo.summary}}{{/if}}</small></div>
+    <div class="fcp-name"><b>{{actor.name}}</b><small>{{#if (eq headerTab 'sheet')}}{{actor.subtitle}}{{else}}{{headerInfo.summary}}{{/if}}</small></div>
     {{else}}
     <img class="fcp-portrait" src="icons/svg/mystery-man.svg" alt="">
     <div class="fcp-name"><b>{{localize "FCP.Title"}}</b></div>
     {{/if}}
-    {{#if (eq activeTab 'sheet')}}
+    {{#if (eq headerTab 'sheet')}}
     <div class="fcp-menu">
       <button type="button" data-action="refresh" title="{{localize 'FCP.Reload'}}"><i class="ph-duotone ph-arrows-clockwise"></i></button>
       <button type="button" data-action="exitCompanion" title="{{localize 'FCP.ExitCompanion'}}"><i class="ph-duotone ph-desktop"></i></button>
     </div>
     {{/if}}
   </div>
-  {{#if (eq activeTab 'sheet')}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
-  {{#if (eq activeTab 'actions')}}{{#if headerInfo.pin}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}{{/if}}
-  {{#if dice}}{{#if header.modes}}{{#unless (eq activeTab 'inventory')}}
+  {{#if (eq headerTab 'sheet')}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
+  {{#if (eq headerTab 'actions')}}{{#if headerInfo.pin}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}{{/if}}
+  {{#if dice}}{{#if header.modes}}{{#unless (eq headerTab 'inventory')}}
   <div class="fcp-modebar fcp-modebar-head">
     {{#each header.modes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="setMode" data-mode="{{this.key}}">{{this.label}}</button>{{/each}}
   </div>
   {{/unless}}{{/if}}{{/if}}
-  {{#if (eq activeTab 'sheet')}}{{#if panes}}
+  {{#if (eq headerTab 'sheet')}}{{#if panes}}
   <div class="fcp-panes">
     {{#each panes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="switchPane" data-pane="{{this.key}}">{{this.label}}</button>{{/each}}
   </div>

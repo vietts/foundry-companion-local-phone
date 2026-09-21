@@ -1397,6 +1397,91 @@ body.fcp-active #notifications {
   }
 }
 
+/* ---------- Tablet: two columns ---------- */
+
+/*
+ * The sheet (with its header) stays on the left; the tab bar and the chosen tab sit on the right.
+ * Rows: the tab bar, then the rest. The header spans both, the sheet only the second, so the sheet
+ * column starts right under the header and the right column right under the tab bar.
+ */
+#fcp-app.fcp-wide {
+  --fcp-navh: calc(var(--fcp-safe-top) + 56px);
+  display: grid;
+  grid-template-columns: minmax(340px, 5fr) 6fr;
+  grid-template-rows: var(--fcp-navh) auto minmax(0, 1fr);
+  grid-template-areas:
+    "head nav"
+    "head main"
+    "sheet main";
+}
+
+#fcp-app.fcp-wide > .fcp-header {
+  grid-area: head;
+}
+
+#fcp-app.fcp-wide > .fcp-header,
+#fcp-app.fcp-wide > .fcp-tab[data-tab="sheet"] {
+  border-right: 1.5px solid var(--color-text);
+}
+
+#fcp-app.fcp-wide > .fcp-tab[data-tab="sheet"] {
+  grid-area: sheet;
+  display: block;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 20px calc(var(--fcp-safe-bottom) + 20px);
+}
+
+#fcp-app.fcp-wide > .fcp-tab.active:not([data-tab="sheet"]) {
+  grid-area: main;
+  padding-bottom: calc(var(--fcp-safe-bottom) + 20px);
+}
+
+#fcp-app.fcp-wide > .fcp-tab[data-tab="chat"].active {
+  padding-bottom: var(--fcp-safe-bottom);
+}
+
+#fcp-app.fcp-wide > .fcp-tab[data-tab="map"].active {
+  padding-bottom: var(--fcp-safe-bottom);
+}
+
+#fcp-app.fcp-wide > .fcp-nav {
+  grid-area: nav;
+  align-self: stretch;
+  padding: var(--fcp-safe-top) 8px 0;
+  border-top: 0;
+  border-bottom: 1.5px solid var(--color-text);
+}
+
+#fcp-app.fcp-wide > .fcp-nav button {
+  min-height: 0;
+  flex-direction: row;
+  gap: 8px;
+  font-size: 13px;
+}
+
+#fcp-app.fcp-wide > .fcp-nav button.active {
+  font-size: 13px;
+}
+
+#fcp-app.fcp-wide .fcp-badge {
+  position: static;
+}
+
+#fcp-app.fcp-wide > .fcp-nav button[data-tab="sheet"] {
+  display: none;
+}
+
+#fcp-app.fcp-wide .fcp-map-title {
+  padding-top: 16px;
+}
+
+.fcp-chat-dice {
+  flex: none;
+  margin-bottom: 12px;
+}
+
 /* ---------- D&D 5e ---------- */
 
 /* Component classes set their own display, so the hidden attribute needs to win explicitly. */

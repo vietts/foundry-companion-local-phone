@@ -7,6 +7,8 @@ import { FOG_FLAG } from "../fog.mjs";
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
 const T = `modules/${MODULE_ID}/templates/parts`;
 const VIDEO_RE = /\.(webm|mp4|m4v|ogv|ogg)(\?.*)?$/i;
+/** Tablet layout: the sheet stays on the left, the other tabs open on the right. Phones in landscape stay single-column. */
+const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
 
 const TAB_ICONS = {
   sheet: "ph-duotone ph-scroll",
@@ -33,6 +35,20 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.condPicker = false;
     this.spellQuery = "";
     this.spellFilter = "all";
+    this.wideQuery = window.matchMedia?.(WIDE_QUERY) ?? null;
+    this.#onWideChange = () => this.render();
+  }
+
+  #onWideChange;
+
+  /** Two columns (tablet): the sheet is always shown, so the active tab is one of the others. */
+  get wide() {
+    return !!this.wideQuery?.matches;
+  }
+
+  /** The tab the header describes: in two columns it heads the sheet column. */
+  get headerTab() {
+    return this.wide ? "sheet" : this.activeTab;
   }
 
   /** Digital dice off = reference mode: nothing rolls, items open their text. */
@@ -140,6 +156,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async _prepareContext(options) {
+    if (this.wide && this.activeTab === "sheet") this.activeTab = "actions";
     const actor = this.actor;
     const actors = this.actors.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === actor?.id }));
     const header = actor ? await this.adapter.prepareHeader(actor) : { hp: null, stats: [] };
@@ -156,6 +173,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       conditions,
       conditionsActive: conditions.some(c => c.active),
       activeTab: this.activeTab,
+      headerTab: this.headerTab,
+      wide: this.wide,
       tabs: TABS.map(id => ({
         id,
         label: game.i18n.localize(`FCP.Tabs.${id.capitalize()}`),
@@ -175,7 +194,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Kicker, one-line summary and pinned hint shown by the header of each tab. */
   #headerInfo(actor, header) {
     const loc = key => game.i18n.localize(key);
-    const tab = this.activeTab;
+    const tab = this.headerTab;
     const right = {
       sheet: actor ? this.adapter.kicker(actor) : "",
       actions: loc(this.diceEnabled ? "FCP.Hint.ActionsDice" : "FCP.Hint.Actions"),
@@ -197,10 +216,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = this.actor;
     switch (partId) {
       case "header":
-        context.chat = {
-          quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"],
-          formulaDraft: this.#draft("formula")
-        };
+        context.chat = this.#diceBar();
         break;
       case "sheet":
         context.sheet = actor ? await this.adapter.prepareSheet(actor) : { sections: [], rests: [] };
@@ -236,13 +252,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         await this.#decorateItems(actor, context.groups);
         break;
       case "chat":
-        context.chat = { messageDraft: this.#draft("message") };
+        // In two columns the header belongs to the sheet, so the chat carries its own dice bar.
+        context.chat = { ...this.#diceBar(), messageDraft: this.#draft("message") };
         break;
       case "map":
         context.map = this.#prepareMap();
         break;
     }
     return context;
+  }
+
+  #diceBar() {
+    return { quickDice: ["d4", "d6", "d8", "d10", "d12", "d20", "d100"], formulaDraft: this.#draft("formula") };
   }
 
   /** Current value of a text input, so a re-render does not wipe what the player is typing. */
@@ -385,6 +406,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onRender(context, options) {
     await super._onRender(context, options);
     const el = this.element;
+    el.classList.toggle("fcp-wide", this.wide);
+    if (options.isFirstRender) this.wideQuery?.addEventListener("change", this.#onWideChange);
 
     // Enter key on text inputs triggers the paired action.
     for (const input of el.querySelectorAll("input[data-enter]")) {
@@ -425,6 +448,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     if (options.isFirstRender && this._dirty.size) this.refreshParts();
+  }
+
+  _onClose(options) {
+    this.wideQuery?.removeEventListener("change", this.#onWideChange);
+    super._onClose(options);
   }
 
   /** Spellbook search and "prepared only" filter, applied in place so typing never re-renders. */
@@ -491,7 +519,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   setTab(tab) {
-    if (!TABS.includes(tab)) return;
+    if (!TABS.includes(tab) || (this.wide && tab === "sheet")) return;
     this.activeTab = tab;
     setSetting(SETTINGS.LAST_TAB, tab);
     for (const section of this.element.querySelectorAll(".fcp-tab")) {
