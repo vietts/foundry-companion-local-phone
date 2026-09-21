@@ -74,13 +74,20 @@ export function positionAtCenter(tokenDoc, center) {
 export async function executeMove(tokenDoc, { x, y }) {
   const from = { x: tokenDoc.x, y: tokenDoc.y };
   const validated = !!tokenDoc.object && typeof tokenDoc.move === "function";
+  let completed = null;
   if (validated) {
-    await tokenDoc.move({ x, y }, { animate: true });
+    completed = await tokenDoc.move({ x, y }, { animate: true });
   } else {
     await tokenDoc.update({ x, y });
   }
-  const arrived = tokenDoc.x === x && tokenDoc.y === y;
+  // The document can lag behind the resolved move: give it a moment to land before calling it blocked.
+  const atTarget = () => tokenDoc.x === x && tokenDoc.y === y;
+  for (let waited = 0; !atTarget() && waited < 2000; waited += 100) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+  const arrived = atTarget();
   const moved = tokenDoc.x !== from.x || tokenDoc.y !== from.y;
-  log(`move ${tokenDoc.name} → ${x},${y} (arrived: ${arrived}, moved: ${moved}, walls checked: ${validated})`);
+  log(`move ${tokenDoc.name} ${from.x},${from.y} → ${x},${y} (now ${tokenDoc.x},${tokenDoc.y}; completed: ${completed}, `
+    + `state: ${tokenDoc.movement?.state}, arrived: ${arrived}, moved: ${moved}, walls checked: ${validated})`);
   return { ok: moved, x: tokenDoc.x, y: tokenDoc.y, constrained: !arrived, validated };
 }
