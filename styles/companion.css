@@ -2044,10 +2044,16 @@ body.fcp-active #notifications {
 }
 
 /*
- * Two columns: the shared sheet-column rule (`padding: 0 20px ...`) would double up with the 20px
- * these notes elements already carry above, for a ~40px inset. Zero the column's own horizontal
- * padding for the notes tab only - the sheet column (players) is untouched.
+ * The notes elements above carry their own 20px side padding, so the tab's own (20px, 24px from
+ * 700px up) would double it to a ~40px inset. Zero it for the notes tab only; players' tabs keep it.
+ * The second rule is for two columns, where the shared sheet-column rule (`padding: 0 20px ...`)
+ * outranks the first.
  */
+.fcp-tab[data-tab="notes"].active {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 #fcp-app.fcp-wide > .fcp-tab[data-tab="notes"] {
   padding-left: 0;
   padding-right: 0;

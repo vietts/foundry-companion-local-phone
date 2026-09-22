@@ -143,6 +143,10 @@ export class GmNotes {
         const ok = await previous.pending;
         if (ok === false) ui.notifications.warn(game.i18n.format("FCP.Doc.SaveFailed", { name: previousName }));
         previous.dispose();
+      }).catch(err => {
+        // A failed handoff must not block every later mount: they all await this chain.
+        warn("failed to hand off the note editor", err);
+        previous.dispose();
       });
     }
     // Every mount - even one that captured no previous editor itself, because an earlier mount already
@@ -222,6 +226,11 @@ export class GmNotes {
 
   async flush() {
     return this.editor ? this.editor.flush() : true;
+  }
+
+  /** The companion is closing: save, then drop the editor so its hook and timer do not outlive it. */
+  async dispose() {
+    await this.#leaveEditor();
   }
 
   /** Save and drop the current editor before the view changes. */

@@ -195,7 +195,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async _prepareContext(options) {
-    if (this.wide && this.activeTab === this.primaryTab) this.activeTab = this.tabs.find(t => t !== this.primaryTab);
+    // Two columns: the primary tab is always shown on the left, so the right column opens on
+    // Actions for players (as before GM notes) and on Chat for the GM.
+    if (this.wide && this.activeTab === this.primaryTab) this.activeTab = this.gmMode ? "chat" : "actions";
     const actor = this.actor;
     const actors = this.actors.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === actor?.id }));
     const header = actor ? await this.adapter.prepareHeader(actor) : { hp: null, stats: [] };
@@ -496,7 +498,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _onClose(options) {
-    this.notes?.flush();
+    // Saves, then disposes the editor: its update hook and autosave timer must not outlive the app.
+    this.notes?.dispose();
     this.wideQuery?.removeEventListener("change", this.#onWideChange);
     super._onClose(options);
   }
