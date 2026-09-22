@@ -23,7 +23,7 @@ Il GM vuole tenere le note di campagna in Foundry invece che su Google Docs, ma 
 ## Contesto tecnico (Foundry v14)
 
 - `foundry.applications.sheets.journal.JournalEntrySheet` si può estendere; `_renderPageViews` è il punto in cui le pagine vengono trasformate in viste.
-- L'elemento `<prose-mirror>` (`HTMLProseMirrorElement`) senza attributo `toggled` è sempre attivo; con `collaborate` e `data-document-uuid` apre una sessione collaborativa sul campo indicato da `name` (qui `text.content`), con le modifiche propagate in tempo reale agli altri client che hanno la stessa pagina aperta.
+- L'elemento `<prose-mirror>` (`HTMLProseMirrorElement`) senza attributo `toggled` è sempre attivo; la modalità `collaborate` esiste ma non è usata (vedi "Salvataggi fra dispositivi e utenti").
 - Un modulo registra un foglio con `DocumentSheetConfig.registerSheet(JournalEntry, MODULE_ID, Classe, { makeDefault: true, label })`; l'utente può tornare al foglio di Foundry dal menu *Configura foglio*.
 
 ## Esperienza
@@ -42,7 +42,7 @@ Il GM vuole tenere le note di campagna in Foundry invece che su Google Docs, ma 
 - Se `game.user.isGM` e il companion è attivo, le schede sono **Note** e **Chat** (niente Scheda, Azioni, Oggetti, Mappa). Sul tablet le Note (elenco e voce aperta) stanno nella colonna fissa a sinistra, come la scheda per i giocatori, e la Chat a destra.
 - **Elenco**: ricerca per nome in cima, poi "Recenti" (ultime 5 voci aperte su questo dispositivo, in un'impostazione `client` del modulo come `lastTab`), poi l'albero delle cartelle del journal, chiuse di default.
 - **Voce**: a tutto schermo. Con più pagine, un selettore in alto; accanto, l'indice dei titoli della pagina per saltare alle sezioni.
-- **Scrittura**: stesso `<prose-mirror>` sempre attivo e collaborativo; la barra di formattazione di Foundry resta completa e va a capo su più righe (non scorre in orizzontale: lo scorrimento taglierebbe i menu a tendina).
+- **Scrittura**: stesso `<prose-mirror>` sempre attivo; la barra di formattazione di Foundry resta completa e va a capo su più righe (non scorre in orizzontale: lo scorrimento taglierebbe i menu a tendina).
 - **"+ Appunto"**: crea una voce nella cartella "Appunti" (creata alla prima occorrenza, tipo `JournalEntry`), con titolo uguale alla data e ora locali (es. "22 set 2026, 18:40") modificabile, una pagina di testo vuota, e la apre in scrittura.
 
 ## Architettura
@@ -75,14 +75,20 @@ createAutosave({ read, save, initial = "", delay = 1000, onState })
 
 Il foglio e la scheda Note segnalano ogni modifica del documento ProseMirror (un plugin `view.update`, che copre anche formattazione e modifiche arrivate da altri client) e usano `save = v => page.update({ "text.content": v }, { render: false })`. `render: false` è necessario: senza, ogni salvataggio ridisegnerebbe il foglio e distruggerebbe l'editor mentre si scrive. `flush()` al cambio pagina, alla chiusura del foglio (`_preClose`) e al cambio scheda o voce nel companion. Se `flush()` in chiusura fallisce: `ui.notifications.warn` con il titolo della pagina.
 
-### Modalità collaborativa e salvataggi
+### Salvataggi fra dispositivi e utenti
 
-La sessione collaborativa di Foundry è per utente: la sincronia in tempo reale funziona fra utenti diversi (per esempio un co-GM), non fra due dispositivi dello stesso utente (il GM su portatile e telefono), che Foundry tratta come uno solo. Per questo ogni salvataggio porta negli `options` dell'update un identificativo del client che l'ha fatto; un editor aperto che riceve un salvataggio della sua pagina da un altro client:
+L'editor non usa la modalità collaborativa di Foundry: le sue sessioni sono per utente, quindi non sincronizzano i dispositivi dello stesso GM, e il loro salvataggio lato server ridisegnerebbe il foglio durante la scrittura. Al suo posto:
 
-- se non ha modifiche in sospeso, si rimonta con il testo nuovo;
-- se ne ha, tiene il suo testo e il prossimo salvataggio vince.
+- ogni salvataggio porta negli `options` dell'update un identificativo del client che l'ha fatto;
+- un editor aperto che riceve un salvataggio della sua pagina da un altro client si rimonta con il testo nuovo se non ha modifiche in sospeso, altrimenti tiene il suo testo e il prossimo salvataggio vince;
+- chi guarda la pagina senza editor (giocatori con la nota condivisa, fogli di sola lettura) viene ridisegnato a ogni salvataggio che arriva da un altro client;
+- un editor che viene rimosso senza modifiche non salva niente, così aprire e sfogliare una nota non la riscrive.
 
-Gli `update` ridondanti fra collaboratori sono innocui (stesso valore, `diff` vuoto non invia niente lato Foundry).
+Un co-GM vede quindi le modifiche dopo ogni salvataggio (circa un secondo), non a ogni tasto.
+
+### Sistemi con un proprio foglio del journal
+
+Il foglio Documento si costruisce sopra il foglio del journal predefinito del sistema (per esempio quello di D&D 5e), così stile e navigazione del sistema restano; cambia solo il modo in cui si mostrano le pagine di testo modificabili.
 
 ## Errori
 
