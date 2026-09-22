@@ -9,6 +9,8 @@ Priorità, in ordine:
 3. **Azioni** e **Oggetti**: attacchi, incantesimi, carte dominio, privilegi e inventario. Toccando una riga si apre il testo dell'oggetto, per leggere cosa fa. Equipaggia, prepara, sposta nel vault.
 4. **Chat**: in secondo piano, per le regole o gli appunti che il GM manda in chat. Con un badge sui messaggi non letti.
 
+Per il GM, lo stesso modulo trasforma il journal in un documento: aprendo una nota si scrive subito, con salvataggio automatico, e dal telefono il companion mostra le note al posto della scheda.
+
 Con **Dadi digitali** attivi (impostazione del dispositivo, spenta di default) toccare caratteristiche, attacchi e incantesimi tira tramite il sistema, con il risultato nella chat di Foundry, e la chat guadagna dadi rapidi e formule libere.
 
 Il modulo non usa un server esterno e nemmeno CDN: gira dentro il normale client Foundry, con font (Source Serif 4, OFL) e icone (Phosphor duotone, MIT) incluse in `styles/vendor/`. Sul telefono si può disattivare il canvas (il modulo lo propone al primo avvio), così non vengono scaricate le immagini delle scene e il caricamento resta leggero.
@@ -51,6 +53,13 @@ Se la repo è pubblica si può installare anche da *Moduli aggiuntivi → Instal
 
 Per forzare la modalità da desktop (per esempio per provarla): `Impostazioni → Phone Companion → Modalità companion = Sempre attiva`, oppure aggiungi `?companion=1` all'URL. Dal companion il pulsante con il monitor riporta all'interfaccia Foundry completa.
 
+## Note del GM
+
+- **Sul portatile** le voci del journal si aprono nel foglio *Documento*: le pagine di testo sono sempre in modifica (niente matita, niente finestra separata) e si salvano da sole un secondo dopo l'ultima modifica; l'indicatore in alto dice se è salvato. "+ Pagina" aggiunge una pagina di testo. Segnaposti sulla mappa, *Jump to Pin*, link e permessi funzionano come prima. Per tornare al foglio di Foundry: *Configura foglio* sulla voce.
+- **Dal telefono**, entrando come GM, il companion mostra **Note** e **Chat**: ricerca, recenti, cartelle, e le note si leggono e si scrivono con lo stesso editor. **Appunto** crea al volo una nota nella cartella "Appunti", intitolata con data e ora. (la cartella prende il nome nella lingua di Foundry: "Appunti" in italiano, "Inbox" in inglese)
+- Se la stessa pagina è aperta su due dispositivi dello stesso utente (per esempio portatile e telefono), quello che scrivi da una parte compare dall'altra appena viene salvato, se lì non stai scrivendo. Fra utenti diversi (un co-GM) le modifiche compaiono in tempo reale.
+- Le pagine di testo in Markdown, le immagini, i PDF e i video si leggono come in Foundry.
+
 ## Impostazioni
 
 Mondo (GM):
@@ -75,7 +84,7 @@ Dispositivo (ogni giocatore):
 
 ## Stato
 
-Versione 0.2.1, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli).
+Versione 0.3.0, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli). Le note del GM (0.3.0) sono provate su un Foundry locale; sul telefono vero non ancora.
 
 ## Struttura
 
@@ -89,10 +98,15 @@ scripts/
   fog.mjs               zone esplorate, registrate dal client del GM
   app/companion-app.mjs interfaccia (ApplicationV2)
   systems/              adattatori: dnd5e, daggerheart, generico
+  journal/doc-sheet.mjs   foglio "Documento" del journal
+  journal/doc-editor.mjs  editor sempre attivo con salvataggio automatico
+  journal/autosave.mjs    salvataggio differito, uno alla volta
+  app/gm-notes.mjs        scheda Note del GM nel companion
 templates/parts/        template Handlebars per ogni sezione
 styles/companion.css
   styles/vendor/        font e icone incluse (licenze accanto ai file)
 lang/                   en, it
+tests/                  test delle parti pure (node --test)
 ```
 
 Gli adattatori di sistema espongono la stessa interfaccia (`prepareHeader`, `prepareSheet`, `prepareActions`, `prepareInventory`, `handle`), quindi aggiungere un sistema vuol dire scrivere un file in `scripts/systems/`.
