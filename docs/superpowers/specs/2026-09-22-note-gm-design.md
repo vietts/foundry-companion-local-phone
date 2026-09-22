@@ -50,12 +50,12 @@ Il GM vuole tenere le note di campagna in Foundry invece che su Google Docs, ma 
 | File | Compito |
 |---|---|
 | `scripts/journal/autosave.mjs` (nuovo) | Salvataggio automatico di un campo di un documento. Indipendente da Foundry UI, testabile con `node --test`. |
-| `scripts/journal/doc-editor.mjs` (nuovo) | Monta un `<prose-mirror>` sempre attivo e collaborativo su una pagina e lo collega all'autosave; indicatore di stato. Usato dal foglio e dal companion. |
+| `scripts/journal/doc-editor.mjs` (nuovo) | Monta un `<prose-mirror>` sempre attivo su una pagina e lo collega all'autosave; indicatore di stato. Usato dal foglio e dal companion. |
 | `scripts/app/notes-data.mjs` (nuovo) | Funzioni pure per la scheda Note: albero appiattito delle cartelle, ricerca senza accenti, recenti, titolo dell'appunto. Testabili con `node --test`. |
-| `scripts/journal/doc-sheet.mjs` (nuovo) | `CompanionJournalSheet extends JournalEntrySheet`: pagine di testo come editor sempre attivo, indicatore, "+ Pagina". |
+| `scripts/journal/doc-sheet.mjs` (nuovo) | `DocSheetMixin(Base)`, applicato al foglio del journal del sistema (o a `JournalEntrySheet` di Foundry): pagine di testo come editor sempre attivo, indicatore, "+ Pagina". |
 | `scripts/app/gm-notes.mjs` (nuovo) | Dati e azioni della scheda Note del companion: albero, ricerca, recenti, apertura voce, "+ Appunto". |
 | `templates/parts/notes.hbs` (nuovo) | Template della scheda Note (elenco e voce). |
-| `scripts/main.mjs` | Registra il foglio in `init`; in modalità GM crea il companion senza cercare un personaggio. |
+| `scripts/main.mjs` | Registra il foglio in `ready` (solo allora i fogli del sistema sono in `CONFIG`); in modalità GM crea il companion senza cercare un personaggio. |
 | `scripts/app/companion-app.mjs` | Schede diverse per il GM (Note, Chat); parte `notes`. |
 | `lang/it.json`, `lang/en.json`, `styles/companion.css` | Stringhe e stili. |
 | `tests/autosave.test.mjs`, `tests/notes-data.test.mjs` (nuovi) | Test delle parti pure. |

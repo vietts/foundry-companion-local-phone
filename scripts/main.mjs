@@ -8,7 +8,8 @@ import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
 import { DaggerheartAdapter } from "./systems/daggerheart.mjs";
 import { activeScene } from "./movement.mjs";
 import { fogRecorder, registerFogHooks } from "./fog.mjs";
-import { CompanionJournalSheet } from "./journal/doc-sheet.mjs";
+import { registerDocSheet } from "./journal/doc-sheet.mjs";
+import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
 
 let app = null;
 
@@ -17,12 +18,7 @@ Hooks.once("init", () => {
   registerAdapter(Dnd5eAdapter);
   registerAdapter(DaggerheartAdapter);
   registerSocket();
-  // Journal entries open as a document. Foundry's sheet stays available under "Configure Sheet".
-  foundry.applications.apps.DocumentSheetConfig.registerSheet(JournalEntry, MODULE_ID, CompanionJournalSheet, {
-    makeDefault: true,
-    label: "FCP.Doc.SheetLabel"
-  });
-  guardCollaborativeSteps();
+  registerRemoteRefresh();
   // Runs on every client but only records on the active GM's (the one with a canvas).
   registerFogHooks();
   game.modules.get(MODULE_ID).api = {
@@ -33,26 +29,13 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  // Journal entries open as a document. The system's sheet stays available under "Configure Sheet".
+  const base = registerDocSheet();
+  log(`journal document sheet built over ${base.name}`);
   if (!shouldUseCompanion()) return;
   await maybePromptCanvas();
   activateCompanion();
 });
-
-/**
- * Our doc-editor mounts a page's ProseMirror element directly, without rendering the page's own
- * JournalEntryPageProseMirrorSheet. Collaborative steps go through ProseMirrorEditor#_onNewSteps,
- * which calls `this.options.document?.sheet?._onNewSteps?.()`: that sheet method reads
- * `this.form`, which is undefined when the sheet was never rendered, throwing before our steps are
- * confirmed and before remote steps are applied. Skip the sheet's half of the work when it has no form.
- */
-function guardCollaborativeSteps() {
-  const proto = foundry.applications.sheets.journal.JournalEntryPageProseMirrorSheet.prototype;
-  const onNewSteps = proto._onNewSteps;
-  proto._onNewSteps = function (...args) {
-    if (!this.form) return;
-    return onNewSteps.apply(this, args);
-  };
-}
 
 async function maybePromptCanvas() {
   let noCanvas = false;

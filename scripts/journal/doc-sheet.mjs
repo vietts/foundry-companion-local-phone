@@ -1,13 +1,39 @@
 import { isDocPage, mountDocEditor, showSaveState } from "./doc-editor.mjs";
-import { warn } from "../constants.mjs";
+import { MODULE_ID, warn } from "../constants.mjs";
 
-const { JournalEntrySheet } = foundry.applications.sheets.journal;
+/**
+ * Register the document sheet as the default JournalEntry sheet, built over the system's own journal
+ * sheet (e.g. dnd5e's JournalEntrySheet5e) so its styling and navigation stay. Called at "ready":
+ * sheets registered during init and setup only land in CONFIG.JournalEntry.sheetClasses once Foundry
+ * initializes them, right before ready, and a registration made after that takes effect at once.
+ */
+export function registerDocSheet() {
+  const base = systemJournalSheet();
+  foundry.applications.apps.DocumentSheetConfig.registerSheet(JournalEntry, MODULE_ID, DocSheetMixin(base), {
+    makeDefault: true,
+    label: "FCP.Doc.SheetLabel"
+  });
+  return base;
+}
+
+/**
+ * The journal sheet the system registered, or Foundry's own. Only a sheet built on Foundry's
+ * JournalEntrySheet can be extended: the overrides below rely on its page rendering.
+ */
+function systemJournalSheet() {
+  const core = foundry.applications.sheets.journal.JournalEntrySheet;
+  const scope = `${game.system.id}.`;
+  const sheets = Object.values(CONFIG.JournalEntry.sheetClasses?.[CONST.BASE_DOCUMENT_TYPE] ?? {})
+    .filter(s => s.id.startsWith(scope) && s.canBeDefault && foundry.utils.isSubclass(s.cls, core));
+  return (sheets.find(s => s.default) ?? sheets[0])?.cls ?? core;
+}
 
 /**
  * The journal as a document: editable text pages open straight into an always-on editor that saves
- * by itself. Other page types, and pages the user cannot edit, render as in Foundry's sheet.
+ * by itself. Other page types, and pages the user cannot edit, render as in the base sheet.
+ * @param {typeof foundry.applications.sheets.journal.JournalEntrySheet} Base
  */
-export class CompanionJournalSheet extends JournalEntrySheet {
+export const DocSheetMixin = Base => class CompanionJournalSheet extends Base {
   static DEFAULT_OPTIONS = {
     classes: ["fcp-doc-sheet"],
     actions: {
@@ -17,6 +43,17 @@ export class CompanionJournalSheet extends JournalEntrySheet {
 
   /** Mounted editors by page id. */
   #editors = new Map();
+
+  /**
+   * A page was saved on another client (see registerRemoteRefresh in doc-editor.mjs). A page with a
+   * live editor here refreshes itself; a page shown read-only re-renders alone, so that the editors
+   * of the other pages are not interrupted.
+   * @param {string} pageId
+   */
+  fcpOnRemoteSave(pageId) {
+    if (this.#editors.has(pageId) || !this.rendered || !this.parts[pageId]) return;
+    this.render({ parts: [pageId] });
+  }
 
   /** @override */
   async _renderPageView(element, sheet) {
@@ -92,6 +129,8 @@ export class CompanionJournalSheet extends JournalEntrySheet {
       if (!ctl.editor.isConnected) {
         ctl.dispose();
         this.#editors.delete(id);
+        const name = this.entry.pages.get(id)?.name ?? "";
+        ctl.pending?.then(ok => ok === false && ui.notifications.warn(game.i18n.format("FCP.Doc.SaveFailed", { name })));
         continue;
       }
       // Always editing: no pencil.
@@ -142,4 +181,4 @@ export class CompanionJournalSheet extends JournalEntrySheet {
     await ctl?.ready;
     ctl?.editor.focus();
   }
-}
+};
