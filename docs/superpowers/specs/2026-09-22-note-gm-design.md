@@ -39,10 +39,10 @@ Il GM vuole tenere le note di campagna in Foundry invece che su Google Docs, ma 
 
 ### Telefono: companion in modalità GM
 
-- Se `game.user.isGM` e il companion è attivo, le schede sono **Note** e **Chat** (niente Scheda, Azioni, Oggetti, Mappa). Sul tablet la colonna fissa a sinistra è la lista delle note.
-- **Elenco**: ricerca per nome in cima, poi "Recenti" (ultime 5 voci aperte su questo dispositivo, in `localStorage`, con try/catch), poi l'albero delle cartelle del journal, chiuse di default.
+- Se `game.user.isGM` e il companion è attivo, le schede sono **Note** e **Chat** (niente Scheda, Azioni, Oggetti, Mappa). Sul tablet le Note (elenco e voce aperta) stanno nella colonna fissa a sinistra, come la scheda per i giocatori, e la Chat a destra.
+- **Elenco**: ricerca per nome in cima, poi "Recenti" (ultime 5 voci aperte su questo dispositivo, in un'impostazione `client` del modulo come `lastTab`), poi l'albero delle cartelle del journal, chiuse di default.
 - **Voce**: a tutto schermo. Con più pagine, un selettore in alto; accanto, l'indice dei titoli della pagina per saltare alle sezioni.
-- **Scrittura**: stesso `<prose-mirror>` sempre attivo e collaborativo, con la barra ridotta a titolo, grassetto, corsivo, elenco, link.
+- **Scrittura**: stesso `<prose-mirror>` sempre attivo e collaborativo; la barra di formattazione di Foundry resta completa e va a capo su più righe (non scorre in orizzontale: lo scorrimento taglierebbe i menu a tendina).
 - **"+ Appunto"**: crea una voce nella cartella "Appunti" (creata alla prima occorrenza, tipo `JournalEntry`), con titolo uguale alla data e ora locali (es. "22 set 2026, 18:40") modificabile, una pagina di testo vuota, e la apre in scrittura.
 
 ## Architettura
@@ -50,28 +50,30 @@ Il GM vuole tenere le note di campagna in Foundry invece che su Google Docs, ma 
 | File | Compito |
 |---|---|
 | `scripts/journal/autosave.mjs` (nuovo) | Salvataggio automatico di un campo di un documento. Indipendente da Foundry UI, testabile con `node --test`. |
+| `scripts/journal/doc-editor.mjs` (nuovo) | Monta un `<prose-mirror>` sempre attivo e collaborativo su una pagina e lo collega all'autosave; indicatore di stato. Usato dal foglio e dal companion. |
+| `scripts/app/notes-data.mjs` (nuovo) | Funzioni pure per la scheda Note: albero appiattito delle cartelle, ricerca senza accenti, recenti, titolo dell'appunto. Testabili con `node --test`. |
 | `scripts/journal/doc-sheet.mjs` (nuovo) | `CompanionJournalSheet extends JournalEntrySheet`: pagine di testo come editor sempre attivo, indicatore, "+ Pagina". |
 | `scripts/app/gm-notes.mjs` (nuovo) | Dati e azioni della scheda Note del companion: albero, ricerca, recenti, apertura voce, "+ Appunto". |
 | `templates/parts/notes.hbs` (nuovo) | Template della scheda Note (elenco e voce). |
 | `scripts/main.mjs` | Registra il foglio in `init`; in modalità GM crea il companion senza cercare un personaggio. |
 | `scripts/app/companion-app.mjs` | Schede diverse per il GM (Note, Chat); parte `notes`. |
 | `lang/it.json`, `lang/en.json`, `styles/companion.css` | Stringhe e stili. |
-| `tests/autosave.test.mjs` (nuovo) | Test del salvataggio automatico. |
+| `tests/autosave.test.mjs`, `tests/notes-data.test.mjs` (nuovi) | Test delle parti pure. |
 
 ### `autosave.mjs`
 
 ```js
-createAutosave({ save, delay = 1000, onState })
-// → { change(value), flush(), dispose() }
+createAutosave({ read, save, initial = "", delay = 1000, onState })
+// → { touch(), flush(value?), dispose() }
 ```
 
-- `change(value)`: memorizza l'ultimo valore e fa ripartire il timer di `delay` ms.
-- Allo scadere del timer, o su `flush()`, se il valore è diverso dall'ultimo salvato con successo chiama `await save(value)`.
-- `onState` riceve `"saving"`, `"saved"` o `"error"`. Su errore il valore resta pendente e viene ritentato alla prossima `change` o `flush`.
-- Un salvataggio alla volta: se arriva una `change` durante un salvataggio, parte un altro salvataggio al termine con l'ultimo valore.
+- `touch()`: segna una modifica (stato `"dirty"`) e fa ripartire il timer di `delay` ms. Il valore non viene letto a ogni tasto: serializzare l'HTML costa, lo si fa solo al salvataggio.
+- Allo scadere del timer, o su `flush()`, legge `read()` (o usa `value` se passato a `flush`) e, se diverso dall'ultimo valore salvato con successo, chiama `await save(value)`. `flush` restituisce `true` se alla fine non resta niente da salvare.
+- `onState` riceve `"dirty"`, `"saving"`, `"saved"` o `"error"`. Su errore la modifica resta pendente e viene ritentata alla prossima `touch` o `flush`.
+- Un salvataggio alla volta: se arriva una modifica durante un salvataggio, il salvataggio successivo parte al termine con il valore più recente.
 - `dispose()`: annulla il timer senza salvare (chi chiude chiama prima `flush()`).
 
-Il foglio e la scheda Note collegano l'evento `input` del `<prose-mirror>` a `change(element.value)` e usano `save = v => page.update({ "text.content": v })`. `flush()` al cambio pagina, alla chiusura del foglio (`_preClose`) e al cambio scheda o voce nel companion. Se `flush()` in chiusura fallisce: `ui.notifications.warn` con il titolo della pagina.
+Il foglio e la scheda Note segnalano ogni modifica del documento ProseMirror (un plugin `view.update`, che copre anche formattazione e modifiche arrivate da altri client) e usano `save = v => page.update({ "text.content": v }, { render: false })`. `render: false` è necessario: senza, ogni salvataggio ridisegnerebbe il foglio e distruggerebbe l'editor mentre si scrive. `flush()` al cambio pagina, alla chiusura del foglio (`_preClose`) e al cambio scheda o voce nel companion. Se `flush()` in chiusura fallisce: `ui.notifications.warn` con il titolo della pagina.
 
 ### Modalità collaborativa e salvataggi
 
@@ -85,7 +87,7 @@ Con più client sulla stessa pagina ciascuno fa autosave dello stesso contenuto 
 
 ## Test
 
-- `node --test tests/`: ritardo e reset del timer, `flush` immediato, niente `save` senza modifiche, errore → stato `"error"` e ritentativo, serializzazione dei salvataggi concorrenti.
+- `node --test tests/`: ritardo e reset del timer, `flush` immediato, niente `save` senza modifiche, errore → stato `"error"` e ritentativo, serializzazione dei salvataggi concorrenti; albero, ricerca, recenti e titolo dell'appunto.
 - Verifica dal vivo su Foundry locale (14.367, dnd5e e daggerheart):
   1. Apertura dalla barra laterale, da un segnaposto sulla mappa, da un link `@UUID`.
   2. Scrivere, chiudere, riaprire: il testo c'è.
