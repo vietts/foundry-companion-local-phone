@@ -8,6 +8,7 @@ import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
 import { DaggerheartAdapter } from "./systems/daggerheart.mjs";
 import { activeScene } from "./movement.mjs";
 import { fogRecorder, registerFogHooks } from "./fog.mjs";
+import { CompanionJournalSheet } from "./journal/doc-sheet.mjs";
 
 let app = null;
 
@@ -16,6 +17,11 @@ Hooks.once("init", () => {
   registerAdapter(Dnd5eAdapter);
   registerAdapter(DaggerheartAdapter);
   registerSocket();
+  // Journal entries open as a document. Foundry's sheet stays available under "Configure Sheet".
+  foundry.applications.apps.DocumentSheetConfig.registerSheet(JournalEntry, MODULE_ID, CompanionJournalSheet, {
+    makeDefault: true,
+    label: "FCP.Doc.SheetLabel"
+  });
   // Runs on every client but only records on the active GM's (the one with a canvas).
   registerFogHooks();
   game.modules.get(MODULE_ID).api = {

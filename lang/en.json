@@ -184,5 +184,13 @@
   "FCP.Settings.MapStyle.Name": "Phone map style",
   "FCP.Settings.MapStyle.Hint": "Schematic: white ground with the scene grid and walls in black, readable on any map. Image: the scene background under the walls.",
   "FCP.Settings.MapStyle.Schematic": "Schematic (white, grid and walls)",
-  "FCP.Settings.MapStyle.Image": "Scene image"
+  "FCP.Settings.MapStyle.Image": "Scene image",
+  "FCP.Doc.SheetLabel": "Document (Phone Companion)",
+  "FCP.Doc.AddPage": "Page",
+  "FCP.Doc.NewPage": "New page",
+  "FCP.Doc.State.dirty": "Unsaved changes",
+  "FCP.Doc.State.saving": "Saving…",
+  "FCP.Doc.State.saved": "Saved",
+  "FCP.Doc.State.error": "Not saved",
+  "FCP.Doc.SaveFailed": "The latest changes to “{name}” were not saved: check the connection."
 }
