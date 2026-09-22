@@ -22,6 +22,7 @@ Hooks.once("init", () => {
     makeDefault: true,
     label: "FCP.Doc.SheetLabel"
   });
+  guardCollaborativeSteps();
   // Runs on every client but only records on the active GM's (the one with a canvas).
   registerFogHooks();
   game.modules.get(MODULE_ID).api = {
@@ -36,6 +37,22 @@ Hooks.once("ready", async () => {
   await maybePromptCanvas();
   activateCompanion();
 });
+
+/**
+ * Our doc-editor mounts a page's ProseMirror element directly, without rendering the page's own
+ * JournalEntryPageProseMirrorSheet. Collaborative steps go through ProseMirrorEditor#_onNewSteps,
+ * which calls `this.options.document?.sheet?._onNewSteps?.()`: that sheet method reads
+ * `this.form`, which is undefined when the sheet was never rendered, throwing before our steps are
+ * confirmed and before remote steps are applied. Skip the sheet's half of the work when it has no form.
+ */
+function guardCollaborativeSteps() {
+  const proto = foundry.applications.sheets.journal.JournalEntryPageProseMirrorSheet.prototype;
+  const onNewSteps = proto._onNewSteps;
+  proto._onNewSteps = function (...args) {
+    if (!this.form) return;
+    return onNewSteps.apply(this, args);
+  };
+}
 
 async function maybePromptCanvas() {
   let noCanvas = false;
