@@ -1,0 +1,60 @@
+<section class="fcp-tab fcp-notes {{#if (eq activeTab 'notes')}}active{{/if}}" data-tab="notes">
+  {{#if notes.entry}}
+  <div class="fcp-note-bar">
+    <button type="button" class="fcp-btn" data-action="closeNote"><i class="ph-duotone ph-arrow-left"></i>{{localize "FCP.Notes.Back"}}</button>
+    {{#if notes.page.editable}}<span class="fcp-save-state" data-state="saved">{{localize "FCP.Doc.State.saved"}}</span>{{/if}}
+  </div>
+  <h2 class="fcp-note-title">{{notes.entry.name}}</h2>
+  {{#if notes.multiple}}
+  <div class="fcp-note-pages">
+    {{#each notes.pages}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="notePage" data-page-id="{{this.id}}">{{this.name}}</button>{{/each}}
+  </div>
+  {{/if}}
+  <details class="fcp-note-toc" hidden>
+    <summary>{{localize "FCP.Notes.Contents"}}</summary>
+    <div class="fcp-note-toc-list"></div>
+  </details>
+  {{#if notes.page}}
+  {{#if notes.page.editable}}
+  <div class="fcp-note-editor" data-page-id="{{notes.page.id}}"></div>
+  {{else}}
+  <div class="fcp-note-view">{{{notes.page.html}}}</div>
+  {{/if}}
+  {{else}}
+  <p class="fcp-empty fcp-note-pad">{{localize "FCP.Notes.NoPages"}}</p>
+  {{/if}}
+  {{else}}
+  <div class="fcp-notes-top">
+    <input type="search" name="noteQuery" placeholder="{{localize 'FCP.Notes.Search'}}" autocomplete="off" autocapitalize="off" value="{{notes.query}}">
+    <button type="button" class="fcp-primary" data-action="quickNote"><i class="ph-duotone ph-plus"></i>{{localize "FCP.Notes.Quick"}}</button>
+  </div>
+  <ul class="fcp-note-results" hidden>
+    {{#each notes.all}}<li data-name="{{this.search}}"><button type="button" data-action="openNote" data-entry-id="{{this.id}}">{{this.name}}</button></li>{{/each}}
+    <li class="fcp-empty fcp-note-none" hidden>{{localize "FCP.Notes.NoResults"}}</li>
+  </ul>
+  <div class="fcp-note-browse">
+    {{#if notes.empty}}
+    <p class="fcp-empty fcp-note-pad">{{localize "FCP.Notes.Empty"}}</p>
+    {{else}}
+    {{#if notes.recent.length}}
+    <h3 class="fcp-label fcp-note-pad">{{localize "FCP.Notes.Recent"}}</h3>
+    <ul class="fcp-note-list">
+      {{#each notes.recent}}<li><button type="button" data-action="openNote" data-entry-id="{{this.id}}">{{this.name}}</button></li>{{/each}}
+    </ul>
+    {{/if}}
+    <h3 class="fcp-label fcp-note-pad">{{localize "FCP.Notes.All"}}</h3>
+    <ul class="fcp-note-list">
+      {{#each notes.rows}}
+      <li style="--depth: {{this.depth}}">
+        {{#if (eq this.kind "folder")}}
+        <button type="button" class="fcp-note-folder" data-action="toggleFolder" data-folder-id="{{this.id}}"><i class="ph-duotone {{#if this.open}}ph-minus{{else}}ph-plus{{/if}}"></i>{{this.name}}</button>
+        {{else}}
+        <button type="button" data-action="openNote" data-entry-id="{{this.id}}">{{this.name}}</button>
+        {{/if}}
+      </li>
+      {{/each}}
+    </ul>
+    {{/if}}
+  </div>
+  {{/if}}
+</section>

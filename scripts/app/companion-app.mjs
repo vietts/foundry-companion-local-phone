@@ -1,8 +1,9 @@
-import { MODULE_ID, SETTINGS, TABS, warn } from "../constants.mjs";
+import { MODULE_ID, SETTINGS, TABS, GM_TABS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
 import { requestMove } from "../socket.mjs";
 import { FOG_FLAG } from "../fog.mjs";
+import { GmNotes } from "./gm-notes.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
 const T = `modules/${MODULE_ID}/templates/parts`;
@@ -10,19 +11,26 @@ const VIDEO_RE = /\.(webm|mp4|m4v|ogv|ogg)(\?.*)?$/i;
 /** Tablet layout: the sheet stays on the left, the other tabs open on the right. Phones in landscape stay single-column. */
 const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
 
+/** Parts that do not exist in each mode: the GM has no character, players have no notes. */
+const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map"];
+const PLAYER_HIDDEN_PARTS = ["notes"];
+
 const TAB_ICONS = {
   sheet: "ph-duotone ph-scroll",
   actions: "ph-duotone ph-sword",
   inventory: "ph-duotone ph-backpack",
   chat: "ph-duotone ph-chat-teardrop-text",
-  map: "ph-duotone ph-compass"
+  map: "ph-duotone ph-compass",
+  notes: "ph-duotone ph-scroll"
 };
 
 export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(adapter, options = {}) {
     super(options);
     this.adapter = adapter;
-    this.activeTab = TABS.includes(getSetting(SETTINGS.LAST_TAB)) ? getSetting(SETTINGS.LAST_TAB) : "sheet";
+    this.notes = game.user.isGM ? new GmNotes(this) : null;
+    const lastTab = getSetting(SETTINGS.LAST_TAB);
+    this.activeTab = this.tabs.includes(lastTab) ? lastTab : this.tabs[0];
     this.step = 1;
     this.tokenId = null;
     this.mapTarget = null;
@@ -46,9 +54,23 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return !!this.wideQuery?.matches;
   }
 
+  /** The GM gets notes and chat instead of a character. */
+  get gmMode() {
+    return !!this.notes;
+  }
+
+  get tabs() {
+    return this.gmMode ? GM_TABS : TABS;
+  }
+
+  /** The tab pinned to the left column in two columns: the sheet, or the GM's notes. */
+  get primaryTab() {
+    return this.gmMode ? "notes" : "sheet";
+  }
+
   /** The tab the header describes: in two columns it heads the sheet column. */
   get headerTab() {
-    return this.wide ? "sheet" : this.activeTab;
+    return this.wide ? this.primaryTab : this.activeTab;
   }
 
   /** Digital dice off = reference mode: nothing rolls, items open their text. */
@@ -90,12 +112,19 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       mapTap: CompanionApp.#onMapTap,
       stepToggle: CompanionApp.#onStepToggle,
       selectToken: CompanionApp.#onSelectToken,
+      openNote: CompanionApp.#onOpenNote,
+      closeNote: CompanionApp.#onCloseNote,
+      notePage: CompanionApp.#onNotePage,
+      toggleFolder: CompanionApp.#onToggleFolder,
+      quickNote: CompanionApp.#onQuickNote,
+      noteHeading: CompanionApp.#onNoteHeading,
       noop: () => {}
     }
   };
 
   static PARTS = {
     header: { template: `${T}/header.hbs` },
+    notes: { template: `${T}/notes.hbs`, scrollable: [""] },
     sheet: { template: `${T}/sheet.hbs`, scrollable: [""] },
     actions: { template: `${T}/items.hbs`, scrollable: [""] },
     inventory: { template: `${T}/items.hbs`, scrollable: [""] },
@@ -113,6 +142,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   get actor() {
+    if (this.gmMode) return null;
     const actors = this.actors;
     let actor = actors.find(a => a.id === this._actorId);
     actor ??= actors.find(a => a.id === game.user.character?.id) ?? actors[0] ?? null;
@@ -147,8 +177,16 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _dirty = new Set();
 
   markDirty(...parts) {
-    for (const p of parts) this._dirty.add(p);
+    const hidden = this.gmMode ? GM_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS;
+    for (const p of parts) if (!hidden.includes(p)) this._dirty.add(p);
     this.refreshParts();
+  }
+
+  /** @override */
+  _configureRenderParts(options) {
+    const parts = super._configureRenderParts(options);
+    for (const id of this.gmMode ? GM_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS) delete parts[id];
+    return parts;
   }
 
   /* -------------------------------------------- */
@@ -156,7 +194,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async _prepareContext(options) {
-    if (this.wide && this.activeTab === "sheet") this.activeTab = "actions";
+    if (this.wide && this.activeTab === this.primaryTab) this.activeTab = this.tabs.find(t => t !== this.primaryTab);
     const actor = this.actor;
     const actors = this.actors.map(a => ({ id: a.id, name: a.name, img: a.img, active: a.id === actor?.id }));
     const header = actor ? await this.adapter.prepareHeader(actor) : { hp: null, stats: [] };
@@ -175,7 +213,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       activeTab: this.activeTab,
       headerTab: this.headerTab,
       wide: this.wide,
-      tabs: TABS.map(id => ({
+      tabs: this.tabs.map(id => ({
         id,
         label: game.i18n.localize(`FCP.Tabs.${id.capitalize()}`),
         icon: TAB_ICONS[id],
@@ -200,14 +238,16 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       actions: loc(this.diceEnabled ? "FCP.Hint.ActionsDice" : "FCP.Hint.Actions"),
       inventory: loc("FCP.Hint.Inventory"),
       chat: game.i18n.format("FCP.Hint.Chat", { n: getSetting(SETTINGS.CHAT_LIMIT) }),
-      map: ""
+      map: "",
+      notes: ""
     }[tab] ?? "";
     return {
       left: tab === "sheet" ? loc("FCP.Title") : loc(`FCP.Tabs.${tab.capitalize()}`),
       right,
       summary: header?.summary?.[tab] ?? "",
       // Actions show the pin only where opening an item sets it (dnd5e); elsewhere it belongs to the sheet.
-      pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : ""
+      pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : "",
+      menu: tab === this.primaryTab
     };
   }
 
@@ -250,6 +290,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         context.spellQuery = this.spellQuery;
         context.spellFilter = this.spellFilter;
         await this.#decorateItems(actor, context.groups);
+        break;
+      case "notes":
+        context.notes = await this.notes.prepare();
         break;
       case "chat":
         // In two columns the header belongs to the sheet, so the chat carries its own dice bar.
@@ -441,6 +484,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     this.#applySpellFilter();
+    this.notes?.onRender(el);
 
     const log = el.querySelector(".fcp-chat-log");
     if (log && (options.isFirstRender || options.parts?.includes("chat") || !options.parts)) {
@@ -451,6 +495,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   _onClose(options) {
+    this.notes?.flush();
     this.wideQuery?.removeEventListener("change", this.#onWideChange);
     super._onClose(options);
   }
@@ -519,7 +564,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   setTab(tab) {
-    if (!TABS.includes(tab) || (this.wide && tab === "sheet")) return;
+    if (!this.tabs.includes(tab) || (this.wide && tab === this.primaryTab)) return;
+    if (this.activeTab === "notes" && tab !== "notes") this.notes?.flush();
     this.activeTab = tab;
     setSetting(SETTINGS.LAST_TAB, tab);
     for (const section of this.element.querySelectorAll(".fcp-tab")) {
@@ -756,5 +802,41 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static #onSelectToken() {
     // handled by the change listener bound in _onRender
+  }
+
+  /* -------------------------------------------- */
+  /*  GM notes                                     */
+  /* -------------------------------------------- */
+
+  static async #onOpenNote(event, target) {
+    await this.notes?.open(target.dataset.entryId);
+  }
+
+  static async #onCloseNote() {
+    await this.notes?.close();
+  }
+
+  static async #onNotePage(event, target) {
+    await this.notes?.showPage(target.dataset.pageId);
+  }
+
+  static #onToggleFolder(event, target) {
+    this.notes?.toggleFolder(target.dataset.folderId);
+  }
+
+  static async #onQuickNote(event, target) {
+    target.disabled = true;
+    try {
+      await this.notes?.quickNote();
+    } catch (err) {
+      warn("quick note failed", err);
+      ui.notifications.error(String(err.message ?? err));
+    } finally {
+      target.disabled = false;
+    }
+  }
+
+  static #onNoteHeading(event, target) {
+    this.notes?.scrollToHeading(Number(target.dataset.index));
   }
 }

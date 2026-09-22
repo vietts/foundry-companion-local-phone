@@ -192,5 +192,17 @@
   "FCP.Doc.State.saving": "Saving…",
   "FCP.Doc.State.saved": "Saved",
   "FCP.Doc.State.error": "Not saved",
-  "FCP.Doc.SaveFailed": "The latest changes to “{name}” were not saved: check the connection."
+  "FCP.Doc.SaveFailed": "The latest changes to “{name}” were not saved: check the connection.",
+  "FCP.Tabs.Notes": "Notes",
+  "FCP.Notes.Search": "Search notes",
+  "FCP.Notes.Quick": "Quick note",
+  "FCP.Notes.InboxFolder": "Inbox",
+  "FCP.Notes.Recent": "Recent",
+  "FCP.Notes.All": "All notes",
+  "FCP.Notes.NoResults": "No notes found.",
+  "FCP.Notes.Empty": "No notes yet. Tap “Quick note” to start.",
+  "FCP.Notes.Back": "Notes",
+  "FCP.Notes.Contents": "Contents",
+  "FCP.Notes.NoPages": "This note has no pages.",
+  "FCP.Notes.Unsupported": "Open this kind of page on the laptop."
 }

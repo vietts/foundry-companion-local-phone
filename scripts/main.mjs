@@ -114,4 +114,13 @@ function registerRefreshHooks() {
   Hooks.on("updateUser", (user, changes) => {
     if (user.id === game.user.id && "character" in changes) app.render({ force: true });
   });
+
+  if (app.notes) {
+    for (const name of ["JournalEntry", "JournalEntryPage", "Folder"]) {
+      Hooks.on(`create${name}`, doc => app.notes.onDocumentChange(doc));
+      Hooks.on(`delete${name}`, doc => app.notes.onDocumentChange(doc, { deleted: true }));
+    }
+    Hooks.on("updateJournalEntry", doc => app.notes.onDocumentChange(doc));
+    Hooks.on("updateFolder", doc => app.notes.onDocumentChange(doc));
+  }
 }
