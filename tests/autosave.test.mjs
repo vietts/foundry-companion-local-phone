@@ -137,3 +137,41 @@ test("hasChanges is true after a failed save", async t => {
   assert.equal(await autosave.flush(), false);
   assert.equal(autosave.hasChanges(), true);
 });
+
+test("a change while flush(value) waits for a save in flight is kept and saved later", async t => {
+  const started = [];
+  const releases = [];
+  const { autosave, type } = setup(t, {
+    save: value => {
+      started.push(value);
+      return new Promise(resolve => releases.push(resolve));
+    }
+  });
+  type("a");
+  const first = autosave.flush();
+  await settle();
+  const second = autosave.flush("ab");
+  await settle();
+  type("abc");
+  releases[0]();
+  await first;
+  await settle();
+  assert.deepEqual(started, ["a", "ab"]);
+  releases[1]();
+  assert.equal(await second, false, "the newer change is still pending");
+  assert.equal(autosave.hasChanges(), true);
+  const third = autosave.flush();
+  await settle();
+  assert.deepEqual(started, ["a", "ab", "abc"]);
+  releases[2]();
+  assert.equal(await third, true);
+  assert.equal(autosave.hasChanges(), false);
+});
+
+test("no save on flush() without changes after a successful save", async t => {
+  const { autosave, saves, type } = setup(t);
+  type("x");
+  assert.equal(await autosave.flush(), true);
+  assert.equal(await autosave.flush(), true);
+  assert.deepEqual(saves, ["x"]);
+});

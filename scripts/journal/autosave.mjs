@@ -12,6 +12,8 @@
 export function createAutosave({ read, save, initial = "", delay = 1000, onState = () => {} }) {
   let saved = initial;
   let dirty = false;
+  // Counts touch() calls, so a flush can tell whether the document changed after it took its value.
+  let touches = 0;
   let timer = null;
   let inflight = null;
   let disposed = false;
@@ -19,6 +21,7 @@ export function createAutosave({ read, save, initial = "", delay = 1000, onState
   /** Something changed: save after a quiet `delay`. The value is read later, serializing costs. */
   function touch() {
     if (disposed) return;
+    touches++;
     dirty = true;
     onState("dirty");
     clearTimeout(timer);
@@ -32,16 +35,19 @@ export function createAutosave({ read, save, initial = "", delay = 1000, onState
   async function flush(value) {
     clearTimeout(timer);
     timer = null;
+    let seen = touches;
     // One save at a time: wait for the one in progress, then save the newest value.
     while (inflight) await inflight.catch(() => {});
     if (value === undefined) {
       if (!dirty) return true;
+      seen = touches;
       value = read();
     }
-    dirty = false;
+    // A touch while waiting above is newer than a `value` given by the caller: it stays to be saved.
+    if (touches === seen) dirty = false;
     if (value === saved) {
-      onState("saved");
-      return true;
+      onState(dirty ? "dirty" : "saved");
+      return !dirty;
     }
     onState("saving");
     inflight = (async () => save(value))();
