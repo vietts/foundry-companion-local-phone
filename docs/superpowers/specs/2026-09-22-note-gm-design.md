@@ -77,7 +77,12 @@ Il foglio e la scheda Note segnalano ogni modifica del documento ProseMirror (un
 
 ### Modalità collaborativa e salvataggi
 
-Con più client sulla stessa pagina ciascuno fa autosave dello stesso contenuto sincronizzato. Gli `update` ridondanti sono innocui (stesso valore, `diff` vuoto non invia niente lato Foundry). Se la sessione collaborativa non è disponibile (client offline), l'editor funziona da solo e l'ultimo salvataggio vince.
+La sessione collaborativa di Foundry è per utente: la sincronia in tempo reale funziona fra utenti diversi (per esempio un co-GM), non fra due dispositivi dello stesso utente (il GM su portatile e telefono), che Foundry tratta come uno solo. Per questo ogni salvataggio porta negli `options` dell'update un identificativo del client che l'ha fatto; un editor aperto che riceve un salvataggio della sua pagina da un altro client:
+
+- se non ha modifiche in sospeso, si rimonta con il testo nuovo;
+- se ne ha, tiene il suo testo e il prossimo salvataggio vince.
+
+Gli `update` ridondanti fra collaboratori sono innocui (stesso valore, `diff` vuoto non invia niente lato Foundry).
 
 ## Errori
 
@@ -92,7 +97,7 @@ Con più client sulla stessa pagina ciascuno fa autosave dello stesso contenuto 
   1. Apertura dalla barra laterale, da un segnaposto sulla mappa, da un link `@UUID`.
   2. Scrivere, chiudere, riaprire: il testo c'è.
   3. Una nota esistente con titoli, elenchi e link: aprirla e modificarla non ne altera la formattazione.
-  4. Stessa pagina aperta su portatile e telefono (`?companion=1`): le modifiche compaiono dall'altra parte.
+  4. Stessa pagina aperta su portatile e telefono (`?companion=1`), stesso utente GM: quello che si scrive da una parte compare dall'altra dopo il salvataggio, se lì non si sta scrivendo.
   5. Giocatore con nota condivisa: sola lettura.
   6. "+ Pagina" e "+ Appunto".
   7. Tornare al foglio di Foundry da *Configura foglio*.
