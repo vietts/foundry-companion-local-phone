@@ -97,7 +97,7 @@ Dispositivo (ogni giocatore):
 
 ## Stato
 
-Versione 0.3.0, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli). Le note del GM (0.3.0) sono provate su un Foundry locale; sul telefono vero non ancora.
+Versione 0.3.1, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli). Le note del GM (0.3.0) sono provate su un Foundry locale; sul telefono vero non ancora.
 
 ## Struttura
 
