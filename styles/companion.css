@@ -2043,6 +2043,16 @@ body.fcp-active #notifications {
   padding-right: 20px;
 }
 
+/*
+ * Two columns: the shared sheet-column rule (`padding: 0 20px ...`) would double up with the 20px
+ * these notes elements already carry above, for a ~40px inset. Zero the column's own horizontal
+ * padding for the notes tab only - the sheet column (players) is untouched.
+ */
+#fcp-app.fcp-wide > .fcp-tab[data-tab="notes"] {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .fcp-notes-top {
   display: flex;
   gap: 8px;

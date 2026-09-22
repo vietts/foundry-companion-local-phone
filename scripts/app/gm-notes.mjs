@@ -1,4 +1,4 @@
-import { SETTINGS } from "../constants.mjs";
+import { SETTINGS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { buildTree, matchesQuery, normalize, pushRecent, quickNoteName } from "./notes-data.mjs";
 import { isDocPage, mountDocEditor, showSaveState } from "../journal/doc-editor.mjs";
@@ -15,8 +15,18 @@ export class GmNotes {
     this.focusNext = false;
   }
 
-  /** Bumped on every onRender call: an in-flight remount checks it to tell whether it was superseded. */
+  /** Bumped only when a mount is actually launched: an in-flight remount checks it to tell whether a
+   *  later mount has superseded it. Must not be bumped by app renders that never reach that point (a
+   *  chat message re-rendering "nav" must not make an in-flight mount think it was superseded). */
   #renderToken = 0;
+
+  /**
+   * Serializes editor handoffs across overlapping remounts of the notes tab. Every #mount that finds
+   * a previous editor chains its wait-for-pending-then-dispose onto this promise; every #mount call -
+   * whether or not it captured a previous editor itself - awaits it before reading page content, so a
+   * second remount arriving while the first is still tearing down never mounts from stale text.
+   */
+  #handoff = Promise.resolve();
 
   get entry() {
     return this.entryId ? game.journal.get(this.entryId) ?? null : null;
@@ -83,7 +93,6 @@ export class GmNotes {
   /* -------------------------------------------- */
 
   onRender(root) {
-    const token = ++this.#renderToken;
     const tab = root.querySelector(".fcp-tab[data-tab=notes]");
     if (!tab) return;
 
@@ -102,28 +111,45 @@ export class GmNotes {
     const page = this.entry?.pages.get(holder.dataset.pageId);
     if (!page) return;
     holder.dataset.mounted = "1";
+    // Bumped only now that a mount is actually launched: a render that never reaches this point (e.g.
+    // a chat message re-rendering just "nav") must not make an in-flight mount think it was superseded.
+    const token = ++this.#renderToken;
     // Launched, not awaited: a re-render arriving while this is in flight must not break _onRender.
-    this.#mount(token, tab, holder, page);
+    this.#mount(token, tab, holder, page).catch(err => {
+      warn("failed to mount the note editor", err);
+      ui.notifications.error(String(err.message ?? err));
+    });
   }
 
   /**
-   * Mount a fresh editor for `page`, first waiting out the previous editor's disconnect-triggered
-   * save (its `pending`), same as CompanionJournalSheet#_renderPageView. `token` guards against a
-   * newer onRender superseding this one while the await is in flight - the holder it targets may by
-   * then be detached, and this.editor may already belong to a later mount.
+   * Mount a fresh editor for `page`. If an editor is already mounted (a remount of the same tab, e.g.
+   * from a remote change), its wait-for-pending-then-dispose is chained onto `#handoff`; every call -
+   * whether or not it captured a previous editor itself - awaits that same chain before reading
+   * `page.text.content`, so an overlapping remount can never mount from stale text (ruling 1: only
+   * after the previous editor's flush has actually landed). `token` guards against a newer onRender
+   * superseding this one while the await is in flight - the holder it targets may by then be detached,
+   * and a later mount already owns `this.editor`.
    */
   async #mount(token, tab, holder, page) {
     const previous = this.editor;
     if (previous) {
       this.editor = null;
-      const ok = await previous.pending;
+      // Captured now, not after the await below: by the time it resolves, this.pageId may already
+      // belong to the editor that superseded `previous`.
+      const previousName = this.entry?.pages.get(this.pageId)?.name ?? "";
       // Always warn and dispose, even if superseded below: `previous` is being replaced either way,
       // and leaving it undisposed would keep its updateJournalEntryPage hook and autosave alive.
-      if (ok === false) {
-        ui.notifications.warn(game.i18n.format("FCP.Doc.SaveFailed", { name: this.entry?.pages.get(this.pageId)?.name ?? "" }));
-      }
-      previous.dispose();
+      this.#handoff = this.#handoff.then(async () => {
+        const ok = await previous.pending;
+        if (ok === false) ui.notifications.warn(game.i18n.format("FCP.Doc.SaveFailed", { name: previousName }));
+        previous.dispose();
+      });
     }
+    // Every mount - even one that captured no previous editor itself, because an earlier mount already
+    // cleared this.editor - waits for the same chain, so it never reads page content before whatever
+    // editor was actually showing has been flushed and disposed.
+    await this.#handoff;
+
     // A newer onRender landed while the above was in flight: this holder is now stale, leave the
     // mounting to that later call.
     if (token !== this.#renderToken || !holder.isConnected) return;
@@ -138,6 +164,8 @@ export class GmNotes {
     });
     this.editor = ctl;
     ctl.ready.then(() => {
+      // This editor may have been disposed (or replaced) while it was still opening.
+      if (this.editor !== ctl) return;
       this.#fillToc(tab, ctl);
       if (this.focusNext) {
         this.focusNext = false;
@@ -255,7 +283,14 @@ export class GmNotes {
    */
   onDocumentChange(doc, { deleted = false } = {}) {
     if (doc.documentName === "Folder" && doc.type !== "JournalEntry") return;
-    if (!this.entryId) return this.app.markDirty("notes");
+    if (!this.entryId) {
+      // The list shows entries and folders only: a page changing elsewhere never affects it.
+      if (doc.documentName === "JournalEntryPage") return;
+      // Typing in the search field must not be interrupted by an unrelated create/update/delete
+      // elsewhere and lose the keyboard; the list catches up on whatever render happens next.
+      if (this.app.element?.querySelector("input[name=noteQuery]") === document.activeElement) return;
+      return this.app.markDirty("notes");
+    }
     const entry = doc.documentName === "JournalEntryPage" ? doc.parent : doc;
     if (entry?.id !== this.entryId) return;
     if (deleted && doc.documentName === "JournalEntry") {

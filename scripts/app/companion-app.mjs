@@ -154,6 +154,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   get token() {
+    if (this.gmMode) return null;
     const scene = activeScene();
     if (!scene) return null;
     const mine = actorTokens(this.actor, scene);
