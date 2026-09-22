@@ -17,7 +17,8 @@ export const SETTINGS = {
   RECENT_NOTES: "recentNotes"
 };
 
-export const TABS = ["sheet", "map", "actions", "inventory", "chat"];
+/* Order of the bottom bar: what a player touches most often first, the map last. */
+export const TABS = ["sheet", "actions", "inventory", "chat", "map"];
 
 /** The GM has no character: notes and chat only. */
 export const GM_TABS = ["notes", "chat"];

@@ -1,7 +1,24 @@
-/* Phone Companion — Broadsheet look: newsprint serif, cyan and magenta as spot colors, no boxes. */
+/* Phone Companion — Carta & Inchiostro: paper, ink borders, hard shadows, terracotta as the spot color. */
 
-/* Fonts and icons ship with the module (no CDN): Source Serif 4 (OFL) and Phosphor duotone (MIT). */
+/* Fonts and icons ship with the module (no CDN): Cinzel and Montserrat for the interface, Source
+   Serif 4 for quiet running text, all OFL, and Phosphor duotone (MIT). */
 @import url("./vendor/phosphor.css");
+
+@font-face {
+  font-family: "Cinzel";
+  src: url("./vendor/cinzel-latin-wght-normal.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Montserrat";
+  src: url("./vendor/montserrat-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @font-face {
   font-family: "Source Serif 4";
@@ -40,7 +57,7 @@ body.fcp-active #chat-notifications {
 body.fcp-active {
   overflow: hidden;
   overscroll-behavior: none;
-  background: #f3f2f2;
+  background: #f4eddc;
 }
 
 body.fcp-active #notifications {
@@ -48,35 +65,46 @@ body.fcp-active #notifications {
   z-index: 10001;
 }
 
-/* ---------- Tokens (Broadsheet design system, scoped so they never leak into Foundry) ---------- */
+/* ---------- Tokens (Carta & Inchiostro, scoped so they never leak into Foundry) ---------- */
 
+/*
+ * Paper and ink, terracotta as the spot color, ochre for stress and sage for healing. Every value is
+ * at least 4.5:1 on the paper, so a number stays readable at arm's length in a dim room.
+ * The neutral and accent scales keep their old names: they are what the component rules below read.
+ */
 #fcp-app {
-  --color-bg: #f3f2f2;
-  --color-text: #201e1d;
-  --color-accent: #0088b0;
-  --color-neutral-100: #f8f4f4;
-  --color-neutral-200: #eae7e7;
-  --color-neutral-300: #d7d3d3;
-  --color-neutral-400: #bab6b6;
-  --color-neutral-500: #9b9797;
-  --color-neutral-600: #7d7979;
-  --color-neutral-700: #605d5d;
-  --color-neutral-800: #444141;
-  --color-accent-100: #e9f8ff;
-  --color-accent-200: #cbeeff;
-  --color-accent-500: #38a6cf;
-  --color-accent-600: #1186ac;
-  --color-accent-700: #006786;
-  --color-accent-800: #004961;
-  --color-accent-2-100: #fff1f4;
-  --color-accent-2-200: #ffdee6;
-  --color-accent-2-700: #aa0b56;
-  --color-accent-2-800: #790e3d;
-  --color-accent-2-900: #4b1528;
-  --font-heading: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --radius-sm: 1px;
+  --color-bg: #f4eddc;
+  --color-surface: #f7f1e2;
+  --color-text: #2b241c;
+  --color-accent: #8a4a3a;
+  --color-green: #4e6b52;
+  --color-shadow: rgba(43, 36, 28, 0.2);
+  --color-neutral-100: #faf5e9;
+  --color-neutral-200: #eae0c9;
+  --color-neutral-300: #d8cbae;
+  --color-neutral-400: #bfae8c;
+  --color-neutral-500: #6b5e4b;
+  --color-neutral-600: #6b5e4b;
+  --color-neutral-700: #52483a;
+  --color-neutral-800: #3a3228;
+  --color-accent-100: #f6e7e0;
+  --color-accent-200: #ecd2c7;
+  --color-accent-500: #a8604c;
+  --color-accent-600: #8a4a3a;
+  --color-accent-700: #7b4233;
+  --color-accent-800: #5e3226;
+  /* The second accent is ochre: stress, pact slots and spent uses. */
+  --color-accent-2-100: #f8ecd8;
+  --color-accent-2-200: #f0dcb9;
+  --color-accent-2-700: #9a6320;
+  --color-accent-2-800: #7d5019;
+  --color-accent-2-900: #5e3c13;
+  --font-heading: "Cinzel", Georgia, "Times New Roman", serif;
+  --font-body: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --font-quote: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --radius-sm: 0px;
   --fcp-tap: 44px;
+  --fcp-lift: 3px 3px 0 var(--color-shadow);
 
   /* The companion is always light: do not inherit Foundry's dark-theme text colors. */
   color-scheme: light;
@@ -141,11 +169,13 @@ body.fcp-active #notifications {
   all: unset;
   box-sizing: border-box;
   display: block;
-  font: 400 15px var(--font-body);
+  font: 500 15px var(--font-body);
   color: var(--color-text);
-  border: 1.5px solid var(--color-neutral-500);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  min-height: 44px;
+  box-shadow: var(--fcp-lift);
+  min-height: var(--fcp-tap);
   padding: 8px 12px;
   width: 100%;
   user-select: text;
@@ -202,44 +232,47 @@ body.fcp-active #notifications {
 }
 
 .fcp-kicker span:first-child {
-  font: 600 9.5px/1 var(--font-heading);
-  letter-spacing: 0.18em;
+  font: 600 10px/1 var(--font-body);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-neutral-700);
+  color: var(--color-accent-700);
 }
 
 .fcp-kicker span:last-child {
-  font: 400 9.5px/1 var(--font-body);
-  letter-spacing: 0.1em;
+  font: 500 10px/1 var(--font-body);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-neutral-700);
   text-align: right;
 }
 
 .fcp-rule {
-  height: 6px;
-  border-top: 3px solid var(--color-text);
-  border-bottom: 1px solid var(--color-text);
+  height: 0;
+  border-top: 2px solid var(--color-text);
   margin: 8px 0 10px;
 }
 
+/* Section titles: small caps in ink, over a hairline that runs the width of the section. */
 .fcp-label {
   font: 700 11.5px/1 var(--font-heading);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-accent-700);
   margin: 0 0 8px;
+  padding-bottom: 5px;
+  border-bottom: 1.5px solid var(--color-text);
 }
 
 .fcp-section {
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .fcp-empty,
 .fcp-notice {
-  font: italic 14px/1.45 var(--font-body);
+  font: italic 500 16px/1.45 var(--font-quote);
   color: var(--color-neutral-700);
   padding: 16px 0;
+  text-wrap: pretty;
 }
 
 /* ---------- Header ---------- */
@@ -263,10 +296,12 @@ body.fcp-active #notifications {
 
 .fcp-portrait {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1.5px solid var(--color-text);
-  background: var(--color-neutral-200);
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
   object-fit: cover;
 }
 
@@ -282,7 +317,7 @@ body.fcp-active #notifications {
 
 .fcp-name b {
   display: block;
-  font: 600 18px/1.15 var(--font-heading);
+  font: 700 18px/1.15 var(--font-heading);
 }
 
 .fcp-header.big .fcp-name b {
@@ -293,35 +328,37 @@ body.fcp-active #notifications {
 
 .fcp-name small {
   display: block;
-  font: italic 12px/1.3 var(--font-body);
+  font: 500 12.5px/1.35 var(--font-body);
   color: var(--color-neutral-700);
 }
 
 .fcp-header.big .fcp-name small {
-  font-size: 12.5px;
+  font-size: 13px;
   margin-top: 3px;
 }
 
+/* What the pinned tap will roll, in the accent so it reads before anything else. */
 .fcp-pin {
-  margin-top: 6px;
-  min-height: 18px;
-  font: 600 12.5px/1.4 var(--font-heading);
+  margin-top: 8px;
+  min-height: 20px;
+  font: 600 14.5px/1.35 var(--font-body);
   color: var(--color-accent-700);
 }
 
 .fcp-menu {
   margin-left: auto;
   display: flex;
-  gap: 2px;
+  gap: 6px;
 }
 
 .fcp-menu button {
-  width: 30px;
-  height: 36px;
+  width: var(--fcp-tap);
+  height: var(--fcp-tap);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-neutral-700);
+  border: 1.5px solid var(--color-text);
+  color: var(--color-text);
   font-size: 18px;
 }
 
@@ -382,10 +419,11 @@ body.fcp-active #notifications {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font: 400 11px var(--font-body);
+  gap: 3px;
+  font: 700 9.5px var(--font-heading);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-neutral-600);
-  border-bottom: 3px solid transparent;
   text-align: center;
 }
 
@@ -393,25 +431,29 @@ body.fcp-active #notifications {
   font-size: 20px;
 }
 
+/* The section you are in is a full block of ink: readable from the far side of the table. */
 .fcp-nav button.active {
-  font: 600 11px var(--font-heading);
-  letter-spacing: 0.06em;
-  color: var(--color-text);
-  border-bottom-color: var(--color-accent);
+  background: var(--color-text);
+  color: var(--color-bg);
 }
 
 .fcp-badge {
   position: absolute;
-  top: 6px;
+  top: 5px;
   left: calc(50% + 6px);
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: var(--color-accent-2-700);
-  color: #fff;
-  font: 600 10px/16px var(--font-heading);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font: 600 10px/18px var(--font-body);
   text-align: center;
+}
+
+.fcp-nav button.active .fcp-badge {
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 /* ---------- Sheet: meters ---------- */
@@ -420,36 +462,54 @@ body.fcp-active #notifications {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 10px 0 4px;
+  gap: 10px;
+  margin: 14px 0 6px;
+  padding-bottom: 5px;
+  border-bottom: 1.5px solid var(--color-text);
 }
 
 .fcp-meter + .fcp-meter .fcp-meter-head {
-  margin-top: 0;
+  margin-top: 14px;
 }
 
 .fcp-meter-head .fcp-label {
   margin: 0;
+  padding: 0;
+  border-bottom: 0;
 }
 
 .fcp-meter-count {
-  font: 600 15px/1 var(--font-heading);
+  font: 500 12px/1 var(--font-body);
+  letter-spacing: 0.1em;
+  color: var(--color-neutral-700);
   white-space: nowrap;
+}
+
+.fcp-meter-count b {
+  font: 700 12px var(--font-body);
+  color: var(--color-text);
 }
 
 .fcp-meter-count small {
   font-size: inherit;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
 }
 
+/*
+ * Box counters are tapped to mark and unmark, so each box is a full 44px target. They wrap: a
+ * Daggerheart character can carry more hit points than fit across a phone in one row.
+ */
 .fcp-boxes {
   display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
 }
 
 .fcp-box {
-  flex: 1;
-  height: 30px;
+  flex: 1 0 40px;
+  max-width: 64px;
+  height: var(--fcp-tap);
   border: 1.5px solid var(--fcp-tone, var(--color-text));
   border-radius: var(--radius-sm);
   background: transparent;
@@ -463,12 +523,9 @@ body.fcp-active #notifications {
 .fcp-meter.tone-hp { --fcp-tone: var(--color-text); }
 .fcp-meter.tone-hope { --fcp-tone: var(--color-accent-700); }
 .fcp-meter.tone-stress { --fcp-tone: var(--color-accent-2-700); }
-.fcp-meter.tone-armor { --fcp-tone: var(--color-neutral-700); }
-.fcp-meter.tone-hp .fcp-box { height: 34px; }
-.fcp-meter.tone-armor .fcp-box { height: 26px; }
+.fcp-meter.tone-armor { --fcp-tone: var(--color-green); }
 .fcp-meter.tone-armor .fcp-boxes { margin-bottom: 22px; }
 .fcp-meter.tone-armor.on-sheet-end .fcp-boxes { margin-bottom: 22px; }
-.fcp-meter.tone-armor .fcp-box.on { background: var(--color-neutral-600); }
 
 /* Fallback for systems without box meters (numeric +/−). */
 .fcp-stepper {
@@ -493,12 +550,14 @@ body.fcp-active #notifications {
 }
 
 .fcp-stepper button {
-  width: 44px;
-  height: 44px;
+  width: var(--fcp-tap);
+  height: var(--fcp-tap);
   border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
   text-align: center;
-  font: 600 20px var(--font-heading);
+  font: 700 20px var(--font-heading);
 }
 
 .fcp-quickstats {
@@ -528,7 +587,23 @@ body.fcp-active #notifications {
 }
 
 .fcp-hp-editor input {
-  min-height: 44px;
+  min-height: var(--fcp-tap);
+  text-align: center;
+}
+
+#fcp-app .fcp-hp-editor .fcp-btn {
+  justify-content: center;
+  padding: 6px 14px;
+}
+
+#fcp-app .fcp-hp-editor .fcp-btn[data-sign="-1"] {
+  border-color: var(--color-accent);
+  color: var(--color-accent-800);
+}
+
+#fcp-app .fcp-hp-editor .fcp-btn[data-sign="1"] {
+  border-color: var(--color-green);
+  color: var(--color-green);
 }
 
 /* ---------- Sheet: modes, traits, lists ---------- */
@@ -542,18 +617,19 @@ body.fcp-active #notifications {
 
 .fcp-modebar button {
   flex: none;
-  min-height: 38px;
-  padding: 6px 12px;
-  border: 1.5px solid var(--color-neutral-500);
+  min-height: var(--fcp-tap);
+  padding: 6px 14px;
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 400 13px var(--font-body);
+  background: var(--color-surface);
+  font: 600 11px var(--font-heading);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .fcp-modebar button.active {
-  border-color: var(--color-accent);
-  background: var(--color-accent-100);
-  color: var(--color-accent-800);
-  font-weight: 600;
+  background: var(--color-text);
+  color: var(--color-bg);
 }
 
 .fcp-grid {
@@ -576,12 +652,12 @@ body.fcp-active #notifications {
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0 6px;
-  min-height: 32px;
+  min-height: var(--fcp-tap);
 }
 
 .fcp-tile-value {
   order: -1;
-  font: 600 22px/1 var(--font-heading);
+  font: 700 26px/1 var(--font-heading);
 }
 
 .fcp-tile.fcp-zero .fcp-tile-value {
@@ -589,13 +665,14 @@ body.fcp-active #notifications {
 }
 
 .fcp-tile-label {
-  font: 400 12px/1.2 var(--font-body);
+  font: 500 12.5px/1.2 var(--font-body);
+  letter-spacing: 0.04em;
   color: var(--color-neutral-700);
 }
 
 .fcp-tile-sub {
   flex-basis: 100%;
-  font: italic 11px/1.3 var(--font-body);
+  font: 500 11.5px/1.3 var(--font-body);
   color: var(--color-neutral-600);
 }
 
@@ -619,11 +696,11 @@ body.fcp-active #notifications {
 }
 
 .fcp-line b {
-  font: 400 17px/1.3 var(--font-body);
+  font: 500 16px/1.3 var(--font-body);
 }
 
 .fcp-line span {
-  font: 600 17px var(--font-heading);
+  font: 700 17px var(--font-heading);
   flex: none;
 }
 
@@ -632,11 +709,11 @@ body.fcp-active #notifications {
 }
 
 .fcp-lines.soft .fcp-line b {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .fcp-lines.soft .fcp-line span {
-  font: italic 12.5px var(--font-body);
+  font: 500 12.5px var(--font-body);
   color: var(--color-neutral-700);
 }
 
@@ -655,11 +732,11 @@ body.fcp-active #notifications {
 
 .fcp-thresholds .band b {
   display: block;
-  font: 600 19px/1.2 var(--font-heading);
+  font: 700 19px/1.2 var(--font-heading);
 }
 
 .fcp-thresholds .band small {
-  font: 400 12px/1.2 var(--font-body);
+  font: 500 12px/1.2 var(--font-body);
   color: var(--color-neutral-700);
 }
 
@@ -677,29 +754,36 @@ body.fcp-active #notifications {
   transform: translate(-50%, -50%);
   background: var(--color-bg);
   padding: 2px 4px;
-  font: 600 13px var(--font-heading);
+  font: 700 13px var(--font-heading);
   color: var(--color-accent-700);
 }
 
 .fcp-section-note {
-  font: 400 12.5px var(--font-body);
+  font: 500 12px var(--font-body);
+  letter-spacing: 0.06em;
   color: var(--color-neutral-700);
   white-space: nowrap;
 }
 
 .fcp-section-note b {
-  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-text);
 }
 
 .fcp-headrow {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1.5px solid var(--color-text);
 }
 
 .fcp-headrow .fcp-label {
   margin: 0;
+  padding: 0;
+  border-bottom: 0;
 }
 
 /* Conditions */
@@ -713,12 +797,13 @@ body.fcp-active #notifications {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 5px 10px;
-  border: 1px solid var(--color-neutral-400);
+  min-height: var(--fcp-tap);
+  padding: 5px 12px;
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 400 13px var(--font-body);
-  color: var(--color-neutral-700);
+  background: var(--color-surface);
+  font: 500 13px var(--font-body);
+  color: var(--color-text);
 }
 
 .fcp-chip img {
@@ -732,10 +817,14 @@ body.fcp-active #notifications {
 }
 
 .fcp-chip.active {
-  background: var(--color-accent-2-200);
-  border-color: transparent;
-  color: var(--color-accent-2-800);
-  font: 600 13px var(--font-heading);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 600;
+}
+
+.fcp-chip.active img[src*="icons/svg/"] {
+  filter: none;
 }
 
 /* Passive features, about */
@@ -745,13 +834,13 @@ body.fcp-active #notifications {
 
 .fcp-passive b {
   display: block;
-  font: 600 15.5px/1.25 var(--font-heading);
+  font: 700 15px/1.25 var(--font-heading);
 }
 
 .fcp-passive p,
 .fcp-about p {
   margin: 0;
-  font: 400 13.5px/1.45 var(--font-body);
+  font: 400 14px/1.5 var(--font-quote);
   color: var(--color-neutral-700);
   text-wrap: pretty;
 }
@@ -786,30 +875,38 @@ body.fcp-active #notifications {
 
 .fcp-rests button {
   flex: 1;
-  min-height: 44px;
+  min-height: var(--fcp-tap);
   text-align: center;
-  font: 600 15px var(--font-heading);
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
 }
 
 .fcp-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: var(--fcp-tap);
   padding: 6px 18px;
   border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 600 13.5px var(--font-heading);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--color-text);
 }
 
 .fcp-btn.small {
-  min-height: 38px;
+  min-height: 40px;
   padding: 6px 12px;
-  font-size: 12.5px;
-  border-color: var(--color-neutral-500);
+  font-size: 11px;
+  box-shadow: none;
 }
 
 .fcp-btn i {
@@ -817,14 +914,16 @@ body.fcp-active #notifications {
 }
 
 #fcp-app button.fcp-primary {
-  background: var(--color-accent-700);
-  color: #fff;
-  border: none;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: 1.5px solid var(--color-accent);
+  box-shadow: var(--fcp-lift);
   min-height: 46px;
   padding: 6px 20px;
   border-radius: var(--radius-sm);
-  font: 600 15px var(--font-heading);
-  letter-spacing: 0.02em;
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   text-align: center;
 }
 
@@ -835,7 +934,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-item {
-  border-top: 1px solid var(--color-neutral-300);
+  border-bottom: 1px solid var(--color-neutral-300);
 }
 
 .fcp-row {
@@ -848,7 +947,11 @@ body.fcp-active #notifications {
 }
 
 .fcp-item.expanded > .fcp-row {
-  background: var(--color-neutral-200);
+  background: var(--color-surface);
+}
+
+.fcp-item.expanded {
+  border-bottom-color: var(--color-text);
 }
 
 .fcp-row.fcp-inactive {
@@ -860,8 +963,9 @@ body.fcp-active #notifications {
   flex: none;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--color-neutral-400);
-  background: var(--color-neutral-200);
+  border: 1.5px solid var(--color-text);
+  border-radius: 50%;
+  background: var(--color-surface);
   object-fit: cover;
 }
 
@@ -872,12 +976,12 @@ body.fcp-active #notifications {
 
 .fcp-row-title {
   display: block;
-  font: 600 16px/1.25 var(--font-heading);
+  font: 600 15.5px/1.25 var(--font-body);
 }
 
 .fcp-row-meta {
   display: block;
-  font: italic 12.5px/1.35 var(--font-body);
+  font: 400 12.5px/1.35 var(--font-quote);
   color: var(--color-neutral-700);
 }
 
@@ -887,15 +991,15 @@ body.fcp-active #notifications {
   align-items: center;
   gap: 8px;
   padding-top: 2px;
-  font: 600 14px var(--font-heading);
+  font: 600 14px var(--font-body);
   color: var(--color-neutral-700);
 }
 
 .fcp-uses {
-  font: 600 12.5px var(--font-heading);
-  color: var(--color-neutral-700);
-  border: 1px solid var(--color-neutral-400);
-  padding: 2px 6px;
+  font: 500 12px var(--font-body);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-text);
+  padding: 3px 6px;
   white-space: nowrap;
 }
 
@@ -906,22 +1010,23 @@ body.fcp-active #notifications {
 }
 
 .fcp-row-right button {
-  width: 36px;
-  height: 36px;
+  width: var(--fcp-tap);
+  height: var(--fcp-tap);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-neutral-400);
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  color: var(--color-neutral-700);
+  color: var(--color-text);
 }
 
 .fcp-item-body {
   padding: 0 8px 14px 46px;
+  background: var(--color-surface);
 }
 
 .fcp-item-desc {
-  font: 400 14.5px/1.5 var(--font-body);
+  font: 400 15px/1.55 var(--font-quote);
   margin: 0 0 10px;
   text-wrap: pretty;
   user-select: text;
@@ -994,12 +1099,13 @@ body.fcp-active #notifications {
 }
 
 .fcp-dicebar button {
-  min-height: 44px;
+  min-height: var(--fcp-tap);
   padding: 4px 2px;
   text-align: center;
   border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 600 13px var(--font-heading);
+  background: var(--color-surface);
+  font: 600 12px var(--font-body);
 }
 
 .fcp-customroll {
@@ -1021,12 +1127,41 @@ body.fcp-active #notifications {
 .fcp-chat-log .chat-message {
   background: none;
   border: none;
-  padding: 0;
+  padding: 0 0 12px;
   margin: 0;
+  border-bottom: 1px solid var(--color-neutral-300);
   color: var(--color-text);
-  font: 400 15px/1.5 var(--font-body);
+  font: 400 16px/1.5 var(--font-quote);
   user-select: text;
   -webkit-user-select: text;
+}
+
+/* Sender line: a small round portrait, the name in small caps, the time on the right. */
+.fcp-chat-log .chat-message .message-sender {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.fcp-chat-log .chat-message .avatar img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-text);
+  object-fit: cover;
+}
+
+.fcp-chat-log .chat-message .name-stacked .subtitle {
+  font-size: 9.5px;
+  color: var(--color-neutral-700);
+}
+
+/* Pictures inside a message stay inside the phone. */
+.fcp-chat-log .chat-message .message-content img {
+  max-height: 240px;
+  width: auto;
+  object-fit: contain;
 }
 
 /* !important: a system rule outside Foundry's layers would otherwise win with its light-on-dark colors. */
@@ -1055,10 +1190,10 @@ body.fcp-active #notifications {
   gap: 8px;
   gap: 8px;
   margin-bottom: 3px;
-  font: 700 10.5px/1 var(--font-heading);
-  letter-spacing: 0.12em;
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-neutral-700);
+  color: var(--color-accent-700);
 }
 
 .fcp-chat-log .chat-message .message-header .message-metadata,
@@ -1074,7 +1209,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-chat-log .chat-message .dice-roll .dice-total {
-  font: 600 32px/1 var(--font-heading);
+  font: 700 32px/1 var(--font-heading);
   text-align: left;
   padding: 0;
   background: none;
@@ -1093,12 +1228,14 @@ body.fcp-active #notifications {
 }
 
 .fcp-chat-log .chat-message button {
-  min-height: 40px;
+  min-height: var(--fcp-tap);
   width: 100%;
-  margin-top: 4px;
+  margin-top: 6px;
   text-align: center;
-  border: 1.5px solid var(--color-neutral-500);
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font: 600 13px var(--font-body);
 }
 
 .fcp-chat-compose {
@@ -1107,7 +1244,7 @@ body.fcp-active #notifications {
   grid-template-columns: 1fr auto;
   gap: 8px;
   padding: 10px 0 12px;
-  border-top: 1px solid var(--color-neutral-300);
+  border-top: 2px solid var(--color-text);
   background: var(--color-bg);
 }
 
@@ -1120,17 +1257,23 @@ body.fcp-active #notifications {
   padding: 6px 18px;
   background: var(--color-text);
   color: var(--color-bg);
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 600 14px var(--font-heading);
+  box-shadow: var(--fcp-lift);
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   text-align: center;
 }
 
 .fcp-customroll button {
-  min-height: 44px;
+  min-height: var(--fcp-tap);
   padding: 6px 16px;
   text-align: center;
   border-radius: var(--radius-sm);
-  font: 600 14px var(--font-heading);
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 /* ---------- Actor picker ---------- */
@@ -1147,23 +1290,25 @@ body.fcp-active #notifications {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 4px 10px 4px 4px;
-  border: 1px solid var(--color-neutral-400);
+  min-height: var(--fcp-tap);
+  padding: 4px 12px 4px 4px;
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 400 13px var(--font-body);
+  background: var(--color-surface);
+  font: 500 13px var(--font-body);
   color: var(--color-neutral-700);
 }
 
 .fcp-actorpicker button.active {
-  border-color: var(--color-text);
-  color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
   font-weight: 600;
 }
 
 .fcp-actorpicker img {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   object-fit: cover;
 }
 
@@ -1180,7 +1325,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-map-title h1 {
-  font: 600 24px/1.1 var(--font-heading);
+  font: 700 24px/1.1 var(--font-heading);
   margin: 7px 0 0;
 }
 
@@ -1196,9 +1341,9 @@ body.fcp-active #notifications {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-top: 1.5px solid var(--color-text);
-  border-bottom: 1.5px solid var(--color-text);
-  background: var(--color-neutral-100);
+  border-top: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+  background: var(--color-neutral-200);
 }
 
 .fcp-minimap {
@@ -1218,17 +1363,17 @@ body.fcp-active #notifications {
 }
 
 .fcp-mm-layer:not(.has-bg) {
-  background-color: #fff;
+  background-color: var(--color-bg);
   background-image:
-    linear-gradient(to right, var(--color-neutral-300) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--color-neutral-300) 1px, transparent 1px);
+    linear-gradient(to right, var(--color-neutral-400) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-neutral-400) 1px, transparent 1px);
   background-size: var(--fcp-cell-w, 10%) var(--fcp-cell-h, 12.5%);
   background-position: 0 0;
   background-repeat: repeat;
 }
 
 .fcp-mm-layer.schematic .fcp-mm-walls line {
-  stroke: #000;
+  stroke: var(--color-text);
   opacity: 1;
 }
 
@@ -1237,12 +1382,12 @@ body.fcp-active #notifications {
 }
 
 .fcp-mm-layer.schematic .fcp-mm-walls line.door {
-  stroke: var(--color-accent-600);
+  stroke: var(--color-green);
 }
 
 /* Fog of war: outside the explored area only the dark ground shows; taps still reach the map below. */
 .fcp-minimap.fogged {
-  background: var(--color-neutral-800);
+  background: var(--color-text);
 }
 
 .fcp-minimap.fogged .fcp-mm-layer {
@@ -1276,17 +1421,18 @@ body.fcp-active #notifications {
 }
 
 .fcp-mm-walls line.door {
-  stroke: var(--color-accent-600);
+  stroke: var(--color-green);
   stroke-width: 3;
   opacity: 1;
 }
 
+/* Tokens: mine in ink, allies sage, hostiles terracotta, everyone else quiet. */
 .fcp-mm-token {
   position: absolute;
   border-radius: 50%;
-  background: var(--color-neutral-500) center / cover no-repeat;
+  background: var(--color-neutral-400) center / cover no-repeat;
   border: 2px solid var(--color-bg);
-  box-shadow: 0 0 0 2px var(--color-neutral-700);
+  box-shadow: 0 0 0 2px var(--color-neutral-600);
   transform: translate(-50%, -50%);
   transition: left 0.18s ease, top 0.18s ease;
 }
@@ -1297,18 +1443,18 @@ body.fcp-active #notifications {
 }
 
 .fcp-mm-token.friendly {
-  box-shadow: 0 0 0 2px var(--color-accent-700);
+  box-shadow: 0 0 0 2px var(--color-green);
 }
 
 .fcp-mm-token.hostile {
-  box-shadow: 0 0 0 2px var(--color-accent-2-700);
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
 .fcp-mm-target {
   position: absolute;
   width: 14px;
   height: 14px;
-  border: 2px dashed var(--color-accent-700);
+  border: 2px dashed var(--color-accent);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -1323,18 +1469,21 @@ body.fcp-active #notifications {
 }
 
 .fcp-mapbar span {
-  font: italic 12px var(--font-body);
+  font: italic 400 13px var(--font-quote);
   color: var(--color-neutral-700);
 }
 
 .fcp-mapbar button {
   flex: none;
-  min-height: 38px;
-  padding: 6px 12px;
-  border: 1.5px solid var(--color-accent);
-  background: var(--color-accent-100);
-  color: var(--color-accent-800);
-  font: 600 12.5px var(--font-heading);
+  min-height: var(--fcp-tap);
+  padding: 6px 14px;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
+  color: var(--color-text);
+  font: 700 11px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   border-radius: var(--radius-sm);
   text-align: center;
 }
@@ -1357,6 +1506,7 @@ body.fcp-active #notifications {
   border-radius: 50%;
   background: var(--color-bg);
   border: 1.5px solid var(--color-text);
+  box-shadow: var(--fcp-lift);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -1380,7 +1530,7 @@ body.fcp-active #notifications {
   border-radius: 50%;
   background: var(--color-text);
   color: var(--color-bg);
-  font: 600 15px var(--font-heading);
+  font: 700 15px var(--font-heading);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1499,39 +1649,34 @@ body.fcp-active #notifications {
 }
 
 .fcp-panes button {
-  min-height: 40px;
+  min-height: var(--fcp-tap);
   padding: 0 0 7px;
   text-align: center;
-  font: 600 13.5px var(--font-heading);
-  letter-spacing: 0.04em;
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--color-neutral-600);
-  border-bottom: 3px solid transparent;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
 }
 
 .fcp-panes button.active {
-  color: var(--color-text);
-  border-bottom-color: var(--color-accent);
+  background: var(--color-text);
+  color: var(--color-bg);
+  padding-bottom: 0;
 }
 
 .fcp-modebar.fcp-modebar-head {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin: 4px 0 0;
+  gap: 6px;
+  margin: 8px 0 0;
 }
 
 .fcp-modebar.fcp-modebar-head button {
   border: 1.5px solid var(--color-text);
-  font: 600 12px var(--font-heading);
   justify-content: center;
-}
-
-.fcp-modebar.fcp-modebar-head button.active {
-  background: var(--color-text);
-  color: var(--color-bg);
-  border-color: var(--color-text);
 }
 
 /* Hit points */
@@ -1556,31 +1701,34 @@ body.fcp-active #notifications {
 }
 
 .fcp-hpbig b {
-  font: 600 38px/1 var(--font-heading);
-  letter-spacing: -0.02em;
+  font: 700 44px/1 var(--font-heading);
+  letter-spacing: -0.01em;
 }
 
 .fcp-hpbig span {
-  font: 400 17px/1.45 var(--font-body);
+  font: 500 18px/1.45 var(--font-body);
   color: var(--color-neutral-600);
 }
 
 .fcp-hpbig em {
   margin-left: auto;
-  font: 600 12.5px var(--font-heading);
-  padding: 4px 9px;
-  background: var(--color-accent-200);
-  color: var(--color-accent-800);
+  font: 600 12.5px var(--font-body);
+  font-style: normal;
+  padding: 5px 9px;
+  border: 1.5px solid var(--color-accent-2-700);
+  color: var(--color-accent-2-800);
   border-radius: var(--radius-sm);
 }
 
+/* The bar is a ruled box, not a pill: same ink line as everything else. */
 .fcp-hpbar {
-  height: 8px;
+  height: 12px;
   display: flex;
   overflow: hidden;
-  background: var(--color-neutral-300);
+  background: transparent;
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  margin-bottom: 9px;
+  margin-bottom: 10px;
 }
 
 .fcp-hpbar i {
@@ -1589,7 +1737,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-hpbar i.temp {
-  background: var(--color-accent-500);
+  background: var(--color-accent-2-700);
 }
 
 .fcp-hpcontrols {
@@ -1600,41 +1748,45 @@ body.fcp-active #notifications {
 }
 
 .fcp-hpcontrols button {
-  min-height: 44px;
+  min-height: var(--fcp-tap);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--color-neutral-500);
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 600 19px var(--font-heading);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
+  font: 700 19px var(--font-heading);
 }
 
 .fcp-hpcontrols button.dmg,
 .fcp-hpcontrols button.heal {
-  font-size: 14px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .fcp-hpcontrols button.dmg {
-  border-color: var(--color-accent-2-700);
-  color: var(--color-accent-2-800);
+  border-color: var(--color-accent);
+  color: var(--color-accent-800);
 }
 
 .fcp-hpcontrols button.heal {
-  border-color: var(--color-accent-700);
-  color: var(--color-accent-800);
+  border-color: var(--color-green);
+  color: var(--color-green);
 }
 
 .fcp-hpcontrols input {
   padding: 8px 4px;
   text-align: center;
-  font: 600 16px var(--font-heading);
+  font: 700 16px var(--font-body);
 }
 
-/* Death saving throws, shown at 0 HP. */
+/* Death saving throws, shown at 0 HP: successes in sage, failures in terracotta. */
 .fcp-death {
-  --fcp-tone: var(--color-accent-2-700);
-  border: 2px solid var(--color-accent-2-700);
-  background: var(--color-accent-2-100);
+  --fcp-tone: var(--color-accent);
+  border: 2px solid var(--color-accent);
+  background: var(--color-accent-100);
   border-radius: var(--radius-sm);
   padding: 12px 14px 14px;
   margin-bottom: 20px;
@@ -1644,14 +1796,14 @@ body.fcp-active #notifications {
   font: 700 11.5px/1 var(--font-heading);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-accent-2-800);
+  color: var(--color-accent-800);
   margin-bottom: 3px;
 }
 
 .fcp-death p {
   margin: 0 0 10px;
-  font: 400 12.5px/1.45 var(--font-body);
-  color: var(--color-accent-2-900);
+  font: 400 13.5px/1.45 var(--font-quote);
+  color: var(--color-accent-800);
 }
 
 .fcp-death-row {
@@ -1663,18 +1815,22 @@ body.fcp-active #notifications {
 
 .fcp-death-row span {
   flex: none;
-  width: 70px;
-  font: 600 13px var(--font-heading);
-  color: var(--color-accent-2-900);
+  width: 84px;
+  font: 600 12px var(--font-body);
+  letter-spacing: 0.04em;
+  color: var(--color-accent-800);
 }
 
 .fcp-death-row .fcp-box {
-  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 600 17px var(--font-heading);
+  font: 700 17px var(--font-heading);
   color: var(--color-bg);
+}
+
+.fcp-death-row .fcp-box[data-key="death.success"] {
+  --fcp-tone: var(--color-green);
 }
 
 /* AC, proficiency, initiative, speed or spell DC */
@@ -1683,20 +1839,21 @@ body.fcp-active #notifications {
   grid-template-columns: repeat(4, 1fr);
   border-top: 1.5px solid var(--color-text);
   border-bottom: 1.5px solid var(--color-text);
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
 .fcp-statrow div {
-  padding: 9px 0;
+  padding: 11px 0;
 }
 
 .fcp-statrow b {
   display: block;
-  font: 600 20px/1.1 var(--font-heading);
+  font: 700 22px/1.1 var(--font-heading);
 }
 
 .fcp-statrow span {
-  font: 400 11px/1.2 var(--font-body);
+  font: 500 11.5px/1.2 var(--font-body);
+  letter-spacing: 0.04em;
   color: var(--color-neutral-700);
 }
 
@@ -1733,16 +1890,17 @@ body.fcp-active #notifications {
 
 .fcp-lines.compact .fcp-line,
 .fcp-lines.feature .fcp-line {
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  padding: 9px 6px 9px 0;
-  border-top: 1px solid var(--color-neutral-300);
+  min-height: var(--fcp-tap);
+  padding: 8px 6px 8px 0;
+  border-bottom: 1px solid var(--color-neutral-300);
 }
 
 .fcp-lines.compact .fcp-line b {
   flex: 1;
   min-width: 0;
-  font: 400 14.5px/1.3 var(--font-body);
+  font: 500 15px/1.3 var(--font-body);
 }
 
 .fcp-lines.feature .fcp-line {
@@ -1752,19 +1910,19 @@ body.fcp-active #notifications {
 .fcp-lines.feature .fcp-line b {
   flex: 1;
   min-width: 0;
-  font: 600 15.5px/1.25 var(--font-heading);
+  font: 600 15px/1.25 var(--font-body);
 }
 
 .fcp-lines.compact .fcp-line > span {
-  width: 40px;
+  width: 44px;
   text-align: right;
-  font: 600 16.5px var(--font-heading);
+  font: 700 17px var(--font-heading);
 }
 
 .fcp-lines.feature .fcp-line > span {
-  width: 40px;
+  width: 44px;
   text-align: right;
-  font: 600 19px var(--font-heading);
+  font: 700 19px var(--font-heading);
 }
 
 .fcp-lines.compact .fcp-line.inactive b {
@@ -1774,13 +1932,13 @@ body.fcp-active #notifications {
 .fcp-line b small {
   display: block;
   margin-top: 1px;
-  font: 400 11px/1.3 var(--font-body);
+  font: 400 11.5px/1.3 var(--font-quote);
   color: var(--color-neutral-600);
 }
 
 .fcp-marker {
   flex: none;
-  font: 600 11.5px var(--font-heading);
+  font: 600 12px var(--font-body);
   font-style: normal;
   color: var(--color-accent-700);
 }
@@ -1800,9 +1958,9 @@ body.fcp-active #notifications {
 
 .fcp-btn.small.danger {
   flex: none;
-  border-color: var(--color-accent-2-700);
-  color: var(--color-accent-2-800);
-  font-size: 12px;
+  border-color: var(--color-accent);
+  color: var(--color-accent-800);
+  font-size: 11px;
 }
 
 .fcp-lines.compact .fcp-resource {
@@ -1811,7 +1969,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-lines.compact .fcp-resource b {
-  font: 600 15px/1.25 var(--font-heading);
+  font: 600 15px/1.25 var(--font-body);
 }
 
 .fcp-lines.compact .fcp-resource b small {
@@ -1819,32 +1977,33 @@ body.fcp-active #notifications {
   line-height: 1.35;
 }
 
+/* Limited uses: a ruled tag, ochre once they are spent. */
 .fcp-lines.compact .fcp-line > span.fcp-count {
   width: auto;
-  font: 600 13px var(--font-heading);
+  font: 500 12.5px var(--font-body);
   padding: 5px 9px;
+  border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  background: var(--color-neutral-200);
-  color: var(--color-neutral-800);
+  background: transparent;
+  color: var(--color-text);
 }
 
 .fcp-lines.compact .fcp-line > span.fcp-count.spent {
-  background: var(--color-accent-2-200);
+  border-color: var(--color-accent-2-700);
   color: var(--color-accent-2-800);
 }
 
-/* Spell slots and hit dice */
+/* Spell slots, hit dice and the slot strip above a spell level. */
 .fcp-meter.tone-slot { --fcp-tone: var(--color-accent-700); }
 .fcp-meter.tone-pact { --fcp-tone: var(--color-accent-2-700); }
-.fcp-meter.tone-hd { --fcp-tone: var(--color-neutral-700); }
-.fcp-meter.tone-hd .fcp-box { height: 28px; }
+.fcp-meter.tone-hd { --fcp-tone: var(--color-green); }
 .fcp-meter.tone-slot .fcp-boxes,
-.fcp-meter.tone-pact .fcp-boxes { margin-bottom: 11px; }
-.fcp-group-slots .fcp-box { height: 26px; }
-.fcp-group-slots .fcp-boxes { margin-bottom: 9px; }
+.fcp-meter.tone-pact .fcp-boxes { margin-bottom: 12px; }
+.fcp-group-slots .fcp-boxes { margin-bottom: 10px; }
 
 .fcp-meter-head b {
-  font: 600 13.5px var(--font-heading);
+  font: 600 13px var(--font-body);
+  letter-spacing: 0.04em;
 }
 
 .fcp-meter.tone-pact .fcp-meter-head b,
@@ -1870,13 +2029,14 @@ body.fcp-active #notifications {
 
 .fcp-chip-none {
   align-self: center;
-  font: italic 12.5px var(--font-body);
+  font: italic 400 13.5px var(--font-quote);
   color: var(--color-neutral-700);
 }
 
 .fcp-chip.add {
-  border: 1.5px dashed var(--color-neutral-500);
-  font: 600 12.5px var(--font-heading);
+  border: 1.5px dashed var(--color-text);
+  background: transparent;
+  font-weight: 600;
 }
 
 .fcp-chips.fcp-picker {
@@ -1885,12 +2045,13 @@ body.fcp-active #notifications {
 }
 
 .fcp-picker .fcp-chip {
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .fcp-picker .fcp-chip.on {
-  border-color: var(--color-accent-2-700);
-  color: var(--color-accent-2-800);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
 }
 
 /* Action rows */
@@ -1915,13 +2076,16 @@ body.fcp-active #notifications {
 
 .fcp-segmented button {
   flex: 1;
-  min-height: 40px;
+  min-height: var(--fcp-tap);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1.5px solid var(--color-text);
   border-radius: var(--radius-sm);
-  font: 600 12.5px var(--font-heading);
+  background: var(--color-surface);
+  font: 700 11px var(--font-heading);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .fcp-segmented button.active {
@@ -1934,8 +2098,8 @@ body.fcp-active #notifications {
 }
 
 .fcp-sublabel {
-  font: 600 11.5px var(--font-heading);
-  letter-spacing: 0.1em;
+  font: 600 11px var(--font-body);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-neutral-700);
   margin-bottom: 4px;
@@ -1945,36 +2109,37 @@ body.fcp-active #notifications {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 0;
-  border-top: 1px solid var(--color-neutral-300);
+  min-height: var(--fcp-tap);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-neutral-300);
 }
 
 .fcp-spell-name {
   display: block;
-  font: 400 14.5px/1.25 var(--font-body);
+  font: 500 15px/1.25 var(--font-body);
 }
 
 .fcp-spell small {
   display: block;
   margin-top: 1px;
-  font: 400 11px/1.3 var(--font-body);
+  font: 400 11.5px/1.3 var(--font-quote);
   color: var(--color-neutral-600);
 }
 
 .fcp-spell em {
   flex: none;
-  font: italic 11px var(--font-body);
+  font: italic 400 12px var(--font-quote);
   color: var(--color-neutral-600);
 }
 
 .fcp-switch {
   flex: none;
   position: relative;
-  width: 46px;
-  height: 28px;
+  width: 52px;
+  height: 30px;
   border: 1.5px solid var(--color-text);
-  border-radius: 14px;
-  background: var(--color-neutral-300);
+  border-radius: 15px;
+  background: var(--color-neutral-200);
   transition: background 0.14s ease;
 }
 
@@ -1982,8 +2147,8 @@ body.fcp-active #notifications {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--color-bg);
   border: 1.5px solid var(--color-text);
@@ -1991,11 +2156,11 @@ body.fcp-active #notifications {
 }
 
 .fcp-switch.on {
-  background: var(--color-accent-700);
+  background: var(--color-accent);
 }
 
 .fcp-switch.on i {
-  left: 20px;
+  left: 24px;
 }
 
 /* ---------- Journal as a document (Foundry's desktop sheet) ---------- */
@@ -2094,45 +2259,79 @@ body.fcp-active #notifications {
   gap: 8px;
   width: 100%;
   min-height: var(--fcp-tap);
+  font: 500 16px var(--font-body);
   border-bottom: 1px solid var(--color-neutral-300);
 }
 
 #fcp-app .fcp-notes .fcp-note-folder {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .fcp-note-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding-top: 12px;
 }
 
+/*
+ * Whether the note is safe: a dot the colour of the state, so a glance at the top of the screen is
+ * enough — sage when saved, ochre while saving, terracotta when the last save failed.
+ */
 .fcp-save-state {
-  font-size: 12px;
-  color: var(--color-neutral-600);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 10px var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+}
+
+.fcp-save-state::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-green);
+}
+
+.fcp-save-state[data-state="saving"]::before,
+.fcp-save-state[data-state="dirty"]::before {
+  background: var(--color-accent-2-700);
 }
 
 .fcp-save-state[data-state="error"] {
-  color: var(--color-accent-2-700);
+  color: var(--color-accent-800);
   font-weight: 700;
+}
+
+.fcp-save-state[data-state="error"]::before {
+  background: var(--color-accent);
 }
 
 .fcp-note-title {
   font: 700 24px/1.2 var(--font-heading);
-  margin: 6px 0 10px;
+  margin: 8px 0 12px;
 }
 
 .fcp-note-pages {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 #fcp-app .fcp-note-pages button {
-  padding: 6px 10px;
-  border: 1px solid var(--color-neutral-400);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  font: 500 13px var(--font-body);
 }
 
 #fcp-app .fcp-note-pages button.active {
@@ -2149,9 +2348,10 @@ body.fcp-active #notifications {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-accent-700);
-  min-height: 32px;
+  min-height: var(--fcp-tap);
   display: flex;
   align-items: center;
+  border-bottom: 1.5px solid var(--color-text);
 }
 
 #fcp-app .fcp-note-toc-list button {
@@ -2187,29 +2387,71 @@ body.fcp-active #notifications {
 .fcp-note-editor .editor-menu {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 4px;
+  padding: 6px 0;
   position: sticky;
   top: 0;
   z-index: 1;
   background: var(--color-bg);
-  border-bottom: 1px solid var(--color-neutral-300);
+  border-bottom: 1.5px solid var(--color-text);
 }
 
 #fcp-app .fcp-note-editor .editor-menu button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  min-height: 36px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 0 8px;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
 }
 
+/* A note is running text: the serif reads better than the interface sans over paragraphs. */
 .fcp-note-editor .editor-content,
 .fcp-note-view {
-  font: 400 17px/1.5 var(--font-body);
+  font: 400 17px/1.6 var(--font-quote);
+}
+
+.fcp-note-editor .editor-content :is(h1, h2, h3, h4),
+.fcp-note-view :is(h1, h2, h3, h4) {
+  font-family: var(--font-heading);
+  font-weight: 700;
 }
 
 .fcp-note-view img {
   max-width: 100%;
   height: auto;
+}
+
+/* ---------- Empty states ---------- */
+
+/*
+ * A tab with nothing in it says what is missing and what will fill it, centred, in the serif: it
+ * reads as a note from the game rather than as an error.
+ */
+.fcp-tab .fcp-empty:only-child,
+.fcp-tab > .fcp-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 40vh;
+  text-align: center;
+  font-size: 17px;
+}
+
+.fcp-group .fcp-empty {
+  padding: 12px 0;
+  text-align: center;
+}
+
+/* ---------- Motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  #fcp-app *,
+  #fcp-app *::before,
+  #fcp-app *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
