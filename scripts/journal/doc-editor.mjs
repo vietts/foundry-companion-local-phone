@@ -91,6 +91,11 @@ export function mountDocEditor(container, page, { onState, onRemoteChange } = {}
   // and stop the element from firing "change", which would submit the journal sheet's form.
   editor.addEventListener("save", event => {
     event.preventDefault();
+    // Cancelling save() also skips the element's own _setValue, and a reconnected element rebuilds
+    // from _value: the multi-page sheet re-appends every page on any render, so without this the
+    // other pages' editors would come back with their text from mount time. _setValue, not the value
+    // setter, which would fire "change" and submit the sheet's form.
+    editor._setValue(editor.value);
     if (disposed) return;
     // Nothing typed: save nothing. ProseMirror's HTML can differ from the stored HTML without any
     // edit (normalization), so saving it anyway would rewrite a note just by opening it.
