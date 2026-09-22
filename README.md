@@ -51,6 +51,19 @@ Se la repo è pubblica si può installare anche da *Moduli aggiuntivi → Instal
 
 Per forzare la modalità da desktop (per esempio per provarla): `Impostazioni → Phone Companion → Modalità companion = Sempre attiva`, oppure aggiungi `?companion=1` all'URL. Dal companion il pulsante con il monitor riporta all'interfaccia Foundry completa.
 
+## Giocare senza internet
+
+Il modulo non ha bisogno di internet, ma i telefoni devono raggiungere Foundry. Se Foundry è ospitato su un server e al tavolo non c'è rete, lo si fa girare sul portatile del GM e i telefoni si collegano lì, su una Wi‑Fi senza internet (hotspot del portatile o router da viaggio). La licenza Foundry permette di usarlo su più macchine, ma non su due nello stesso momento.
+
+`tools/foundry-offline.sh` sposta i dati fra server (Foundry in Docker, raggiungibile via ssh) e Mac:
+
+1. Copia `tools/offline.env.example` in `tools/offline.env` e inserisci host ssh, percorso di `Data/` e nome del container.
+2. Prima della sessione, con Foundry chiuso sul portatile: `tools/foundry-offline.sh pull`. Spegne Foundry sul server, fa un backup dei mondi locali e copia mondi, sistemi, moduli e asset. La prima volta ci mette un po', poi copia solo le differenze.
+3. Al tavolo apri Foundry sul portatile. I telefoni vanno su `http://<ip-del-portatile>:30000`: lo script stampa l'indirizzo.
+4. Dopo la sessione, con Foundry chiuso: `tools/foundry-offline.sh push`. Fa un backup dei mondi sul server, ci ricopia mondi e asset nuovi e riaccende Foundry.
+
+Fra `pull` e `push` Foundry sul server resta spento, così il mondo non viene modificato in due posti. `tools/foundry-offline.sh status` dice dove si sta giocando. Serve la stessa versione di Foundry su server e portatile, e se non coincidono il `pull` avvisa.
+
 ## Impostazioni
 
 Mondo (GM):
