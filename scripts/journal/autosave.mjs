@@ -6,7 +6,8 @@
  * @param {string} [config.initial=""]                      The value already stored.
  * @param {number} [config.delay=1000]                      Quiet time after the last change before saving (ms).
  * @param {(state: "dirty"|"saving"|"saved"|"error", error?: unknown) => void} [config.onState]
- * @returns {{touch: () => void, flush: (value?: string) => Promise<boolean>, dispose: () => void}}
+ * @returns {{touch: () => void, flush: (value?: string) => Promise<boolean>, dispose: () => void,
+ *   hasChanges: () => boolean}}
  */
 export function createAutosave({ read, save, initial = "", delay = 1000, onState = () => {} }) {
   let saved = initial;
@@ -64,5 +65,10 @@ export function createAutosave({ read, save, initial = "", delay = 1000, onState
     timer = null;
   }
 
-  return { touch, flush, dispose };
+  /** True while there is an unsaved change, or a save for one is in flight. */
+  function hasChanges() {
+    return dirty || (inflight !== null);
+  }
+
+  return { touch, flush, dispose, hasChanges };
 }

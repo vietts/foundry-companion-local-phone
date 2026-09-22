@@ -107,3 +107,33 @@ test("dispose cancels a pending save", async t => {
   await settle();
   assert.deepEqual(saves, []);
 });
+
+test("hasChanges is false until there is something to save", async t => {
+  const { autosave, type } = setup(t);
+  assert.equal(autosave.hasChanges(), false);
+  type("x");
+  assert.equal(autosave.hasChanges(), true);
+});
+
+test("hasChanges is true while a save is in flight, false once it succeeds", async t => {
+  const releases = [];
+  const { autosave, type } = setup(t, {
+    save: () => new Promise(resolve => releases.push(resolve))
+  });
+  type("x");
+  const flushed = autosave.flush();
+  await settle();
+  assert.equal(autosave.hasChanges(), true, "a save is in flight");
+  releases[0]();
+  assert.equal(await flushed, true);
+  assert.equal(autosave.hasChanges(), false);
+});
+
+test("hasChanges is true after a failed save", async t => {
+  const { autosave, type } = setup(t, {
+    save: async () => { throw new Error("offline"); }
+  });
+  type("x");
+  assert.equal(await autosave.flush(), false);
+  assert.equal(autosave.hasChanges(), true);
+});

@@ -61,7 +61,11 @@ export class CompanionJournalSheet extends JournalEntrySheet {
           sheet.toc = toc;
           this._renderHeadings(element, toc).catch(err => warn("failed to refresh the heading index", err));
         }
-      }
+      },
+      // A save from another client of the same page with nothing local to lose: re-render just
+      // this page part. The new editor mounts from the now-current page.text.content, and since it
+      // starts equal to that text, nothing is dirty and nothing saves back - no loop.
+      onRemoteChange: () => this.render({ parts: [page.id] })
     });
     this.#editors.set(page.id, ctl);
     await ctl.ready;

@@ -12,18 +12,25 @@ export function showSaveState(el, state) {
   el.textContent = game.i18n.localize(`FCP.Doc.State.${state}`);
 }
 
+// One id per module load (not per editor): marks this device's own saves. Foundry's collaborative
+// ProseMirror session is per user, not per device, so the same GM's laptop and phone never see each
+// other's live steps - only the resulting save. The updateJournalEntryPage hook below uses this id
+// to tell its own saves apart from ones made elsewhere.
+const CLIENT_ID = foundry.utils.randomID();
+
 /**
  * Mount an always-on, collaborative ProseMirror editor for a text page, saved automatically.
  * @param {HTMLElement} container
  * @param {JournalEntryPage} page
- * @param {{onState?: (state: string, error?: unknown) => void}} [options]
+ * @param {{onState?: (state: string, error?: unknown) => void,
+ *   onRemoteChange?: (page: JournalEntryPage) => void}} [options]
  * @returns {{editor: HTMLElement, ready: Promise<HTMLElement|null>, pending: Promise<boolean>|null,
  *   content: () => HTMLElement|null, flush: (value?: string) => Promise<boolean>, dispose: () => void}}
  */
-export function mountDocEditor(container, page, { onState } = {}) {
+export function mountDocEditor(container, page, { onState, onRemoteChange } = {}) {
   const initial = page.text.content ?? "";
   // Once disposed (the controller already flushed and tore down, e.g. from _preClose) the
-  // disconnect "save" event below and any state it triggers must be inert.
+  // disconnect "save" event, the remote-change hook below, and any state they trigger must be inert.
   let disposed = false;
   const editor = foundry.applications.elements.HTMLProseMirrorElement.create({
     name: "text.content",
@@ -36,7 +43,8 @@ export function mountDocEditor(container, page, { onState } = {}) {
     initial,
     read: () => editor.value,
     // render: false, or every save would re-render the sheet and destroy the editor mid-sentence.
-    save: value => page.update({ "text.content": value }, { render: false }),
+    // fcpClient marks this device's own save, see CLIENT_ID above.
+    save: value => page.update({ "text.content": value }, { render: false, fcpClient: CLIENT_ID }),
     onState: (state, error) => { if (!disposed) onState?.(state, error); }
   });
 
@@ -49,6 +57,16 @@ export function mountDocEditor(container, page, { onState } = {}) {
         }
       })
     });
+  });
+
+  // A save of this page from elsewhere - typically the same GM's other device, since Foundry's
+  // collaborative session doesn't cover that case (see CLIENT_ID above). Refresh only when there
+  // is nothing local to lose; otherwise keep the local text and let the next save win.
+  const remoteChangeHook = Hooks.on("updateJournalEntryPage", (updated, changed, options) => {
+    if (disposed || (updated.id !== page.id) || (options.fcpClient === CLIENT_ID)) return;
+    if (foundry.utils.getProperty(changed, "text.content") === undefined) return;
+    if (autosave.hasChanges()) return;
+    onRemoteChange?.(updated);
   });
 
   const opened = new Promise(resolve => editor.addEventListener("open", () => resolve(editor), { once: true }));
@@ -64,6 +82,7 @@ export function mountDocEditor(container, page, { onState } = {}) {
     flush: value => autosave.flush(value),
     dispose: () => {
       disposed = true;
+      Hooks.off("updateJournalEntryPage", remoteChangeHook);
       autosave.dispose();
     }
   };
