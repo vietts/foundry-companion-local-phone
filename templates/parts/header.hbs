@@ -21,7 +21,7 @@
     <img class="fcp-portrait" src="icons/svg/mystery-man.svg" alt="">
     <div class="fcp-name"><b>{{localize "FCP.Title"}}</b></div>
     {{/if}}
-    {{#if (eq headerTab 'sheet')}}
+    {{#if headerInfo.menu}}
     <div class="fcp-menu">
       <button type="button" data-action="refresh" title="{{localize 'FCP.Reload'}}"><i class="ph-duotone ph-arrows-clockwise"></i></button>
       <button type="button" data-action="exitCompanion" title="{{localize 'FCP.ExitCompanion'}}"><i class="ph-duotone ph-desktop"></i></button>

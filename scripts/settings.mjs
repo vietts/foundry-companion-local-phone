@@ -111,6 +111,13 @@ export function registerSettings() {
     type: String,
     default: "sheet"
   });
+
+  game.settings.register(MODULE_ID, SETTINGS.RECENT_NOTES, {
+    scope: "client",
+    config: false,
+    type: Array,
+    default: []
+  });
 }
 
 export function getSetting(key) {

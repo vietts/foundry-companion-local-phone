@@ -1420,11 +1420,11 @@ body.fcp-active #notifications {
 }
 
 #fcp-app.fcp-wide > .fcp-header,
-#fcp-app.fcp-wide > .fcp-tab[data-tab="sheet"] {
+#fcp-app.fcp-wide > .fcp-tab:is([data-tab="sheet"], [data-tab="notes"]) {
   border-right: 1.5px solid var(--color-text);
 }
 
-#fcp-app.fcp-wide > .fcp-tab[data-tab="sheet"] {
+#fcp-app.fcp-wide > .fcp-tab:is([data-tab="sheet"], [data-tab="notes"]) {
   grid-area: sheet;
   display: block;
   min-height: 0;
@@ -1433,7 +1433,7 @@ body.fcp-active #notifications {
   padding: 0 20px calc(var(--fcp-safe-bottom) + 20px);
 }
 
-#fcp-app.fcp-wide > .fcp-tab.active:not([data-tab="sheet"]) {
+#fcp-app.fcp-wide > .fcp-tab.active:not([data-tab="sheet"], [data-tab="notes"]) {
   grid-area: main;
   padding-bottom: calc(var(--fcp-safe-bottom) + 20px);
 }
@@ -1469,7 +1469,7 @@ body.fcp-active #notifications {
   position: static;
 }
 
-#fcp-app.fcp-wide > .fcp-nav button[data-tab="sheet"] {
+#fcp-app.fcp-wide > .fcp-nav button:is([data-tab="sheet"], [data-tab="notes"]) {
   display: none;
 }
 
@@ -1996,4 +1996,220 @@ body.fcp-active #notifications {
 
 .fcp-switch.on i {
   left: 20px;
+}
+
+/* ---------- Journal as a document (Foundry's desktop sheet) ---------- */
+
+.fcp-doc-sheet .journal-entry-page.fcp-doc {
+  display: flex;
+  flex-direction: column;
+}
+
+.fcp-doc-sheet .journal-entry-page.fcp-doc prose-mirror {
+  flex: 1;
+  min-height: 480px;
+}
+
+.fcp-doc-sheet .fcp-save-state {
+  align-self: flex-end;
+  font-size: var(--font-size-12, 12px);
+  opacity: 0.7;
+}
+
+.fcp-doc-sheet .fcp-save-state[data-state="error"] {
+  color: var(--color-level-error, #c62828);
+  font-weight: bold;
+  opacity: 1;
+}
+
+.fcp-doc-sheet .fcp-add-page {
+  flex: none;
+  align-self: center;
+  width: auto;
+  margin: 8px;
+}
+
+/* ---------- GM notes ---------- */
+
+.fcp-note-pad,
+.fcp-notes-top,
+.fcp-note-bar,
+.fcp-note-title,
+.fcp-note-pages,
+.fcp-note-toc,
+.fcp-note-editor,
+.fcp-note-view {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/*
+ * The notes elements above carry their own 20px side padding, so the tab's own (20px, 24px from
+ * 700px up) would double it to a ~40px inset. Zero it for the notes tab only; players' tabs keep it.
+ * The second rule is for two columns, where the shared sheet-column rule (`padding: 0 20px ...`)
+ * outranks the first.
+ */
+.fcp-tab[data-tab="notes"].active {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#fcp-app.fcp-wide > .fcp-tab[data-tab="notes"] {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.fcp-notes-top {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  padding-bottom: 12px;
+}
+
+.fcp-notes-top input {
+  flex: 1;
+  min-width: 0;
+}
+
+#fcp-app .fcp-notes-top .fcp-primary {
+  flex: none;
+  gap: 6px;
+  padding: 0 14px;
+}
+
+.fcp-note-list,
+.fcp-note-results {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0 20px;
+}
+
+.fcp-note-list li {
+  padding-left: calc(var(--depth, 0) * 18px);
+}
+
+#fcp-app .fcp-notes li > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--fcp-tap);
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+#fcp-app .fcp-notes .fcp-note-folder {
+  font-weight: 600;
+}
+
+.fcp-note-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.fcp-save-state {
+  font-size: 12px;
+  color: var(--color-neutral-600);
+}
+
+.fcp-save-state[data-state="error"] {
+  color: var(--color-accent-2-700);
+  font-weight: 700;
+}
+
+.fcp-note-title {
+  font: 700 24px/1.2 var(--font-heading);
+  margin: 6px 0 10px;
+}
+
+.fcp-note-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+#fcp-app .fcp-note-pages button {
+  padding: 6px 10px;
+  border: 1px solid var(--color-neutral-400);
+}
+
+#fcp-app .fcp-note-pages button.active {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.fcp-note-toc {
+  margin-bottom: 10px;
+}
+
+.fcp-note-toc summary {
+  font: 700 11.5px/1 var(--font-heading);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+#fcp-app .fcp-note-toc-list button {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 0;
+}
+
+#fcp-app .fcp-note-toc-list .fcp-toc-h2 {
+  padding-left: 14px;
+}
+
+#fcp-app .fcp-note-toc-list .fcp-toc-h3 {
+  padding-left: 28px;
+}
+
+/* The companion blocks text selection everywhere; notes are text. */
+.fcp-note-editor,
+.fcp-note-view {
+  user-select: text;
+  -webkit-user-select: text;
+  padding-bottom: calc(var(--fcp-safe-bottom) + 24px);
+}
+
+.fcp-note-editor prose-mirror {
+  display: flex;
+  flex-direction: column;
+  min-height: 50vh;
+}
+
+/* Foundry's formatting bar: wrap instead of scrolling, a scrolling bar would clip the dropdowns. */
+.fcp-note-editor .editor-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+#fcp-app .fcp-note-editor .editor-menu button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+}
+
+.fcp-note-editor .editor-content,
+.fcp-note-view {
+  font: 400 17px/1.5 var(--font-body);
+}
+
+.fcp-note-view img {
+  max-width: 100%;
+  height: auto;
 }

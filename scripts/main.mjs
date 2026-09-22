@@ -8,6 +8,8 @@ import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
 import { DaggerheartAdapter } from "./systems/daggerheart.mjs";
 import { activeScene } from "./movement.mjs";
 import { fogRecorder, registerFogHooks } from "./fog.mjs";
+import { registerDocSheet } from "./journal/doc-sheet.mjs";
+import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
 
 let app = null;
 
@@ -16,6 +18,7 @@ Hooks.once("init", () => {
   registerAdapter(Dnd5eAdapter);
   registerAdapter(DaggerheartAdapter);
   registerSocket();
+  registerRemoteRefresh();
   // Runs on every client but only records on the active GM's (the one with a canvas).
   registerFogHooks();
   game.modules.get(MODULE_ID).api = {
@@ -26,6 +29,9 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  // Journal entries open as a document. The system's sheet stays available under "Configure Sheet".
+  const base = registerDocSheet();
+  log(`journal document sheet built over ${base.name}`);
   if (!shouldUseCompanion()) return;
   await maybePromptCanvas();
   activateCompanion();
@@ -91,4 +97,13 @@ function registerRefreshHooks() {
   Hooks.on("updateUser", (user, changes) => {
     if (user.id === game.user.id && "character" in changes) app.render({ force: true });
   });
+
+  if (app.notes) {
+    for (const name of ["JournalEntry", "JournalEntryPage", "Folder"]) {
+      Hooks.on(`create${name}`, doc => app.notes.onDocumentChange(doc));
+      Hooks.on(`delete${name}`, doc => app.notes.onDocumentChange(doc, { deleted: true }));
+    }
+    Hooks.on("updateJournalEntry", doc => app.notes.onDocumentChange(doc));
+    Hooks.on("updateFolder", doc => app.notes.onDocumentChange(doc));
+  }
 }

@@ -13,10 +13,14 @@ export const SETTINGS = {
   QUICK_ROLLS: "quickRolls",
   DIGITAL_DICE: "digitalDice",
   LAST_ACTOR: "lastActor",
-  LAST_TAB: "lastTab"
+  LAST_TAB: "lastTab",
+  RECENT_NOTES: "recentNotes"
 };
 
 export const TABS = ["sheet", "map", "actions", "inventory", "chat"];
+
+/** The GM has no character: notes and chat only. */
+export const GM_TABS = ["notes", "chat"];
 
 export function log(...args) {
   console.log(`${MODULE_ID} |`, ...args);
