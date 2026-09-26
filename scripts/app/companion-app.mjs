@@ -3,7 +3,7 @@ import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
 import { requestMove, requestPlay } from "../socket.mjs";
 import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
-import { filterCandidates, orderCandidates, isExplored } from "./targets-data.mjs";
+import { filterCandidates, orderCandidates, isExplored, pruneTargets } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
 
@@ -294,6 +294,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         await this.#decorateItems(actor, context.groups);
         context.targets = actor && this.#decorateVfx(actor, context.groups) ? this.#prepareTargets() : null;
+        this.showsTargets = !!context.targets;
         break;
       case "inventory":
         context.tabId = "inventory";
@@ -403,13 +404,14 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     const combat = game.combats?.find(c => c.scene?.id === scene.id && c.started) ?? null;
     const combatants = combat ? combat.turns.map(c => c.tokenId).filter(Boolean) : [];
+    const fog = this.#fogTest(scene, center);
     const list = orderCandidates(
-      filterCandidates(scene.tokens.contents, { explored: this.#fogTest(scene, center) }),
+      filterCandidates(scene.tokens.contents, { explored: fog?.test ?? null }),
       { originId: origin.id, combatants, distance }
     );
     // Targets that left the strip (deleted, hidden, fogged, other scene) are dropped, so they are never sent.
-    const visible = new Set(list.map(t => t.id));
-    for (const id of this.targetIds) if (!visible.has(id)) this.targetIds.delete(id);
+    // Not while the first fog mask is still decoding: everything but the user's own tokens would look unexplored.
+    if (!fog?.pending && pruneTargets(this.targetIds, new Set(list.map(t => t.id)))) this.#syncTargets();
     return {
       list: list.map(t => ({
         id: t.id,
@@ -427,26 +429,34 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
-  #fog = { src: null, data: null };
+  #fog = { src: null, sceneId: null, data: null };
 
-  /** With fog on, a test "is this token's center explored"; null when fog is off. */
+  /**
+   * With fog on, `{ test, pending }`: `test(token)` says whether the token's center is explored, `pending` that
+   * no mask of this scene is decoded yet. Null when fog is off.
+   */
   #fogTest(scene, center) {
     if (!getSetting(SETTINGS.MAP_FOG)) return null;
     const src = scene.getFlag(MODULE_ID, FOG_FLAG);
-    if (!src) return () => false; // nothing explored yet: only the user's own tokens
-    if (this.#fog.src !== src) this.#loadFog(src);
-    const mask = this.#fog.data;
-    if (!mask) return () => false; // still decoding: re-rendered once ready
+    if (!src) return { test: () => false, pending: false }; // nothing explored yet: only the user's own tokens
+    if (this.#fog.src !== src) this.#loadFog(src, scene.id);
+    // The explored area only grows: until the new image is decoded the previous mask of this scene still holds.
+    const mask = this.#fog.sceneId === scene.id ? this.#fog.data : null;
+    if (!mask) return { test: () => false, pending: true }; // re-rendered once decoded
     const d = scene.dimensions;
-    return t => {
-      const c = center(t);
-      return isExplored(mask, ((c.x - d.sceneX) * mask.width) / d.sceneWidth, ((c.y - d.sceneY) * mask.height) / d.sceneHeight);
+    return {
+      pending: false,
+      test: t => {
+        const c = center(t);
+        return isExplored(mask, ((c.x - d.sceneX) * mask.width) / d.sceneWidth, ((c.y - d.sceneY) * mask.height) / d.sceneHeight);
+      }
     };
   }
 
   /** Decode the explored-area image once per change and re-render the actions. */
-  #loadFog(src) {
-    this.#fog = { src, data: null };
+  #loadFog(src, sceneId) {
+    const previous = this.#fog.sceneId === sceneId ? this.#fog.data : null;
+    this.#fog = { src, sceneId, data: previous };
     const img = new Image();
     img.onload = () => {
       if (this.#fog.src !== src) return;
@@ -462,10 +472,15 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     img.src = src;
   }
 
-  /** Share the targets: Foundry draws the user's crosshair on every client with a canvas. */
+  /**
+   * Share the targets: Foundry draws the user's crosshair on every client with a canvas. Other clients apply
+   * targets only for users viewing their scene, and a phone without a canvas views none, so the scene goes along.
+   */
   #syncTargets() {
+    const sceneId = activeScene()?.id;
+    if (!sceneId) return;
     try {
-      game.user.updateTokenTargets(Array.from(this.targetIds));
+      game.user.broadcastActivity({ sceneId, targets: Array.from(this.targetIds) });
     } catch (err) {
       warn("could not share the targets", err);
     }
@@ -557,9 +572,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
   }
 
+  async _preRender(context, options) {
+    await super._preRender(context, options);
+    // The targets strip scrolls sideways and is rebuilt when tokens move: keep its position.
+    this._stripScroll = this.element?.querySelector(".fcp-targets-strip")?.scrollLeft ?? 0;
+  }
+
   async _onRender(context, options) {
     await super._onRender(context, options);
     const el = this.element;
+    const strip = el.querySelector(".fcp-targets-strip");
+    if (strip && this._stripScroll) strip.scrollLeft = this._stripScroll;
     el.classList.toggle("fcp-wide", this.wide);
     if (options.isFirstRender) this.wideQuery?.addEventListener("change", this.#onWideChange);
 

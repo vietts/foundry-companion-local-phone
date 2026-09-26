@@ -1,7 +1,7 @@
 import { SOCKET_NAME, SETTINGS, MODULE_ID, warn } from "./constants.mjs";
 import { getSetting } from "./settings.mjs";
 import { executeMove } from "./movement.mjs";
-import { checkPlayRequest, sanitizeTargetIds } from "./app/targets-data.mjs";
+import { checkPlayRequest, sanitizeTargetIds, requestUserId } from "./app/targets-data.mjs";
 import { playLocally } from "./vfx.mjs";
 
 const pending = new Map();
@@ -11,17 +11,18 @@ export function registerSocket() {
   game.socket.on(SOCKET_NAME, onSocketMessage);
 }
 
-async function onSocketMessage(msg) {
+/** `senderId` is attached by the server: requests are checked against it, not against `msg.userId`. */
+async function onSocketMessage(msg, senderId) {
   if (!msg || typeof msg !== "object") return;
   switch (msg.type) {
     case "moveRequest":
-      if (game.user.isActiveGM) return handleMoveRequest(msg);
+      if (game.user.isActiveGM) return handleMoveRequest(msg, requestUserId(msg, senderId));
       return;
     case "moveResult":
       if (msg.targetUserId !== game.user.id) return;
       return resolvePending(msg);
     case "vfxRequest":
-      if (game.user.isActiveGM) return handleVfxRequest(msg);
+      if (game.user.isActiveGM) return handleVfxRequest(msg, requestUserId(msg, senderId));
       return;
     case "vfxResult":
       if (msg.targetUserId !== game.user.id) return;
@@ -38,12 +39,12 @@ function resolvePending(msg) {
 }
 
 /** GM side: validate ownership and perform the move. */
-async function handleMoveRequest(msg) {
+async function handleMoveRequest(msg, userId) {
   const reply = payload => game.socket.emit(SOCKET_NAME, {
-    type: "moveResult", requestId: msg.requestId, targetUserId: msg.userId, ...payload
+    type: "moveResult", requestId: msg.requestId, targetUserId: userId, ...payload
   });
 
-  const user = game.users.get(msg.userId);
+  const user = userId ? game.users.get(userId) : null;
   const scene = game.scenes.get(msg.sceneId);
   const tokenDoc = scene?.tokens.get(msg.tokenId);
   if (!user || !tokenDoc) return reply({ ok: false, reason: "missing" });
@@ -103,12 +104,12 @@ export async function requestMove(tokenDoc, { x, y }) {
 }
 
 /** GM side: check who asks, then play the effect on this client's canvas. */
-async function handleVfxRequest(msg) {
+async function handleVfxRequest(msg, userId) {
   const reply = payload => game.socket.emit(SOCKET_NAME, {
-    type: "vfxResult", requestId: msg.requestId, targetUserId: msg.userId, ...payload
+    type: "vfxResult", requestId: msg.requestId, targetUserId: userId, ...payload
   });
   try {
-    const user = game.users.get(msg.userId);
+    const user = userId ? game.users.get(userId) : null;
     const scene = game.scenes.get(msg.sceneId);
     const tokenDoc = scene?.tokens.get(msg.originId) ?? null;
     const item = typeof msg.itemUuid === "string" ? await fromUuid(msg.itemUuid) : null;

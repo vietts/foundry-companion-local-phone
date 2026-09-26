@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterCandidates, orderCandidates, isExplored, checkPlayRequest, sanitizeTargetIds } from "../scripts/app/targets-data.mjs";
+import { filterCandidates, orderCandidates, isExplored, checkPlayRequest, sanitizeTargetIds, pruneTargets, requestUserId } from "../scripts/app/targets-data.mjs";
 
 const tok = (id, extra = {}) => ({ id, name: id, hidden: false, isOwner: false, ...extra });
 
@@ -105,4 +105,18 @@ test("sanitizeTargetIds keeps known string ids once", () => {
   assert.deepEqual(sanitizeTargetIds(["t1", 7, null, "zz", "t2", "t1"], id => known.has(id)), ["t1", "t2"]);
   assert.deepEqual(sanitizeTargetIds("t1", id => known.has(id)), []);
   assert.deepEqual(sanitizeTargetIds(undefined, id => known.has(id)), []);
+});
+
+test("pruneTargets drops ids that left the strip and says whether anything changed", () => {
+  const selected = new Set(["gob", "wolf"]);
+  assert.equal(pruneTargets(selected, new Set(["gob", "me"])), true);
+  assert.deepEqual([...selected], ["gob"]);
+  assert.equal(pruneTargets(selected, new Set(["gob"])), false);
+  assert.deepEqual([...selected], ["gob"]);
+});
+
+test("requestUserId trusts the sender id from the server, never the message", () => {
+  assert.equal(requestUserId({ userId: "someone-else" }, "u1"), "u1");
+  assert.equal(requestUserId({ userId: "someone-else" }, undefined), null);
+  assert.equal(requestUserId({ userId: "someone-else" }, 42), null);
 });

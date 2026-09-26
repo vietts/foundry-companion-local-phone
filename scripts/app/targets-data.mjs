@@ -44,3 +44,19 @@ export function sanitizeTargetIds(ids, hasToken) {
   if (!Array.isArray(ids)) return [];
   return [...new Set(ids.filter(id => typeof id === "string" && hasToken(id)))];
 }
+
+/** Drop from `selected` (a Set, changed in place) the ids no longer in the strip; true when some were dropped. */
+export function pruneTargets(selected, visibleIds) {
+  let changed = false;
+  for (const id of selected) {
+    if (visibleIds.has(id)) continue;
+    selected.delete(id);
+    changed = true;
+  }
+  return changed;
+}
+
+/** Who sent a socket request: the id the server attaches, never the one written in the message. */
+export function requestUserId(msg, senderId) {
+  return typeof senderId === "string" ? senderId : null;
+}

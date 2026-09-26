@@ -108,15 +108,17 @@ Gli adattatori di sistema (`systems/*.mjs`) non cambiano.
 ### Scelta dei bersagli
 
 1. La striscia legge i candidati dalla scena attiva (`activeScene()`), li filtra e li ordina.
-2. Un tocco su una tessera accende o spegne il token e chiama
-   `game.user.updateTokenTargets(ids)`: Foundry sincronizza il mirino col colore
-   dell'utente su tutti i client. La ✕ azzera.
-3. Lo stato acceso/spento si legge da `game.user.targets`. Se senza canvas `targets` non
-   si popola, il companion tiene gli id in memoria e la striscia legge quelli.
+2. Un tocco su una tessera accende o spegne il token e trasmette i target dell'utente con
+   `game.user.broadcastActivity({ sceneId, targets })`: gli altri client disegnano il mirino
+   col colore dell'utente. `User#updateTokenTargets` non esiste in v14.367; gli altri client
+   applicano i target solo per chi guarda la loro scena, e un telefono senza canvas non ne
+   guarda nessuna, per questo va anche `sceneId`. La ✕ azzera.
+3. Lo stato acceso/spento sta nel companion (senza canvas `game.user.targets` resta vuoto).
+   Quando un bersaglio esce dalla striscia viene tolto e i target vengono ritrasmessi.
 
-**Da verificare in Foundry:** che `updateTokenTargets` funzioni e si propaghi dal telefono
-con il canvas spento. Se no, il telefono manda `targetsRequest {userId, sceneId, targetIds}`
-al GM attivo, che imposta i target per conto dell'utente; stesso controllo `missing`.
+**Da verificare in Foundry:** che il mirino compaia sullo schermo del GM. Se no, il telefono
+manda `targetsRequest {sceneId, targetIds}` al GM attivo, che imposta i target per conto
+dell'utente; stesso controllo `missing`.
 
 ### ▶
 
