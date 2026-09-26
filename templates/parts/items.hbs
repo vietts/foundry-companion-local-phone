@@ -3,6 +3,28 @@
   <div class="fcp-empty">{{localize "FCP.NoActor"}}</div>
   {{else}}
   {{#unless groups.length}}<div class="fcp-empty">{{localize "FCP.Empty"}}</div>{{/unless}}
+  {{#if targets}}
+  <div class="fcp-targets" style="--fcp-user: {{targets.color}};">
+    <div class="fcp-targets-head">
+      <span class="fcp-label">{{localize "FCP.Vfx.Targets"}}</span>
+      {{#if targets.count}}
+      <button type="button" class="fcp-targets-clear" data-action="clearTargets" aria-label="{{localize 'FCP.Vfx.Clear'}}"><b>{{targets.count}}</b><i class="ph-duotone ph-x"></i></button>
+      {{/if}}
+    </div>
+    {{#if targets.noToken}}
+    <div class="fcp-targets-empty">{{localize "FCP.Vfx.NoToken"}}</div>
+    {{else}}
+    <div class="fcp-targets-strip">
+      {{#each targets.list}}
+      <button type="button" class="fcp-target {{this.cls}} {{#if this.selected}}on{{/if}}" data-action="toggleTarget" data-token-id="{{this.id}}" aria-pressed="{{#if this.selected}}true{{else}}false{{/if}}" title="{{this.name}}">
+        <span class="fcp-target-img" style="background-image: url('{{this.img}}');"></span>
+        <span class="fcp-target-name">{{this.short}}</span>
+      </button>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
   {{#each groups}}
   <div class="fcp-group {{#if this.spellbook}}fcp-spellbook{{/if}}">
     {{#if this.count}}
@@ -42,6 +64,7 @@
     {{/if}}
     {{#each this.items}}
     <div class="fcp-item {{#if this.expanded}}expanded{{/if}}">
+      <div class="fcp-row-line">
       <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}} {{#if this.big}}big{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{else}}data-action="noop"{{/if}}>
         <img src="{{this.img}}" alt="">
         <span class="fcp-row-main">
@@ -53,6 +76,10 @@
           {{#if this.id}}<i class="ph-duotone ph-caret-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
         </span>
       </button>
+      {{#if this.vfx}}
+      <button type="button" class="fcp-play" data-action="playVfx" data-item-id="{{this.id}}" data-vfx-action="{{this.vfx.actionId}}" {{#if ../../targets.noToken}}disabled{{/if}} aria-label="{{localize 'FCP.Vfx.Play'}}: {{this.name}}"><span class="fcp-play-icon"></span></button>
+      {{/if}}
+      </div>
       {{#unless ../../useInBody}}
       {{#if this.action}}
       <div class="fcp-use-row"><button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button></div>

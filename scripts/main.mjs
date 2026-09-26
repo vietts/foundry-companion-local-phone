@@ -7,6 +7,7 @@ import { getAdapter, registerAdapter } from "./systems/index.mjs";
 import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
 import { DaggerheartAdapter } from "./systems/daggerheart.mjs";
 import { activeScene } from "./movement.mjs";
+import { vfxApi } from "./vfx.mjs";
 import { fogRecorder, registerFogHooks } from "./fog.mjs";
 import { registerDocSheet } from "./journal/doc-sheet.mjs";
 import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
@@ -87,12 +88,17 @@ function registerRefreshHooks() {
   Hooks.on("updateChatMessage", message => app.onChatChanged(message));
   Hooks.on("deleteChatMessage", message => app.onChatChanged(message, { deleted: true }));
 
+  // The targets strip lists the scene's tokens: refresh it too, but only when effects are on.
+  const sceneParts = () => (vfxApi() ? ["map", "actions"] : ["map"]);
   for (const hook of ["createToken", "updateToken", "deleteToken"]) {
-    Hooks.on(hook, token => { if (token.parent?.id === activeScene()?.id) app.markDirty("map"); });
+    Hooks.on(hook, token => { if (token.parent?.id === activeScene()?.id) app.markDirty(...sceneParts()); });
   }
   Hooks.on("updateScene", (scene, changes) => {
-    if ("active" in changes || scene.id === activeScene()?.id) app.markDirty("map");
+    if ("active" in changes || scene.id === activeScene()?.id) app.markDirty(...sceneParts());
   });
+  for (const hook of ["createCombat", "updateCombat", "deleteCombat", "createCombatant", "updateCombatant", "deleteCombatant"]) {
+    Hooks.on(hook, () => { if (vfxApi()) app.markDirty("actions"); });
+  }
   Hooks.on("canvasReady", () => app.markDirty("map"));
   Hooks.on("updateUser", (user, changes) => {
     if (user.id === game.user.id && "character" in changes) app.render({ force: true });

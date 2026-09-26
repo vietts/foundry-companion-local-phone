@@ -1,7 +1,9 @@
 import { MODULE_ID, SETTINGS, TABS, GM_TABS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
-import { requestMove } from "../socket.mjs";
+import { requestMove, requestPlay } from "../socket.mjs";
+import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
+import { filterCandidates, orderCandidates, isExplored } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
 
@@ -43,6 +45,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.condPicker = false;
     this.spellQuery = "";
     this.spellFilter = "all";
+    /** Tokens targeted from the phone. Without a canvas `game.user.targets` stays empty, so the ids live here. */
+    this.targetIds = new Set();
     this.wideQuery = window.matchMedia?.(WIDE_QUERY) ?? null;
     this.#onWideChange = () => this.render();
   }
@@ -112,6 +116,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       mapTap: CompanionApp.#onMapTap,
       stepToggle: CompanionApp.#onStepToggle,
       selectToken: CompanionApp.#onSelectToken,
+      toggleTarget: CompanionApp.#onToggleTarget,
+      clearTargets: CompanionApp.#onClearTargets,
+      playVfx: CompanionApp.#onPlayVfx,
       openNote: CompanionApp.#onOpenNote,
       closeNote: CompanionApp.#onCloseNote,
       notePage: CompanionApp.#onNotePage,
@@ -286,9 +293,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
           context.useInBody = !!prepared.useInBody;
         }
         await this.#decorateItems(actor, context.groups);
+        context.targets = actor && this.#decorateVfx(actor, context.groups) ? this.#prepareTargets() : null;
         break;
       case "inventory":
         context.tabId = "inventory";
+        context.targets = null;
         context.groups = actor ? (await this.adapter.prepareInventory(actor)).groups : [];
         context.spellQuery = this.spellQuery;
         context.spellFilter = this.spellFilter;
@@ -360,6 +369,105 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         row.expanded = true;
         if (!row.description) row.description = `<p>${game.i18n.localize("FCP.Empty")}</p>`;
       }
+    }
+  }
+
+  /** Mark the rows whose item has an effect; true when at least one does. */
+  #decorateVfx(actor, groups) {
+    if (!vfxApi()) return false;
+    let any = false;
+    for (const group of groups) {
+      for (const row of group.items ?? []) {
+        const item = row.id ? actor.items.get(row.id) : null;
+        const actionId = resolveActionId(item, row.data?.["action-id"]);
+        if (item && hasEffect(item, actionId)) {
+          row.vfx = { actionId: actionId ?? "" };
+          any = true;
+        }
+      }
+    }
+    return any;
+  }
+
+  /** Candidates of the targets strip: visible tokens of the active scene, nearest first, mine last. */
+  #prepareTargets() {
+    const scene = activeScene();
+    const origin = this.token;
+    if (!scene || !origin) return { noToken: true };
+    const grid = scene.grid;
+    const center = t => ({ x: t.x + (t.width * grid.sizeX) / 2, y: t.y + (t.height * grid.sizeY) / 2 });
+    const o = center(origin);
+    const distance = t => {
+      const c = center(t);
+      return Math.max(Math.abs(c.x - o.x) / grid.sizeX, Math.abs(c.y - o.y) / grid.sizeY);
+    };
+    const combat = game.combats?.find(c => c.scene?.id === scene.id && c.started) ?? null;
+    const combatants = combat ? combat.turns.map(c => c.tokenId).filter(Boolean) : [];
+    const list = orderCandidates(
+      filterCandidates(scene.tokens.contents, { explored: this.#fogTest(scene, center) }),
+      { originId: origin.id, combatants, distance }
+    );
+    // Targets that left the strip (deleted, hidden, fogged, other scene) are dropped, so they are never sent.
+    const visible = new Set(list.map(t => t.id));
+    for (const id of this.targetIds) if (!visible.has(id)) this.targetIds.delete(id);
+    return {
+      list: list.map(t => ({
+        id: t.id,
+        name: t.name,
+        short: (t.name ?? "").trim().split(/\s+/)[0].slice(0, 10),
+        img: this.#tokenImage(t),
+        cls: t.id === origin.id ? "mine"
+          : (t.isOwner || t.disposition === CONST.TOKEN_DISPOSITIONS.FRIENDLY) ? "friendly"
+          : t.disposition === CONST.TOKEN_DISPOSITIONS.HOSTILE ? "hostile" : "other",
+        selected: this.targetIds.has(t.id),
+        mine: t.id === origin.id
+      })),
+      count: this.targetIds.size,
+      color: game.user.color?.css ?? String(game.user.color ?? "")
+    };
+  }
+
+  #fog = { src: null, data: null };
+
+  /** With fog on, a test "is this token's center explored"; null when fog is off. */
+  #fogTest(scene, center) {
+    if (!getSetting(SETTINGS.MAP_FOG)) return null;
+    const src = scene.getFlag(MODULE_ID, FOG_FLAG);
+    if (!src) return () => false; // nothing explored yet: only the user's own tokens
+    if (this.#fog.src !== src) this.#loadFog(src);
+    const mask = this.#fog.data;
+    if (!mask) return () => false; // still decoding: re-rendered once ready
+    const d = scene.dimensions;
+    return t => {
+      const c = center(t);
+      return isExplored(mask, ((c.x - d.sceneX) * mask.width) / d.sceneWidth, ((c.y - d.sceneY) * mask.height) / d.sceneHeight);
+    };
+  }
+
+  /** Decode the explored-area image once per change and re-render the actions. */
+  #loadFog(src) {
+    this.#fog = { src, data: null };
+    const img = new Image();
+    img.onload = () => {
+      if (this.#fog.src !== src) return;
+      const el = document.createElement("canvas");
+      el.width = img.naturalWidth;
+      el.height = img.naturalHeight;
+      const ctx = el.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      this.#fog.data = ctx.getImageData(0, 0, el.width, el.height);
+      this.markDirty("actions");
+    };
+    img.onerror = () => warn("could not read the explored area for the targets strip");
+    img.src = src;
+  }
+
+  /** Share the targets: Foundry draws the user's crosshair on every client with a canvas. */
+  #syncTargets() {
+    try {
+      game.user.updateTokenTargets(Array.from(this.targetIds));
+    } catch (err) {
+      warn("could not share the targets", err);
     }
   }
 
@@ -802,6 +910,40 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onStepToggle() {
     this.step = this.step >= 3 ? 1 : this.step + 1;
     this.markDirty("map");
+  }
+
+  static #onToggleTarget(event, target) {
+    const id = target.dataset.tokenId;
+    if (!id) return;
+    if (this.targetIds.has(id)) this.targetIds.delete(id);
+    else this.targetIds.add(id);
+    this.#syncTargets();
+    this.markDirty("actions");
+  }
+
+  static #onClearTargets() {
+    this.targetIds.clear();
+    this.#syncTargets();
+    this.markDirty("actions");
+  }
+
+  static async #onPlayVfx(event, target) {
+    const tokenDoc = this.token;
+    const item = this.actor?.items.get(target.dataset.itemId);
+    if (!tokenDoc || !item || target.disabled) return;
+    target.disabled = true;
+    target.classList.add("playing");
+    try {
+      const targetIds = Array.from(this.targetIds).filter(id => tokenDoc.parent.tokens.has(id));
+      const result = await requestPlay({ tokenDoc, item, actionId: target.dataset.vfxAction || null, targetIds });
+      if (!result.ok) ui.notifications.warn(game.i18n.localize(`FCP.Vfx.Fail.${result.reason ?? "error"}`));
+    } catch (err) {
+      warn("effect request failed", err);
+      ui.notifications.warn(game.i18n.localize("FCP.Vfx.Fail.error"));
+    } finally {
+      target.disabled = false;
+      target.classList.remove("playing");
+    }
   }
 
   static #onSelectToken() {

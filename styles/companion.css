@@ -946,8 +946,19 @@ body.fcp-active #notifications {
   transition: background 0.12s ease;
 }
 
-.fcp-item.expanded > .fcp-row {
+.fcp-item.expanded > .fcp-row-line {
   background: var(--color-surface);
+}
+
+.fcp-row-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fcp-row-line > .fcp-row {
+  flex: 1;
+  min-width: 0;
 }
 
 .fcp-item.expanded {
@@ -1082,6 +1093,138 @@ body.fcp-active #notifications {
 
 .fcp-use-row .fcp-primary {
   width: 100%;
+}
+
+/* ---------- Targets strip and play button (effects from the phone) ---------- */
+
+.fcp-targets {
+  position: sticky;
+  top: -8px; /* the tab's top padding */
+  z-index: 2;
+  margin: -8px -20px 16px;
+  padding: 10px 20px 12px;
+  background: var(--color-bg);
+  border-bottom: 1.5px solid var(--color-text);
+}
+
+.fcp-targets-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+}
+
+.fcp-targets-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  font: 600 13px var(--font-body);
+}
+
+.fcp-targets-empty {
+  padding: 6px 0;
+  font: 400 13px/1.35 var(--font-quote);
+  color: var(--color-neutral-700);
+}
+
+.fcp-targets-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 6px 2px 2px;
+}
+
+.fcp-target {
+  flex: none;
+  width: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  scroll-snap-align: start;
+}
+
+.fcp-target-img {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-surface) center / cover no-repeat;
+  box-shadow: 0 0 0 2px var(--color-text);
+}
+
+.fcp-target.hostile .fcp-target-img { box-shadow: 0 0 0 2px var(--color-accent); }
+.fcp-target.friendly .fcp-target-img,
+.fcp-target.mine .fcp-target-img { box-shadow: 0 0 0 2px var(--color-green); }
+
+.fcp-target.on .fcp-target-img {
+  box-shadow: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--fcp-user, var(--color-accent));
+}
+
+.fcp-target.on .fcp-target-img::after {
+  content: "✓";
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font: 700 12px/1 var(--font-body);
+}
+
+.fcp-target-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 11.5px var(--font-body);
+}
+
+.fcp-play {
+  flex: none;
+  width: var(--fcp-tap);
+  height: var(--fcp-tap);
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-accent);
+  box-shadow: var(--fcp-lift);
+}
+
+.fcp-play-icon {
+  width: 14px;
+  height: 16px;
+  margin-left: 3px;
+  background: var(--color-bg);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.fcp-play:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-shadow);
+}
+
+.fcp-play:disabled {
+  opacity: 0.45;
+}
+
+.fcp-play.playing {
+  animation: fcp-play-pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes fcp-play-pulse {
+  from { background: var(--color-accent); }
+  to { background: var(--color-accent-500); }
 }
 
 /* ---------- Chat ---------- */
