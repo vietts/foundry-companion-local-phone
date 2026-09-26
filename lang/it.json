@@ -204,5 +204,16 @@
   "FCP.Notes.Back": "Note",
   "FCP.Notes.Contents": "Indice",
   "FCP.Notes.NoPages": "Questa nota non ha pagine.",
-  "FCP.Notes.Unsupported": "Questo tipo di pagina si apre dal portatile."
+  "FCP.Notes.Unsupported": "Questo tipo di pagina si apre dal portatile.",
+  "FCP.Vfx.Targets": "Bersagli",
+  "FCP.Vfx.Clear": "Azzera i bersagli",
+  "FCP.Vfx.Play": "Gioca l'effetto",
+  "FCP.Vfx.NoToken": "Nessun token in scena: metti il tuo personaggio sulla mappa.",
+  "FCP.Vfx.Fail.noGM": "Nessun GM connesso: l'effetto parte dallo schermo del GM.",
+  "FCP.Vfx.Fail.missing": "Effetto non riprodotto: token o oggetto non trovato.",
+  "FCP.Vfx.Fail.denied": "Non controlli questo personaggio.",
+  "FCP.Vfx.Fail.scene": "Il GM non ha aperta la scena del tuo token.",
+  "FCP.Vfx.Fail.noEffect": "Effetto non riprodotto.",
+  "FCP.Vfx.Fail.error": "Errore nel riprodurre l'effetto (vedi la console del GM).",
+  "FCP.Vfx.Fail.timeout": "Il GM non ha risposto."
 }

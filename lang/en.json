@@ -204,5 +204,16 @@
   "FCP.Notes.Back": "Notes",
   "FCP.Notes.Contents": "Contents",
   "FCP.Notes.NoPages": "This note has no pages.",
-  "FCP.Notes.Unsupported": "Open this kind of page on the laptop."
+  "FCP.Notes.Unsupported": "Open this kind of page on the laptop.",
+  "FCP.Vfx.Targets": "Targets",
+  "FCP.Vfx.Clear": "Clear targets",
+  "FCP.Vfx.Play": "Play the effect",
+  "FCP.Vfx.NoToken": "No token on the scene: place your character on the map.",
+  "FCP.Vfx.Fail.noGM": "No GM connected: effects play on the GM's screen.",
+  "FCP.Vfx.Fail.missing": "Effect not played: token or item not found.",
+  "FCP.Vfx.Fail.denied": "You do not control this character.",
+  "FCP.Vfx.Fail.scene": "The GM does not have your token's scene open.",
+  "FCP.Vfx.Fail.noEffect": "Effect not played.",
+  "FCP.Vfx.Fail.error": "Error while playing the effect (see the GM's console).",
+  "FCP.Vfx.Fail.timeout": "The GM did not answer."
 }
