@@ -215,5 +215,6 @@
   "FCP.Vfx.Fail.scene": "Il GM non ha aperta la scena del tuo token.",
   "FCP.Vfx.Fail.noEffect": "Effetto non riprodotto.",
   "FCP.Vfx.Fail.error": "Errore nel riprodurre l'effetto (vedi la console del GM).",
-  "FCP.Vfx.Fail.timeout": "Il GM non ha risposto."
+  "FCP.Vfx.Fail.noTargets": "Nessun effetto senza bersagli: scegli prima un bersaglio nella striscia.",
+  "FCP.Vfx.Fail.timeout": "Il GM non ha risposto: serve un GM connesso con la scena del tuo token aperta."
 }

@@ -60,3 +60,20 @@ export function pruneTargets(selected, visibleIds) {
 export function requestUserId(msg, senderId) {
   return typeof senderId === "string" ? senderId : null;
 }
+
+/**
+ * What a GM client does with an effect request. The GM user may be connected from several clients (laptop and
+ * phone): a refusal is the same everywhere, but only the client showing the token's scene can play, so the
+ * others stay silent instead of answering first with a misleading "scene".
+ */
+export function vfxRequestOutcome({ reason, onScene }) {
+  if (reason) return { reply: reason };
+  return onScene ? { play: true } : { silent: true };
+}
+
+/** Localization suffix for a failed effect: with no targets, "nothing played" usually means "pick a target". */
+export function failureKey(reason, targetCount) {
+  if (!reason) return "error";
+  if (reason === "noEffect" && targetCount === 0) return "noTargets";
+  return reason;
+}

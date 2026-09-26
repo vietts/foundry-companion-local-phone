@@ -1,7 +1,7 @@
 import { SOCKET_NAME, SETTINGS, MODULE_ID, warn } from "./constants.mjs";
 import { getSetting } from "./settings.mjs";
 import { executeMove } from "./movement.mjs";
-import { checkPlayRequest, sanitizeTargetIds, requestUserId } from "./app/targets-data.mjs";
+import { checkPlayRequest, sanitizeTargetIds, requestUserId, vfxRequestOutcome } from "./app/targets-data.mjs";
 import { playLocally } from "./vfx.mjs";
 
 const pending = new Map();
@@ -113,9 +113,9 @@ async function handleVfxRequest(msg, userId) {
     const scene = game.scenes.get(msg.sceneId);
     const tokenDoc = scene?.tokens.get(msg.originId) ?? null;
     const item = typeof msg.itemUuid === "string" ? await fromUuid(msg.itemUuid) : null;
-    const reason = checkPlayRequest({ user, tokenDoc, item });
-    if (reason) return reply({ ok: false, reason });
-    if (canvas?.scene?.id !== scene.id) return reply({ ok: false, reason: "scene" });
+    const outcome = vfxRequestOutcome({ reason: checkPlayRequest({ user, tokenDoc, item }), onScene: canvas?.scene?.id === scene?.id });
+    if (outcome.reply) return reply({ ok: false, reason: outcome.reply });
+    if (outcome.silent) return; // another client of the GM user shows the scene; if none does, the player times out
     const targetIds = sanitizeTargetIds(msg.targetIds, id => scene.tokens.has(id));
     const actionId = typeof msg.actionId === "string" ? msg.actionId : null;
     return reply(await playLocally({ item, actionId, originId: tokenDoc.id, targetIds }));

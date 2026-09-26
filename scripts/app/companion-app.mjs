@@ -3,7 +3,7 @@ import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
 import { requestMove, requestPlay } from "../socket.mjs";
 import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
-import { filterCandidates, orderCandidates, isExplored, pruneTargets } from "./targets-data.mjs";
+import { filterCandidates, orderCandidates, isExplored, pruneTargets, failureKey } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
 
@@ -959,7 +959,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const targetIds = Array.from(this.targetIds).filter(id => tokenDoc.parent.tokens.has(id));
       const result = await requestPlay({ tokenDoc, item, actionId: target.dataset.vfxAction || null, targetIds });
-      if (!result.ok) ui.notifications.warn(game.i18n.localize(`FCP.Vfx.Fail.${result.reason ?? "error"}`));
+      if (!result.ok) ui.notifications.warn(game.i18n.localize(`FCP.Vfx.Fail.${failureKey(result.reason, targetIds.length)}`));
     } catch (err) {
       warn("effect request failed", err);
       ui.notifications.warn(game.i18n.localize("FCP.Vfx.Fail.error"));

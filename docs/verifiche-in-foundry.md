@@ -15,4 +15,12 @@ con la scena aperta sul desktop e un giocatore dal telefono (o `?companion=1`) c
 6. Senza il modulo degli effetti la scheda Azioni è identica a prima.
 7. Con il GM su un'altra scena il ▶ avvisa "Il GM non ha aperta la scena del tuo token."
 
-Esito dell'ultima prova: non ancora eseguita.
+Esito dell'ultima prova: 26/9/2026, VPS (Foundry 14.367), mondo `faglia` (dnd5e 6.0.3), daggerheart-vfx vero (branch `feature/dnd5e`), giocatore "tester" col canvas spento, GM sul portatile.
+
+- 1 ok: il mirino compare sullo schermo del GM, ma piccolo (Foundry disegna così i bersagli degli altri utenti, le frecce grandi sono solo per i propri).
+- 2 ok per la nebbia: i goblin in zona inesplorata non erano nella striscia. Token nascosti non provati dal vivo (coperti dai test).
+- 3 non provato dal vivo (coperto dai test).
+- 4 ok in D&D: Fire Bolt sul lupo e Longbow su lupo e due goblin partono, visti sullo schermo. Con 0 bersagli un proiettile non parte (`noEffect`): ora il telefono chiede di scegliere un bersaglio. Daggerheart non provato.
+- 5 ok: origine falsa → `denied`; un `userId` falso nel messaggio viene ignorato (conta il mittente del server).
+- 6 non provato.
+- 7 ok: la risposta "scene" arriva, ma con il GM collegato da due client (uno senza canvas) arrivava per prima anche quando l'effetto partiva. Corretto: risponde solo il client che ha la scena aperta; la correzione è testata con node ma non ancora dal vivo (l'altro client GM non è stato ricaricato).

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { filterCandidates, orderCandidates, isExplored, checkPlayRequest, sanitizeTargetIds, pruneTargets, requestUserId } from "../scripts/app/targets-data.mjs";
+import { filterCandidates, orderCandidates, isExplored, checkPlayRequest, sanitizeTargetIds, pruneTargets, requestUserId, vfxRequestOutcome, failureKey } from "../scripts/app/targets-data.mjs";
 
 const tok = (id, extra = {}) => ({ id, name: id, hidden: false, isOwner: false, ...extra });
 
@@ -119,4 +119,21 @@ test("requestUserId trusts the sender id from the server, never the message", ()
   assert.equal(requestUserId({ userId: "someone-else" }, "u1"), "u1");
   assert.equal(requestUserId({ userId: "someone-else" }, undefined), null);
   assert.equal(requestUserId({ userId: "someone-else" }, 42), null);
+});
+
+test("vfxRequestOutcome: a refused request is answered by every GM client", () => {
+  assert.deepEqual(vfxRequestOutcome({ reason: "denied", onScene: false }), { reply: "denied" });
+  assert.deepEqual(vfxRequestOutcome({ reason: "missing", onScene: true }), { reply: "missing" });
+});
+
+test("vfxRequestOutcome: only the GM client showing the scene plays, the others stay silent", () => {
+  assert.deepEqual(vfxRequestOutcome({ reason: null, onScene: true }), { play: true });
+  assert.deepEqual(vfxRequestOutcome({ reason: null, onScene: false }), { silent: true });
+});
+
+test("failureKey suggests picking a target when nothing played without targets", () => {
+  assert.equal(failureKey("noEffect", 0), "noTargets");
+  assert.equal(failureKey("noEffect", 2), "noEffect");
+  assert.equal(failureKey("denied", 0), "denied");
+  assert.equal(failureKey(undefined, 1), "error");
 });

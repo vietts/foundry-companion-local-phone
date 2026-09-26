@@ -75,11 +75,11 @@ Fra `pull` e `push` Foundry sul server resta spento, così il mondo non viene mo
 
 ## Effetti dal telefono
 
-Con il modulo **Tavolo VFX** (`daggerheart-vfx`) attivo, la scheda Azioni mostra in cima una striscia con i token della scena: toccandoli si scelgono i bersagli, che compaiono sullo schermo del GM con il mirino del giocatore. Le azioni che hanno un effetto hanno un ▶: quando il GM dice che è riuscito, lo si tocca e l'effetto parte sullo schermo grande dal token del personaggio verso i bersagli (con nessun bersaglio, sul personaggio stesso).
+Con il modulo **Tavolo VFX** (`daggerheart-vfx`) attivo, la scheda Azioni mostra in cima una striscia con i token della scena: toccandoli si scelgono i bersagli, che compaiono sullo schermo del GM con il mirino del giocatore. Le azioni che hanno un effetto hanno un ▶: quando il GM dice che è riuscito, lo si tocca e l'effetto parte sullo schermo grande dal token del personaggio verso i bersagli. Senza bersagli partono solo gli effetti che non ne hanno bisogno (ad area o sul personaggio); un dardo o una freccia chiedono di sceglierne uno.
 
 - Il ▶ non consuma slot, Speranza o usi: si segnano come sempre con le caselle della scheda.
 - La striscia mostra i token non nascosti, ordinati per distanza (in combattimento prima i combattenti, per iniziativa), con il proprio in fondo. Con la nebbia attiva, solo quelli nelle zone esplorate.
-- L'effetto lo gioca il client del GM, che controlla che il giocatore possieda il personaggio: serve un GM connesso con la scena del token aperta.
+- L'effetto lo gioca il client del GM, che controlla che il giocatore possieda il personaggio: serve un GM connesso con la scena del token aperta. Se il GM è collegato da più dispositivi, risponde quello che ha la scena aperta.
 - Senza Tavolo VFX la scheda Azioni resta com'è.
 
 ## Impostazioni

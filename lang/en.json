@@ -215,5 +215,6 @@
   "FCP.Vfx.Fail.scene": "The GM does not have your token's scene open.",
   "FCP.Vfx.Fail.noEffect": "Effect not played.",
   "FCP.Vfx.Fail.error": "Error while playing the effect (see the GM's console).",
-  "FCP.Vfx.Fail.timeout": "The GM did not answer."
+  "FCP.Vfx.Fail.noTargets": "No effect without targets: pick a target in the strip first.",
+  "FCP.Vfx.Fail.timeout": "The GM did not answer: a GM needs to be connected with your token's scene open."
 }
