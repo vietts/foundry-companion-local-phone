@@ -73,6 +73,15 @@ Fra `pull` e `push` Foundry sul server resta spento, così il mondo non viene mo
 - Se la stessa pagina è aperta su due dispositivi dello stesso utente (per esempio portatile e telefono), quello che scrivi da una parte compare dall'altra appena viene salvato, se lì non stai scrivendo. Lo stesso vale fra utenti diversi (un co-GM): le modifiche compaiono dopo ogni salvataggio, non lettera per lettera.
 - Le pagine di testo in Markdown, le immagini, i PDF e i video si leggono come in Foundry.
 
+## Effetti dal telefono
+
+Con il modulo **Tavolo VFX** (`daggerheart-vfx`) attivo, la scheda Azioni mostra in cima una striscia con i token della scena: toccandoli si scelgono i bersagli, che compaiono sullo schermo del GM con il mirino del giocatore. Le azioni che hanno un effetto hanno un ▶: quando il GM dice che è riuscito, lo si tocca e l'effetto parte sullo schermo grande dal token del personaggio verso i bersagli (con nessun bersaglio, sul personaggio stesso).
+
+- Il ▶ non consuma slot, Speranza o usi: si segnano come sempre con le caselle della scheda.
+- La striscia mostra i token non nascosti, ordinati per distanza (in combattimento prima i combattenti, per iniziativa), con il proprio in fondo. Con la nebbia attiva, solo quelli nelle zone esplorate.
+- L'effetto lo gioca il client del GM, che controlla che il giocatore possieda il personaggio: serve un GM connesso con la scena del token aperta.
+- Senza Tavolo VFX la scheda Azioni resta com'è.
+
 ## Impostazioni
 
 Mondo (GM):
@@ -107,9 +116,11 @@ scripts/
   settings.mjs          impostazioni
   device.mjs            rilevamento telefono/tablet
   socket.mjs            richieste di movimento verso il client GM
+  vfx.mjs               ponte opzionale verso daggerheart-vfx (effetti dal telefono)
   movement.mjs          esecuzione dello spostamento e minimappa
   fog.mjs               zone esplorate, registrate dal client del GM
   app/companion-app.mjs interfaccia (ApplicationV2)
+  app/targets-data.mjs  ordine e filtri della striscia dei bersagli
   systems/              adattatori: dnd5e, daggerheart, generico
   journal/doc-sheet.mjs   foglio "Documento" del journal
   journal/doc-editor.mjs  editor sempre attivo con salvataggio automatico
