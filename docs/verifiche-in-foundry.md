@@ -20,7 +20,10 @@ Esito dell'ultima prova: 26/9/2026, VPS (Foundry 14.367), mondo `faglia` (dnd5e 
 - 1 ok: il mirino compare sullo schermo del GM, ma piccolo (Foundry disegna così i bersagli degli altri utenti, le frecce grandi sono solo per i propri).
 - 2 ok per la nebbia: i goblin in zona inesplorata non erano nella striscia. Token nascosti non provati dal vivo (coperti dai test).
 - 3 non provato dal vivo (coperto dai test).
-- 4 ok in D&D: Fire Bolt sul lupo e Longbow su lupo e due goblin partono, visti sullo schermo. Con 0 bersagli un proiettile non parte (`noEffect`): ora il telefono chiede di scegliere un bersaglio. Daggerheart non provato.
+- 4 ok in D&D: Fire Bolt sul lupo e Longbow su lupo e due goblin partono, visti sullo schermo. Con 0 bersagli un proiettile non parte (`noEffect`): ora il telefono chiede di scegliere un bersaglio.
+- 4 ok in Daggerheart (mondo `faglia-dh`, system 2.10.5): un ▶ per ogni azione delle carte di dominio, con l'id dell'azione; Cinder Grasp sull'orso e su orso e bandito, Unleash Chaos (proiettile) sull'orso, Unleash Chaos: Replenish Tokens senza bersagli sull'Arcanista: tutti partiti, visti sullo schermo. Le armi dei PG Daggerheart non hanno effetti in daggerheart-vfx, quindi niente ▶.
 - 5 ok: origine falsa → `denied`; un `userId` falso nel messaggio viene ignorato (conta il mittente del server).
 - 6 non provato.
-- 7 ok: la risposta "scene" arriva, ma con il GM collegato da due client (uno senza canvas) arrivava per prima anche quando l'effetto partiva. Corretto: risponde solo il client che ha la scena aperta; la correzione è testata con node ma non ancora dal vivo (l'altro client GM non è stato ricaricato).
+- 7 ok: la risposta "scene" arriva, ma con il GM collegato da due client (uno senza canvas) arrivava per prima anche quando l'effetto partiva. Corretto: risponde solo il client che ha la scena aperta (testato con node; dal vivo in Daggerheart con un solo client GM arriva una sola risposta, il caso con due client non è stato rifatto).
+
+Nota per chi prova: GM e giocatore vanno in due sessioni separate del browser (per esempio GM in incognito). Nello stesso profilo, entrare col secondo utente ricarica l'altra scheda con quell'utente, e "canvas spento" vale per tutte le schede.
