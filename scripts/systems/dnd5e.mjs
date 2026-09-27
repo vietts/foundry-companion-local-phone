@@ -363,21 +363,62 @@ export class Dnd5eAdapter extends SystemAdapter {
       });
     }
 
-    // Features with something to activate.
-    const feats = actor.items
-      .filter(i => i.type === "feat" && hasActivities(i) && !i.hasAttack)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(i => this.#row(i));
+    // Features with something to activate: one row per activity, so an option hidden inside a
+    // multi-activity feature (e.g. Psionic Power -> Protective Field) is visible and usable directly.
+    const reactions = [];
+    const feats = [];
+    for (const i of actor.items.filter(i => i.type === "feat" && hasActivities(i) && !i.hasAttack)) {
+      for (const r of this.#activityRows(i)) (r.reaction ? reactions : feats).push(r);
+    }
+    feats.sort((a, b) => a.name.localeCompare(b.name));
     if (feats.length) groups.push({ title: t("FCP.D5.Features"), items: feats });
 
     // Consumables and other usable gear.
-    const usable = actor.items
-      .filter(i => ["consumable", "equipment", "tool"].includes(i.type) && hasActivities(i) && !i.hasAttack)
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(i => this.#row(i));
+    const usable = [];
+    for (const i of actor.items.filter(i => ["consumable", "equipment", "tool"].includes(i.type) && hasActivities(i) && !i.hasAttack)) {
+      for (const r of this.#activityRows(i)) (r.reaction ? reactions : usable).push(r);
+    }
+    usable.sort((a, b) => a.name.localeCompare(b.name));
     if (usable.length) groups.push({ title: t("FCP.D5.Consumables"), items: usable });
 
+    // Reactions first: they happen on someone else's turn, when there is no time to look for them.
+    // Reaction spells stay in their level group too, where their slots are.
+    for (const sp of spells) {
+      if (this.#activation(sp) === "reaction") reactions.push({ ...this.#row(sp, { actionLabel: t("FCP.D5.Cast") }), reaction: true });
+    }
+    reactions.sort((a, b) => a.name.localeCompare(b.name));
+    if (reactions.length) groups.unshift({ title: t("FCP.D5.Reactions"), items: reactions });
+
     return { groups, useInBody: true };
+  }
+
+  /** Activation type of an item: its only activity's, or the first one's. */
+  #activation(item) {
+    const acts = Array.from(item.system.activities ?? []);
+    return acts[0]?.activation?.type ?? item.system.activation?.type ?? "";
+  }
+
+  /** Rows for an item: itself when it has one activity, one per activity otherwise. */
+  #activityRows(item) {
+    const acts = Array.from(item.system.activities ?? []);
+    if (acts.length <= 1) {
+      return [{ ...this.#row(item), reaction: acts[0]?.activation?.type === "reaction" }];
+    }
+    const uses = this.#uses(item);
+    return acts.map(a => ({
+      id: `${item.id}.${a.id}`,
+      itemId: item.id,
+      name: a.name && a.name !== item.name ? a.name : item.name,
+      img: a.img || item.img,
+      meta: [a.labels?.activation ?? game.i18n.localize(CONFIG.DND5E.activityActivationTypes?.[a.activation?.type]?.label ?? ""),
+        a.name && a.name !== item.name ? item.name : null].filter(Boolean).join(" · "),
+      uses,
+      big: false,
+      action: "useActivity",
+      actionLabel: t("FCP.Use"),
+      data: { activity: a.id },
+      reaction: a.activation?.type === "reaction"
+    }));
   }
 
   #castable(spell) {
@@ -591,6 +632,7 @@ export class Dnd5eAdapter extends SystemAdapter {
     switch (action) {
       case "roll": return this.#roll(actor, data);
       case "useItem": return this.#useItem(actor, data);
+      case "useActivity": return this.#useActivity(actor, data);
       case "toggleItem": return this.#toggleItem(actor, data);
       case "rest": return this.rest(actor, data.kind);
       case "counter": return this.setBox(actor, data.key, Number(data.box));
@@ -621,6 +663,13 @@ export class Dnd5eAdapter extends SystemAdapter {
     const item = actor.items.get(itemId);
     if (!item) return false;
     return item.use({ event: {} }, this.#dialog(), {});
+  }
+
+  async #useActivity(actor, { itemId, activity }) {
+    const item = actor.items.get(String(itemId).split(".")[0]);
+    const act = item?.system.activities?.get(activity);
+    if (!act) return false;
+    return act.use({ event: {} }, this.#dialog(), {});
   }
 
   async #toggleItem(actor, { itemId }) {

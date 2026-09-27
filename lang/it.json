@@ -159,6 +159,7 @@
   "FCP.D5.PinSave": "TS {name} · d20 {mod}",
   "FCP.D5.PinD20": "{name} · d20 {mod}",
   "FCP.D5.Attacks": "Attacchi",
+  "FCP.D5.Reactions": "Reazioni",
   "FCP.D5.Features": "Privilegi attivabili",
   "FCP.D5.Consumables": "Consumabili",
   "FCP.D5.Attack": "Attacca",

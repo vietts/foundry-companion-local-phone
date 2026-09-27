@@ -357,9 +357,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const TextEditor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
     for (const group of groups) {
       for (const row of group.items) {
-        if (!dice && row.action === "useItem") row.action = null;
+        if (!dice && (row.action === "useItem" || row.action === "useActivity")) row.action = null;
         if (!row.id || !this.expandedItems.has(row.id)) continue;
-        const item = actor?.items.get(row.id);
+        const item = actor?.items.get(row.itemId ?? row.id);
         if (!item) continue;
         const raw = item.system?.description?.value ?? item.system?.description ?? "";
         try {
@@ -379,7 +379,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     let any = false;
     for (const group of groups) {
       for (const row of group.items ?? []) {
-        const item = row.id ? actor.items.get(row.id) : null;
+        const item = row.id ? actor.items.get(row.itemId ?? row.id) : null;
         const actionId = resolveActionId(item, row.data?.["action-id"]);
         if (item && hasEffect(item, actionId)) {
           row.vfx = { actionId: actionId ?? "" };
