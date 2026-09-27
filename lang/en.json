@@ -49,6 +49,8 @@
   "FCP.Move.Sent": "Move requested",
   "FCP.SwitchActor": "Character",
   "FCP.ExitCompanion": "Full Foundry interface",
+  "FCP.LogOut": "Log out",
+  "FCP.LogOutConfirm": "Log out of Foundry? You will go back to the join page.",
   "FCP.Reload": "Reload",
   "FCP.Uses": "Uses",
   "FCP.Equipped": "Equipped",

@@ -222,3 +222,11 @@
   content: "\e4f7";
   margin-left: -1em;
 }
+.ph-duotone.ph-sign-out:before {
+  content: "\e42a";
+  opacity: 0.2;
+}
+.ph-duotone.ph-sign-out:after {
+  content: "\e42b";
+  margin-left: -1em;
+}

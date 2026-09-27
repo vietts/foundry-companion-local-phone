@@ -93,6 +93,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       selectActor: CompanionApp.#onSelectActor,
       refresh: CompanionApp.#onRefresh,
       exitCompanion: CompanionApp.#onExit,
+      logOut: CompanionApp.#onLogOut,
       hpDelta: CompanionApp.#onHpDelta,
       hpApply: CompanionApp.#onHpApply,
       counter: CompanionApp.#onAdapterAction,
@@ -756,6 +757,16 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onRefresh() {
     this._chatCache.clear();
     this.render({ force: true });
+  }
+
+  /** Log out of Foundry (back to the join page), with a confirm: the button sits next to others on a small screen. */
+  static async #onLogOut() {
+    const ok = await foundry.applications.api.DialogV2.confirm({
+      window: { title: game.i18n.localize("FCP.LogOut") },
+      content: `<p>${game.i18n.localize("FCP.LogOutConfirm")}</p>`,
+      rejectClose: false
+    });
+    if (ok) game.logOut();
   }
 
   static async #onExit() {

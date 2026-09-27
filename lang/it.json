@@ -49,6 +49,8 @@
   "FCP.Move.Sent": "Movimento richiesto",
   "FCP.SwitchActor": "Personaggio",
   "FCP.ExitCompanion": "Interfaccia Foundry completa",
+  "FCP.LogOut": "Esci (logout)",
+  "FCP.LogOutConfirm": "Vuoi uscire da Foundry? Tornerai alla pagina di accesso.",
   "FCP.Reload": "Ricarica",
   "FCP.Uses": "Usi",
   "FCP.Equipped": "Equipaggiato",
