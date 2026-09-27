@@ -1,6 +1,6 @@
 import { MODULE_ID, SETTINGS, log } from "./constants.mjs";
 import { registerSettings, getSetting, setSetting } from "./settings.mjs";
-import { shouldUseCompanion } from "./device.mjs";
+import { shouldUseCompanion, migrateStuckMobileMode } from "./device.mjs";
 import { registerSocket } from "./socket.mjs";
 import { CompanionApp } from "./app/companion-app.mjs";
 import { getAdapter, registerAdapter } from "./systems/index.mjs";
@@ -32,6 +32,7 @@ Hooks.once("ready", async () => {
   // Journal entries open as a document. The system's sheet stays available under "Configure Sheet".
   const base = registerDocSheet();
   log(`journal document sheet built over ${base.name}`);
+  await migrateStuckMobileMode();
   if (!shouldUseCompanion()) return;
   await maybePromptCanvas();
   activateCompanion();

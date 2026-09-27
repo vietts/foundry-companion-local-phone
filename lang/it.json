@@ -48,7 +48,7 @@
   "FCP.Move.Center": "Ricentra",
   "FCP.Move.Sent": "Movimento richiesto",
   "FCP.SwitchActor": "Personaggio",
-  "FCP.ExitCompanion": "Interfaccia Foundry completa",
+  "FCP.ExitCompanion": "Interfaccia Foundry completa (solo in questa scheda del browser)",
   "FCP.LogOut": "Esci (logout)",
   "FCP.LogOutConfirm": "Vuoi uscire da Foundry? Tornerai alla pagina di accesso.",
   "FCP.Reload": "Ricarica",

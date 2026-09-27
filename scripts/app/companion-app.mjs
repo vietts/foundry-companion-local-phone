@@ -6,6 +6,7 @@ import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
 import { filterCandidates, orderCandidates, isExplored, pruneTargets, failureKey } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
+import { setDesktopForSession } from "../device.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
 const T = `modules/${MODULE_ID}/templates/parts`;
@@ -766,11 +767,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       content: `<p>${game.i18n.localize("FCP.LogOutConfirm")}</p>`,
       rejectClose: false
     });
-    if (ok) game.logOut();
+    if (ok) { setDesktopForSession(false); game.logOut(); }
   }
 
+  /** Desktop UI for this tab only: the next login (or a new tab) is back on the companion. */
   static async #onExit() {
-    await setSetting(SETTINGS.MOBILE_MODE, "off");
+    setDesktopForSession(true);
     const url = new URL(window.location.href);
     url.searchParams.delete("companion");
     window.location.replace(url.toString());
