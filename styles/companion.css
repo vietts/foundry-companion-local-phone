@@ -1014,6 +1014,16 @@ body.fcp-active #notifications {
   white-space: nowrap;
 }
 
+/* Total to-hit / save DC: the number players forget, so it is the loudest thing on the row. */
+.fcp-badge {
+  font: 700 16px var(--font-body);
+  color: var(--color-text);
+  background: var(--color-accent-100, transparent);
+  border: 2px solid var(--color-accent-700, var(--color-text));
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
 .fcp-chevron {
   color: var(--color-accent-700);
   font-size: 15px;

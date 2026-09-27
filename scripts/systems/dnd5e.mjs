@@ -305,12 +305,29 @@ export class Dnd5eAdapter extends SystemAdapter {
   /** One-line summary of an item: to-hit, damage and range for attacks, casting data for spells. */
   #meta(item) {
     if (item.type === "spell") {
-      return [item.labels?.activation, item.labels?.range, item.labels?.components?.vsm,
+      return [item.labels?.activation, item.labels?.range, damageText(item), item.labels?.components?.vsm,
         item.system.method && item.system.method !== "spell" ? CONFIG.DND5E.spellcasting?.[item.system.method]?.label : null].filter(Boolean).join(" · ");
     }
-    if (item.hasAttack) return [item.labels?.toHit, damageText(item), item.labels?.range].filter(Boolean).join(" · ");
+    if (item.hasAttack) return [damageText(item), item.labels?.range].filter(Boolean).join(" · "); // to-hit is in the badge
     if (item.type === "feat") return [item.labels?.activation, item.labels?.recovery].filter(Boolean).join(" · ");
     return item.labels?.activation ?? "";
+  }
+
+  /**
+   * The number players forget: total to-hit for attacks, save DC for save effects.
+   * dnd5e already computes both (proficiency, ability, magic bonuses, active effects).
+   */
+  #badge(source) {
+    const acts = source.system?.activities ? Array.from(source.system.activities) : [source];
+    const attack = acts.find(a => a.type === "attack");
+    const toHit = attack?.labels?.toHit ?? (source.hasAttack ? source.labels?.toHit : null);
+    if (toHit) return { text: toHit, hint: t("FCP.D5.ToHit") };
+    const save = acts.find(a => a.type === "save")?.save;
+    const dc = save?.dc?.value;
+    if (!dc) return null;
+    const ab = Array.from(save.ability ?? []);
+    const abbr = ab.length === 1 ? t(CONFIG.DND5E.abilities?.[ab[0]]?.abbreviation ?? ab[0]) : "";
+    return { text: f("FCP.D5.SaveBadge", { dc, ab: abbr }).trim(), hint: t("FCP.D5.SaveDC") };
   }
 
   #row(item, { actionLabel, big = false } = {}) {
@@ -319,6 +336,7 @@ export class Dnd5eAdapter extends SystemAdapter {
       name: item.name,
       img: item.img,
       meta: this.#meta(item),
+      badge: this.#badge(item),
       uses: this.#uses(item),
       big,
       action: "useItem",
@@ -413,6 +431,7 @@ export class Dnd5eAdapter extends SystemAdapter {
       meta: [a.labels?.activation ?? game.i18n.localize(CONFIG.DND5E.activityActivationTypes?.[a.activation?.type]?.label ?? ""),
         a.name && a.name !== item.name ? item.name : null].filter(Boolean).join(" · "),
       uses,
+      badge: this.#badge(a),
       big: false,
       action: "useActivity",
       actionLabel: t("FCP.Use"),

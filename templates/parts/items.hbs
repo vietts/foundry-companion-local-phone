@@ -72,6 +72,7 @@
           {{#if this.meta}}<span class="fcp-row-meta">{{this.meta}}</span>{{/if}}
         </span>
         <span class="fcp-row-right">
+          {{#if this.badge}}<span class="fcp-badge" title="{{this.badge.hint}}">{{this.badge.text}}</span>{{/if}}
           {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}} / {{this.uses.max}}</span>{{/if}}
           {{#if this.id}}<i class="ph-duotone ph-caret-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
         </span>
