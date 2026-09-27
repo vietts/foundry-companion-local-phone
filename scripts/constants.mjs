@@ -14,7 +14,8 @@ export const SETTINGS = {
   DIGITAL_DICE: "digitalDice",
   LAST_ACTOR: "lastActor",
   LAST_TAB: "lastTab",
-  RECENT_NOTES: "recentNotes"
+  RECENT_NOTES: "recentNotes",
+  KEEP_AWAKE: "keepAwake"
 };
 
 /* Order of the bottom bar: what a player touches most often first, the map last. */

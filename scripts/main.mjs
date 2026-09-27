@@ -10,6 +10,7 @@ import { activeScene } from "./movement.mjs";
 import { fogRecorder, registerFogHooks } from "./fog.mjs";
 import { registerDocSheet } from "./journal/doc-sheet.mjs";
 import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
+import { startWakeLock } from "./wake-lock.mjs";
 
 let app = null;
 
@@ -64,6 +65,7 @@ function activateCompanion() {
   app = new CompanionApp(adapter);
   app.render({ force: true });
   registerRefreshHooks();
+  startWakeLock();
 }
 
 function isCurrentActor(doc) {

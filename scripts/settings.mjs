@@ -16,6 +16,16 @@ export function registerSettings() {
     requiresReload: true
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.KEEP_AWAKE, {
+    name: "FCP.Settings.KeepAwake.Name",
+    hint: "FCP.Settings.KeepAwake.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => import("./wake-lock.mjs").then(m => m.syncWakeLock())
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.CANVAS_PROMPTED, {
     name: "FCP.Settings.CanvasPrompted.Name",
     scope: "client",

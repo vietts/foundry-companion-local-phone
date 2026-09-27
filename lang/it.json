@@ -5,6 +5,8 @@
   "FCP.Settings.MobileMode.Auto": "Auto (rileva telefono)",
   "FCP.Settings.MobileMode.On": "Sempre attiva",
   "FCP.Settings.MobileMode.Off": "Off",
+  "FCP.Settings.KeepAwake.Name": "Schermo sempre acceso sui telefoni",
+  "FCP.Settings.KeepAwake.Hint": "Mentre il companion è aperto il telefono non spegne lo schermo da solo. Se lo schermo si blocca, Foundry perde la connessione e allo sblocco ricarica la pagina. Consuma un po' più di batteria.",
   "FCP.Settings.CanvasPrompted.Name": "Avviso canvas mostrato",
   "FCP.Settings.MinimapTokens.Name": "Token mostrati sulla minimappa del telefono",
   "FCP.Settings.MinimapTokens.Hint": "Quali token vedono i giocatori sulla minimappa. I token nascosti non vengono mai mostrati.",

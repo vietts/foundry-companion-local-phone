@@ -5,6 +5,8 @@
   "FCP.Settings.MobileMode.Auto": "Auto (detect phone)",
   "FCP.Settings.MobileMode.On": "Always on",
   "FCP.Settings.MobileMode.Off": "Off",
+  "FCP.Settings.KeepAwake.Name": "Keep phone screens on",
+  "FCP.Settings.KeepAwake.Hint": "While the companion is open the phone does not dim or lock by itself. A locked screen drops the connection and Foundry reloads the page on unlock. Uses a bit more battery.",
   "FCP.Settings.CanvasPrompted.Name": "Canvas prompt shown",
   "FCP.Settings.MinimapTokens.Name": "Tokens shown on the phone minimap",
   "FCP.Settings.MinimapTokens.Hint": "Which tokens players see on the companion minimap. Hidden tokens are never shown.",
