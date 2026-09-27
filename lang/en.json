@@ -114,6 +114,8 @@
   "FCP.DH.Currency.coins": "coin|coins",
   "FCP.DH.Kind.consumable": "Consumable",
   "FCP.DH.Kind.loot": "Loot",
+  "FCP.D5.SummonedBy": "Summoned by {name}",
+  "FCP.D5.Summon": "Summon",
   "FCP.D5.HP": "Hit points",
   "FCP.D5.HPLeft": "left",
   "FCP.D5.TempShort": "temp.",

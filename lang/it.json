@@ -114,6 +114,8 @@
   "FCP.DH.Currency.coins": "moneta|monete",
   "FCP.DH.Kind.consumable": "Consumabile",
   "FCP.DH.Kind.loot": "Bottino",
+  "FCP.D5.SummonedBy": "Evocazione di {name}",
+  "FCP.D5.Summon": "Evocazione",
   "FCP.D5.HP": "Punti ferita",
   "FCP.D5.HPLeft": "rimasti",
   "FCP.D5.TempShort": "temp.",

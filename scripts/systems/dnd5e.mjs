@@ -34,11 +34,21 @@ export class Dnd5eAdapter extends SystemAdapter {
   /** Opening an item with digital dice off pins its to-hit and damage in the header. */
   pinOnExpand = true;
 
+  /** Player characters, plus creatures they summoned (dnd5e marks them with flags.dnd5e.summon). */
   isPlayable(actor) {
-    return actor.type === "character";
+    return actor.type === "character" || this.#isSummon(actor);
+  }
+
+  #isSummon(actor) {
+    return actor.type === "npc" && !!actor.getFlag("dnd5e", "summon");
   }
 
   subtitle(actor) {
+    if (this.#isSummon(actor)) {
+      const origin = actor.getFlag("dnd5e", "summon")?.origin;
+      const owner = origin ? fromUuidSync(origin)?.actor?.name : null;
+      return owner ? f("FCP.D5.SummonedBy", { name: owner }) : t("FCP.D5.Summon");
+    }
     const s = actor.system;
     const classes = Object.values(actor.classes ?? {}).map(c => `${c.name} ${c.system.levels}`).join(" / ");
     const race = s.details?.race?.name ?? (typeof s.details?.race === "string" ? s.details.race : "");
@@ -114,7 +124,7 @@ export class Dnd5eAdapter extends SystemAdapter {
         hpPct: `${Math.round(value / total * 100)}%`,
         tempPct: `${Math.round(temp / total * 100)}%`
       },
-      death: value <= 0 ? {
+      death: value <= 0 && actor.type === "character" ? {
         rows: [
           { key: "death.success", label: t("FCP.D5.Successes"), boxes: boxes(3, d.success ?? 0) },
           { key: "death.failure", label: t("FCP.D5.Failures"), boxes: boxes(3, d.failure ?? 0) }
