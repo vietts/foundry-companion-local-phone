@@ -1017,8 +1017,9 @@ body.fcp-active #notifications {
   white-space: nowrap;
 }
 
-/* Total to-hit / save DC: the number players forget, so it is the loudest thing on the row. */
-.fcp-badge {
+/* Total to-hit / save DC: the number players forget, so it is the loudest thing on the row.
+   Not .fcp-badge: that name is the chat unread dot, absolutely positioned. */
+.fcp-tohit {
   font: 700 16px var(--font-body);
   color: var(--color-text);
   background: var(--color-accent-100, transparent);
