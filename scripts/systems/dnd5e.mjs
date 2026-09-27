@@ -326,7 +326,10 @@ export class Dnd5eAdapter extends SystemAdapter {
     const dc = save?.dc?.value;
     if (!dc) return null;
     const ab = Array.from(save.ability ?? []);
-    const abbr = ab.length === 1 ? t(CONFIG.DND5E.abilities?.[ab[0]]?.abbreviation ?? ab[0]) : "";
+    // Our own abbreviations: the system's come out untranslated ("wis") on an Italian table.
+    const key = `FCP.D5.Ab.${ab[0]}`;
+    const abbr = ab.length !== 1 ? "" : game.i18n.has?.(key) ? t(key)
+      : String(t(CONFIG.DND5E.abilities?.[ab[0]]?.abbreviation ?? ab[0])).replace(/^./, c => c.toUpperCase());
     return { text: f("FCP.D5.SaveBadge", { dc, ab: abbr }).trim(), hint: t("FCP.D5.SaveDC") };
   }
 
