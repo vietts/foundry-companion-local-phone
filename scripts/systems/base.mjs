@@ -21,8 +21,21 @@ export function equipToggle(item) {
 }
 
 /** Plain text of an HTML description, cut at a word boundary. */
+/**
+ * Foundry enricher syntax as the text a reader sees: @UUID[...]{Archery} -> "Archery",
+ * [[/r 1d6]] -> "1d6", &Reference[prone] -> "prone". Left raw, a compendium id is one long
+ * unbreakable word that pushes the phone layout sideways.
+ */
+export function enricherText(text) {
+  return String(text ?? "")
+    .replace(/@Embed\[[^\]]*\](?:\{[^}]*\})?/g, "")
+    .replace(/@\w+\[([^\]]*)\](?:\{([^}]*)\})?/g, (_, ref, label) => label ?? ref.split(/[.#]/).pop())
+    .replace(/\[\[\/\w+\s+([^\]]*?)\]\](?:\{([^}]*)\})?/g, (_, formula, label) => label ?? formula)
+    .replace(/&\w+\[([^\]]*)\](?:\{([^}]*)\})?/g, (_, ref, label) => label ?? ref.split(/\s/)[0]);
+}
+
 export function plainText(html, max = 180) {
-  const text = String(html ?? "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  const text = enricherText(String(html ?? "").replace(/<[^>]*>/g, " ")).replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 30))}…`;

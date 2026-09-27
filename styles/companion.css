@@ -837,6 +837,9 @@ body.fcp-active #notifications {
   font: 700 15px/1.25 var(--font-heading);
 }
 
+/* Never let one long word (a URL, a leftover id) widen the column. */
+.fcp-passive, .fcp-item-desc, .fcp-row-meta { overflow-wrap: anywhere; min-width: 0; }
+
 .fcp-passive p,
 .fcp-about p {
   margin: 0;
