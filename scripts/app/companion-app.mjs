@@ -6,6 +6,7 @@ import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
 import { filterCandidates, orderCandidates, isExplored, pruneTargets, failureKey } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
+import { MapViewport } from "./map-viewport.mjs";
 import { setDesktopForSession } from "../device.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
@@ -37,6 +38,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.step = 1;
     this.tokenId = null;
     this.mapTarget = null;
+    this.mapViewport = new MapViewport();
     this.unreadChat = 0;
     this._chatCache = new Map();
     this._actorId = getSetting(SETTINGS.LAST_ACTOR) || null;
@@ -117,6 +119,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       move: CompanionApp.#onMove,
       mapTap: CompanionApp.#onMapTap,
       stepToggle: CompanionApp.#onStepToggle,
+      mapRecenter: CompanionApp.#onMapRecenter,
+      mapOverview: CompanionApp.#onMapOverview,
       selectToken: CompanionApp.#onSelectToken,
       toggleTarget: CompanionApp.#onToggleTarget,
       clearTargets: CompanionApp.#onClearTargets,
@@ -511,6 +515,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const background = (!schematic && this.activeTab === "map" && src && !VIDEO_RE.test(src)) ? src : null;
     const cells = grid.isSquare ? { w: (grid.sizeX / d.sceneWidth * 100).toFixed(4), h: (grid.sizeY / d.sceneHeight * 100).toFixed(4) } : null;
 
+    // The point the zoomed map keeps in the middle: the user's token.
+    const focus = token ? {
+      x: (token.x + token.width * grid.sizeX / 2 - d.sceneX) / d.sceneWidth,
+      y: (token.y + token.height * grid.sizeY / 2 - d.sceneY) / d.sceneHeight
+    } : null;
+
     const myIds = choices.map(t => t.id);
     const tokens = visibleMinimapTokens(scene, myIds).map(t => {
       const w = t.width * grid.sizeX;
@@ -542,6 +552,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       sceneName: scene.navName || scene.name,
       hasToken: !!token,
       ratio: (d.sceneWidth / d.sceneHeight).toFixed(4),
+      cell: (d.size / d.sceneWidth).toFixed(6),
+      focus: focus ? { x: focus.x.toFixed(5), y: focus.y.toFixed(5) } : null,
       initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
       background,
       tokens,
@@ -621,6 +633,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this.#applySpellFilter();
     this.notes?.onRender(el);
+    this.mapViewport.attach(el.querySelector(".fcp-mapwrap"));
 
     const log = el.querySelector(".fcp-chat-log");
     if (log && (options.isFirstRender || options.parts?.includes("chat") || !options.parts)) {
@@ -634,6 +647,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Saves, then disposes the editor: its update hook and autosave timer must not outlive the app.
     this.notes?.dispose();
     this.wideQuery?.removeEventListener("change", this.#onWideChange);
+    this.mapViewport.detach();
     super._onClose(options);
   }
 
@@ -926,6 +940,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const dx = Number(target.dataset.dx);
     const dy = Number(target.dataset.dy);
     const steps = this.step;
+    this.mapViewport.state.follow = true;
     await this.#moveTo(token => shiftedPosition(token, dx, dy, steps));
   }
 
@@ -940,12 +955,21 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const d = scene.dimensions;
     const center = { x: d.sceneX + px * d.sceneWidth, y: d.sceneY + py * d.sceneHeight };
     this.mapTarget = { left: (px * 100).toFixed(2), top: (py * 100).toFixed(2) };
+    this.mapViewport.state.follow = true;
     await this.#moveTo(t => positionAtCenter(t, center));
   }
 
   static #onStepToggle() {
     this.step = this.step >= 3 ? 1 : this.step + 1;
     this.markDirty("map");
+  }
+
+  static #onMapRecenter() {
+    this.mapViewport.recenter();
+  }
+
+  static #onMapOverview() {
+    this.mapViewport.toggleOverview();
   }
 
   static #onToggleTarget(event, target) {

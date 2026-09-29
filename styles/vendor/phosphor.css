@@ -230,3 +230,27 @@
   content: "\e42b";
   margin-left: -1em;
 }
+.ph-duotone.ph-crosshair:before {
+  content: "\e1d6";
+  opacity: 0.2;
+}
+.ph-duotone.ph-crosshair:after {
+  content: "\e1d7";
+  margin-left: -1em;
+}
+.ph-duotone.ph-arrows-out:before {
+  content: "\e0a2";
+  opacity: 0.2;
+}
+.ph-duotone.ph-arrows-out:after {
+  content: "\e0a3";
+  margin-left: -1em;
+}
+.ph-duotone.ph-arrows-in:before {
+  content: "\e09a";
+  opacity: 0.2;
+}
+.ph-duotone.ph-arrows-in:after {
+  content: "\e09b";
+  margin-left: -1em;
+}

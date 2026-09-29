@@ -14,7 +14,7 @@
   </div>
 
   <div class="fcp-mapwrap">
-    <div class="fcp-minimap {{#if map.fog.on}}fogged{{/if}}" data-action="mapTap" style="--fcp-ratio: {{map.ratio}};">
+    <div class="fcp-minimap {{#if map.fog.on}}fogged{{/if}}" data-action="mapTap" data-ratio="{{map.ratio}}" data-cell="{{map.cell}}" {{#if map.focus}}data-fx="{{map.focus.x}}" data-fy="{{map.focus.y}}"{{/if}} style="--fcp-ratio: {{map.ratio}};">
       <div class="fcp-mm-layer {{#if map.background}}has-bg{{/if}} {{#if map.schematic}}schematic{{/if}} {{#if map.fog.on}}{{#unless map.fog.mask}}unexplored{{/unless}}{{/if}}" style="{{#if map.background}}background-image: url('{{map.background}}');{{/if}}{{#if map.fog.mask}} --fcp-fog: url('{{map.fog.mask}}');{{/if}}{{#if map.cells}} --fcp-cell-w: {{map.cells.w}}%; --fcp-cell-h: {{map.cells.h}}%;{{/if}}">
         {{#if map.walls.length}}
         <svg class="fcp-mm-walls" viewBox="{{map.viewBox}}" preserveAspectRatio="none" aria-hidden="true">
@@ -26,9 +26,13 @@
         {{/unless}}{{/each}}
       </div>
       {{#each map.tokens}}{{#if this.mine}}
-      <div class="fcp-mm-token {{this.cls}}" style="left: {{this.left}}%; top: {{this.top}}%; width: {{this.size}}%; aspect-ratio: 1; background-image: url('{{this.img}}');" title="{{this.name}}"></div>
+      <div class="fcp-mm-token {{this.cls}}" data-id="{{this.id}}" style="left: {{this.left}}%; top: {{this.top}}%; width: {{this.size}}%; aspect-ratio: 1; background-image: url('{{this.img}}');" title="{{this.name}}"></div>
       {{/if}}{{/each}}
       {{#if map.target}}<div class="fcp-mm-target" style="left: {{map.target.left}}%; top: {{map.target.top}}%;"></div>{{/if}}
+    </div>
+    <div class="fcp-mm-controls">
+      {{#if map.hasToken}}<button type="button" class="fcp-mm-recenter" data-action="mapRecenter" aria-label="{{localize "FCP.Move.Center"}}" title="{{localize "FCP.Move.Center"}}"><i class="ph-duotone ph-crosshair"></i></button>{{/if}}
+      <button type="button" class="fcp-mm-overview" data-action="mapOverview" aria-label="{{localize "FCP.Map.Overview"}}" title="{{localize "FCP.Map.Overview"}}"><i class="ph-duotone ph-arrows-out"></i><i class="ph-duotone ph-arrows-in"></i></button>
     </div>
   </div>
 

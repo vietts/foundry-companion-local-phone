@@ -5,7 +5,7 @@ Interfaccia mobile per giocare **dal vivo, al tavolo, con Foundry sullo schermo 
 Priorità, in ordine:
 
 1. **Scheda**: punti ferita con danno/cura, caratteristiche, abilità, tiri salvezza (D&D 5e) o tratti, Speranza, Stress, Armatura, soglie di danno (Daggerheart), condizioni, riposi. È il riferimento da tenere sotto mano.
-2. **Mappa**: minimappa leggera (senza canvas) con i token e un pad direzionale per muovere il proprio token di una casella alla volta, oppure toccando un punto della minimappa. I movimenti vengono validati dal client del GM, che controlla i muri. Con la **nebbia di guerra** la mappa mostra solo le zone che il gruppo ha esplorato, con i muri disegnati come linee di riferimento.
+2. **Mappa**: minimappa leggera (senza canvas) con i token e un pad direzionale per muovere il proprio token di una casella alla volta, oppure toccando un punto della minimappa. La mappa segue il proprio token da vicino (circa dieci caselle in larghezza): si trascina per guardarsi intorno, si allarga con due dita, il mirino riporta sul token e un pulsante mostra la scena intera. I movimenti vengono validati dal client del GM, che controlla i muri. Con la **nebbia di guerra** la mappa mostra solo le zone che il gruppo ha esplorato, con i muri disegnati come linee di riferimento.
 3. **Azioni** e **Oggetti**: attacchi, incantesimi, carte dominio, privilegi e inventario. Toccando una riga si apre il testo dell'oggetto, per leggere cosa fa. Equipaggia, prepara, sposta nel vault.
 4. **Chat**: in secondo piano, per le regole o gli appunti che il GM manda in chat. Con un badge sui messaggi non letti.
 
@@ -121,6 +121,8 @@ scripts/
   fog.mjs               zone esplorate, registrate dal client del GM
   app/companion-app.mjs interfaccia (ApplicationV2)
   app/targets-data.mjs  ordine e filtri della striscia dei bersagli
+  app/map-view.mjs      zoom e spostamento della mappa (calcoli)
+  app/map-viewport.mjs  zoom e spostamento della mappa (gesti)
   systems/              adattatori: dnd5e, daggerheart, generico
   journal/doc-sheet.mjs   foglio "Documento" del journal
   journal/doc-editor.mjs  editor sempre attivo con salvataggio automatico
