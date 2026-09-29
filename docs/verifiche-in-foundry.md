@@ -26,4 +26,19 @@ Esito dell'ultima prova: 26/9/2026, VPS (Foundry 14.367), mondo `faglia` (dnd5e 
 - 6 non provato.
 - 7 ok: la risposta "scene" arriva, ma con il GM collegato da due client (uno senza canvas) arrivava per prima anche quando l'effetto partiva. Corretto: risponde solo il client che ha la scena aperta (testato con node; dal vivo in Daggerheart con un solo client GM arriva una sola risposta, il caso con due client non è stato rifatto).
 
+## Mappa zoomata (telefono)
+
+Giocatore dal telefono vero (iPhone e Android), canvas spento, una scena con sfondo e con *Stile della mappa = Immagine della scena*.
+
+1. All'apertura della scheda Mappa il proprio token è al centro, circa dieci caselle in larghezza; vicino al bordo della scena la mappa si ferma al bordo.
+2. Con il D-pad la mappa scorre insieme al token, che resta al centro senza scatti.
+3. Un trascinamento sposta la vista e non muove il token; compare il mirino, che riporta sul token.
+4. Due dita allargano e stringono la vista attorno al punto fra le dita; lo zoom si ferma a circa cinque caselle e alla scena intera.
+5. Un tocco singolo sulla mappa muove ancora il token in quel punto (anche dopo uno zoom o un trascinamento).
+6. Il pulsante in alto a destra alterna scena intera e vista vicina.
+7. La vista non si perde quando un altro giocatore muove il suo token (la parte della mappa viene ridisegnata).
+8. Nebbia di guerra attiva: la maschera resta allineata allo sfondo a ogni zoom.
+9. Scena grande (oltre 60 caselle) con immagine pesante: su iPhone lo sfondo resta visibile e Safari non ricarica la pagina.
+10. Tablet in orizzontale: la mappa nella colonna di destra si comporta allo stesso modo.
+
 Nota per chi prova: GM e giocatore vanno in due sessioni separate del browser (per esempio GM in incognito). Nello stesso profilo, entrare col secondo utente ricarica l'altra scheda con quell'utente, e "canvas spento" vale per tutte le schede.

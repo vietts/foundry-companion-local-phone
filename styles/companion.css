@@ -1616,6 +1616,70 @@ body.fcp-active #notifications {
   pointer-events: none;
 }
 
+/* Zoomed map: the viewport crops it, the script sizes and moves it (see map-viewport.mjs). */
+.fcp-mapwrap {
+  position: relative;
+}
+
+.fcp-mapwrap.zoomable {
+  display: block;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.fcp-mapwrap.zoomable .fcp-minimap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  aspect-ratio: auto;
+  transform-origin: 0 0;
+  transition: transform 0.18s ease, width 0.18s ease, height 0.18s ease;
+}
+
+.fcp-mapwrap.fcp-still .fcp-minimap,
+.fcp-mapwrap.fcp-still .fcp-mm-token {
+  transition: none;
+}
+
+.fcp-mm-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fcp-mapwrap:not(.zoomable) .fcp-mm-controls {
+  display: none;
+}
+
+.fcp-mm-controls button {
+  width: var(--fcp-tap);
+  height: var(--fcp-tap);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  font-size: 20px;
+}
+
+.fcp-mapwrap.following .fcp-mm-recenter,
+.fcp-mapwrap.overview .fcp-mm-recenter,
+.fcp-mm-overview .ph-arrows-in,
+.fcp-mapwrap.overview .fcp-mm-overview .ph-arrows-out {
+  display: none;
+}
+
+.fcp-mapwrap.overview .fcp-mm-overview .ph-arrows-in {
+  display: inline;
+}
+
 .fcp-mapbar {
   flex: none;
   display: flex;
