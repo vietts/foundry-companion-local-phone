@@ -15,6 +15,8 @@ Con **Dadi digitali** attivi (impostazione del dispositivo, spenta di default) t
 
 Il modulo non usa un server esterno e nemmeno CDN: gira dentro il normale client Foundry, con font (Cinzel e Montserrat per l'interfaccia, Source Serif 4 per i testi discorsivi, tutti OFL) e icone (Phosphor duotone, MIT) inclusi in `styles/vendor/`. Sul telefono si può disattivare il canvas (il modulo lo propone al primo avvio), così non vengono scaricate le immagini delle scene e il caricamento resta leggero.
 
+> **Beta.** Provato dal vivo al nostro tavolo su Foundry 14 con D&D 5e e Daggerheart. Segnala i problemi nelle [Issues](https://github.com/vietts/foundry-companion-local-phone/issues), dicendo sistema, telefono e browser.
+
 ## Schermate
 
 | D&D 5e · Scheda | D&D 5e · Abilità | D&D 5e · Azioni (dadi digitali) |
@@ -38,11 +40,15 @@ Le schermate usano personaggi di prova.
 
 ## Installazione
 
-1. Scarica `module.zip` dalla release.
-2. Nella cartella dati di Foundry crea `Data/modules/foundry-companion-local-phone` e scompatta lo zip **dentro** quella cartella (i file dello zip, come `module.json`, devono stare direttamente lì).
-3. Riavvia Foundry, poi in ogni mondo dove vuoi usarlo attiva **Phone Companion** da *Gestisci moduli*: il modulo si attiva mondo per mondo.
+In Foundry: *Moduli aggiuntivi → Installa modulo*, incolla nel campo **URL del manifest**:
 
-Se la repo è pubblica si può installare anche da *Moduli aggiuntivi → Installa modulo* con il manifest `https://github.com/vietts/foundry-companion-local-phone/releases/latest/download/module.json`.
+```
+https://github.com/vietts/foundry-companion-local-phone/releases/latest/download/module.json
+```
+
+Poi, in ogni mondo dove vuoi usarlo, attiva **Phone Companion** da *Gestisci moduli*: il modulo si attiva mondo per mondo. Gli aggiornamenti arrivano da Foundry come per gli altri moduli.
+
+Senza accesso a internet dal server: scarica `module.zip` dalla [pagina delle release](https://github.com/vietts/foundry-companion-local-phone/releases/latest), crea `Data/modules/foundry-companion-local-phone` e scompatta lo zip **dentro** quella cartella (`module.json` deve stare direttamente lì), poi riavvia Foundry.
 
 ## Uso al tavolo
 
@@ -106,7 +112,7 @@ Dispositivo (ogni giocatore):
 
 ## Stato
 
-Versione 0.4.6, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli). Le note del GM (0.3.0) sono provate su un Foundry locale; sul telefono vero non ancora. Gli effetti dal telefono (0.4.0) sono provati dal vivo sul server con Tavolo VFX, in D&D 5e e in Daggerheart 2.10.5, con il giocatore in modalità companion senza canvas. Le creature evocate in D&D 5e (0.4.1, per esempio il compagno del Signore delle Bestie) sono provate dal vivo dal telefono. Il gruppo Reazioni e le righe per singola attività (0.4.2, per esempio Protective Field del Psi Warrior) sono provati dal vivo dal telefono. Il bonus per colpire e la CD in evidenza su ogni riga (0.4.3) sono provati sulle schede vere del mondo.
+Versione 0.4.8, provata dal vivo su Foundry 14.367 con dnd5e 6.0.3 e Daggerheart 2.10.1: scheda, azioni, oggetti, chat, movimento sulla mappa, nebbia di guerra e sincronizzazione con la scheda desktop. L'impaginazione a due colonne per tablet (0.2.1) è provata solo in anteprima. Le API usate sono quelle dei sistemi (stessi metodi chiamati dai loro fogli). Le note del GM (0.3.0) sono provate su un Foundry locale; sul telefono vero non ancora. Gli effetti dal telefono (0.4.0) sono provati dal vivo sul server con Tavolo VFX, in D&D 5e e in Daggerheart 2.10.5, con il giocatore in modalità companion senza canvas. Le creature evocate in D&D 5e (0.4.1, per esempio il compagno del Signore delle Bestie) sono provate dal vivo dal telefono. Il gruppo Reazioni e le righe per singola attività (0.4.2, per esempio Protective Field del Psi Warrior) sono provati dal vivo dal telefono. Il bonus per colpire e la CD in evidenza su ogni riga (0.4.3) sono provati sulle schede vere del mondo.
 
 ## Struttura
 
