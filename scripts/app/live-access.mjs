@@ -1,6 +1,7 @@
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
 import { qrTarget, newPassword, uniqueUserName } from "./live-data.mjs";
+import { cardsPdf } from "./live-pdf.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2, DialogV2 } = foundry.applications.api;
 
@@ -100,7 +101,7 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Printable cards, one per ticked character with an account.
+   * A PDF with one card per ticked character with an account: name on top, QR below.
    * With a login page the QR carries a fresh password (older cards stop working); without, it opens the join page.
    */
   static async #onPrintCards() {
@@ -118,14 +119,9 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       if (!ok) return;
     }
-    // Opened before the awaits below, while the click still counts as a user gesture for the popup blocker.
-    const win = window.open("", "fcp-live-cards");
-    if (!win) {
-      ui.notifications.error("FCP.Live.PopupBlocked", { localize: true });
-      return;
-    }
     const { default: qrcode } = await import("../vendor/qrcode.mjs");
     const joinUrl = new URL(foundry.utils.getRoute("join"), window.location.origin).href;
+    const host = new URL(joinUrl).host;
     const cards = [];
     for (const { actor, user } of rows) {
       let password = null;
@@ -136,44 +132,22 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const qr = qrcode(0, "M");
       qr.addData(qrTarget({ loginUrl, joinUrl, userId: user.id, password }));
       qr.make();
-      cards.push({ name: actor.name, user: user.name, svg: qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true }) });
+      const note = loginUrl
+        ? game.i18n.localize("FCP.Live.CardDirect")
+        : game.i18n.format("FCP.Live.CardJoin", { host, name: user.name });
+      cards.push({ name: actor.name, note, qr: { count: qr.getModuleCount(), isDark: (r, c) => qr.isDark(r, c) } });
     }
-    win.document.open();
-    win.document.write(cardsHtml(cards, { direct: !!loginUrl, host: new URL(joinUrl).host }));
-    win.document.close();
-    win.focus();
+    const pdf = cardsPdf(cards, { textWidth: measureText, title: game.i18n.localize("FCP.Live.Title") });
+    const file = `${game.i18n.localize("FCP.Live.FileName")}-${game.world.id}.pdf`;
+    foundry.utils.saveDataToFile(pdf, "application/pdf", file);
+    ui.notifications.info(game.i18n.format("FCP.Live.Saved", { n: cards.length, file }));
   }
 }
 
-const escape = s => foundry.utils.escapeHTML?.(s) ?? String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
-
-function cardsHtml(cards, { direct, host }) {
-  const loc = key => game.i18n.localize(key);
-  const how = name => direct
-    ? escape(loc("FCP.Live.CardDirect"))
-    : escape(game.i18n.format("FCP.Live.CardJoin", { host, name }));
-  const body = cards.map(c => `
-    <article class="card">
-      <h2>${escape(c.name)}</h2>
-      <div class="qr">${c.svg}</div>
-      <p>${how(c.user)}</p>
-    </article>`).join("");
-  return `<!doctype html><html lang="${escape(game.i18n.lang)}"><head><meta charset="utf-8">
-<title>${escape(loc("FCP.Live.Title"))}</title>
-<style>
-  @page { size: A4; margin: 12mm; }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: Georgia, "Times New Roman", serif; color: #2b241c; background: #fff; }
-  .bar { padding: 12px 16px; font: 14px/1.4 system-ui, sans-serif; display: flex; gap: 12px; align-items: center; }
-  .bar button { font: inherit; padding: 6px 14px; }
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8mm; padding: 0 16px 16px; }
-  .card { border: 2px solid #2b241c; padding: 8mm 6mm; text-align: center; break-inside: avoid; }
-  .card h2 { margin: 0 0 4mm; font-size: 22pt; }
-  .qr svg { width: 62mm; height: 62mm; display: block; margin: 0 auto; }
-  .card p { margin: 4mm 0 0; font-size: 11pt; }
-  @media print { .bar { display: none; } .grid { padding: 0; } }
-</style></head><body>
-<div class="bar"><button onclick="window.print()">${escape(loc("FCP.Live.PrintNow"))}</button><span>${escape(game.i18n.format("FCP.Live.CardCount", { n: cards.length }))}</span></div>
-<main class="grid">${body}</main>
-</body></html>`;
+/** Arial has Helvetica's metrics, so the canvas measures what the PDF viewer will draw. */
+let ctx = null;
+function measureText(text, size, bold) {
+  ctx ??= document.createElement("canvas").getContext("2d");
+  ctx.font = `${bold ? "bold " : ""}${size}px Helvetica, Arial, sans-serif`;
+  return ctx.measureText(text).width;
 }
