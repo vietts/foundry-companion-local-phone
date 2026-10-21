@@ -2615,12 +2615,6 @@ body.fcp-active #notifications {
 
 /* ---------- Live day ---------- */
 
-/* No nav under the map: the pad keeps clear of the home indicator itself. */
-#fcp-app.fcp-live .fcp-padpanel {
-  height: calc(230px + var(--fcp-safe-bottom));
-  padding-bottom: var(--fcp-safe-bottom);
-}
-
 #fcp-app.fcp-live .fcp-map-title .fcp-kicker span:last-child {
   font-weight: 700;
 }

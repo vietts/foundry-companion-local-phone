@@ -8,7 +8,7 @@
   "FCP.Settings.KeepAwake.Name": "Schermo sempre acceso sui telefoni",
   "FCP.Settings.KeepAwake.Hint": "Mentre il companion è aperto il telefono non spegne lo schermo da solo. Se lo schermo si blocca, Foundry perde la connessione e allo sblocco ricarica la pagina. Consuma un po' più di batteria.",
   "FCP.Settings.LiveDay.Name": "Giornata dal vivo",
-  "FCP.Settings.LiveDay.Hint": "Per eventi con giocatori nuovi e schede di carta: chi ha un personaggio assegnato vede sul telefono solo la mappa per muovere il token, senza scheda, azioni, inventario e chat, e non può tornare all'interfaccia desktop. Account e QR dal pulsante «Accessi della giornata dal vivo».",
+  "FCP.Settings.LiveDay.Hint": "Per eventi con giocatori nuovi e schede di carta: chi ha un personaggio assegnato apre il telefono sempre sulla mappa, per muovere il token; scheda, azioni, oggetti e chat restano nella barra in basso. Niente pulsanti per uscire o tornare all'interfaccia desktop. Account e QR dal pulsante «Accessi della giornata dal vivo».",
   "FCP.Settings.LiveLoginUrl.Name": "Pagina di accesso diretto (giornata dal vivo)",
   "FCP.Settings.LiveLoginUrl.Hint": "Facoltativa. Indirizzo della pagina tools/live-login del modulo, pubblicata sullo stesso dominio di Foundry (es. /accesso/). Se c'è, il QR fa entrare direttamente con una password casuale; se è vuota, il QR apre la pagina di accesso di Foundry e il giocatore sceglie il nome del personaggio (account senza password).",
   "FCP.Live.Menu.Name": "Accessi della giornata dal vivo",

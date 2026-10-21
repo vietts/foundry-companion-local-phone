@@ -1,4 +1,4 @@
-import { MODULE_ID, SETTINGS, TABS, GM_TABS, LIVE_TABS, warn } from "../constants.mjs";
+import { MODULE_ID, SETTINGS, TABS, GM_TABS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
 import { requestMove, requestPlay } from "../socket.mjs";
@@ -17,8 +17,6 @@ const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
 const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map"];
 const PLAYER_HIDDEN_PARTS = ["notes"];
-/** Live day: only the map is left, and with a single tab the nav goes too. */
-const LIVE_HIDDEN_PARTS = ["notes", "sheet", "actions", "inventory", "chat", "nav"];
 
 const TAB_ICONS = {
   sheet: "ph-duotone ph-scroll",
@@ -35,7 +33,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.adapter = adapter;
     this.notes = game.user.isGM ? new GmNotes(this) : null;
     this.live = !this.notes && isLivePlayer();
-    const lastTab = getSetting(SETTINGS.LAST_TAB);
+    // Live day: the paper sheet is on the table, so the phone always opens on the map; the rest is one tap away.
+    const lastTab = this.live ? "map" : getSetting(SETTINGS.LAST_TAB);
     this.activeTab = this.tabs.includes(lastTab) ? lastTab : this.tabs[0];
     this.step = 1;
     this.tokenId = null;
@@ -59,7 +58,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Two columns (tablet): the sheet is always shown, so the active tab is one of the others. */
   get wide() {
-    return !this.live && !!this.wideQuery?.matches;
+    return !!this.wideQuery?.matches;
   }
 
   /** The GM gets notes and chat instead of a character. */
@@ -68,13 +67,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   get tabs() {
-    if (this.gmMode) return GM_TABS;
-    return this.live ? LIVE_TABS : TABS;
+    return this.gmMode ? GM_TABS : TABS;
   }
 
   get hiddenParts() {
-    if (this.gmMode) return GM_HIDDEN_PARTS;
-    return this.live ? LIVE_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS;
+    return this.gmMode ? GM_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS;
   }
 
   /** The tab pinned to the left column in two columns: the sheet, or the GM's notes. */
@@ -270,7 +267,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       summary: header?.summary?.[tab] ?? "",
       // Actions show the pin only where opening an item sets it (dnd5e); elsewhere it belongs to the sheet.
       pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : "",
-      menu: tab === this.primaryTab
+      menu: tab === this.primaryTab,
+      // Live day: no way out of the companion or of the account by mistake, only reload.
+      exits: !this.live
     };
   }
 

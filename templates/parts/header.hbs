@@ -24,8 +24,10 @@
     {{#if headerInfo.menu}}
     <div class="fcp-menu">
       <button type="button" data-action="refresh" title="{{localize 'FCP.Reload'}}"><i class="ph-duotone ph-arrows-clockwise"></i></button>
+      {{#if headerInfo.exits}}
       <button type="button" data-action="exitCompanion" title="{{localize 'FCP.ExitCompanion'}}"><i class="ph-duotone ph-desktop"></i></button>
       <button type="button" data-action="logOut" title="{{localize 'FCP.LogOut'}}"><i class="ph-duotone ph-sign-out"></i></button>
+      {{/if}}
     </div>
     {{/if}}
   </div>

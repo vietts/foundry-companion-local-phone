@@ -8,7 +8,7 @@
   "FCP.Settings.KeepAwake.Name": "Keep phone screens on",
   "FCP.Settings.KeepAwake.Hint": "While the companion is open the phone does not dim or lock by itself. A locked screen drops the connection and Foundry reloads the page on unlock. Uses a bit more battery.",
   "FCP.Settings.LiveDay.Name": "Live day",
-  "FCP.Settings.LiveDay.Hint": "For events with new players and paper sheets: whoever has an assigned character only gets the map on the phone to move the token, with no sheet, actions, inventory or chat, and cannot switch to the desktop UI. Accounts and QR codes from the \"Live day accesses\" button.",
+  "FCP.Settings.LiveDay.Hint": "For events with new players and paper sheets: whoever has an assigned character always opens the phone on the map, to move the token; sheet, actions, items and chat stay in the bottom bar. No buttons to log out or switch to the desktop UI. Accounts and QR codes from the \"Live day accesses\" button.",
   "FCP.Settings.LiveLoginUrl.Name": "Direct login page (live day)",
   "FCP.Settings.LiveLoginUrl.Hint": "Optional. Address of the module's tools/live-login page, published on Foundry's own domain (e.g. /accesso/). When set, the QR code logs in directly with a random password; when empty, the QR code opens Foundry's join page and the player picks the character's name (accounts without a password).",
   "FCP.Live.Menu.Name": "Live day accesses",

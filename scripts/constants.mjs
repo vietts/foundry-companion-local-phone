@@ -23,9 +23,6 @@ export const SETTINGS = {
 /* Order of the bottom bar: what a player touches most often first, the map last. */
 export const TABS = ["sheet", "actions", "inventory", "chat", "map"];
 
-/** Live day: the paper sheet is on the table, the phone only moves the token. */
-export const LIVE_TABS = ["map"];
-
 /** The GM has no character: notes and chat only. */
 export const GM_TABS = ["notes", "chat"];
 
