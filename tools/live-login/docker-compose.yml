@@ -1,0 +1,28 @@
+# Pagina di accesso diretto della giornata dal vivo, sullo stesso dominio di Foundry, dietro Traefik.
+# Sul server: una cartella con questo file, nginx.conf e html/accesso/index.html (copia di index.html).
+# FOUNDRY_HOSTNAME nel .env accanto, es. foundry.example.com. Avvio: docker compose up -d
+services:
+  accesso:
+    image: nginx:1.27-alpine
+    container_name: foundry-accesso
+    restart: unless-stopped
+    mem_limit: 32m
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-net"
+      # Priorità sopra il router principale di Foundry, che prende tutto l'host.
+      - "traefik.http.routers.foundry-accesso.rule=Host(`${FOUNDRY_HOSTNAME}`) && PathPrefix(`/accesso`)"
+      - "traefik.http.routers.foundry-accesso.priority=100"
+      - "traefik.http.routers.foundry-accesso.entrypoints=websecure"
+      - "traefik.http.routers.foundry-accesso.tls=true"
+      - "traefik.http.routers.foundry-accesso.tls.certresolver=letsencrypt-http"
+      - "traefik.http.services.foundry-accesso.loadbalancer.server.port=80"
+
+networks:
+  traefik-net:
+    external: true

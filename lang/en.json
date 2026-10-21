@@ -16,7 +16,7 @@
   "FCP.Live.Menu.Hint": "Create an account for each pregenerated character and print the cards with the login QR code.",
   "FCP.Live.Title": "Live day accesses",
   "FCP.Live.Off": "Live day is off: players will get the full companion. Turn it on in the module settings.",
-  "FCP.Live.IntroDirect": "Tick the characters in play. Each account is linked to a character and owns it. The QR code logs in directly: printing changes the passwords and older cards stop working.",
+  "FCP.Live.IntroDirect": "Tick the characters in play. Each account is linked to a character, owns it and has a random password only the QR code knows. The QR code logs in directly: printing changes the passwords and older cards stop working.",
   "FCP.Live.IntroJoin": "Tick the characters in play. Each account is linked to a character, owns it and has no password. The QR code opens Foundry's join page: the player picks the name on the card and presses Join.",
   "FCP.Live.NoAccount": "no account",
   "FCP.Live.NoCharacters": "There are no player characters in this world.",

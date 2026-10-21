@@ -1,9 +1,9 @@
 /* Pure helpers for the live day accesses: no Foundry globals, so they run under node --test. */
 
-/** No 0/O, 1/l/I: the password is never typed, but it may be read out loud if a card gets lost. */
+/** No 0/O, 1/l/I: the password is never typed, but it may be read out loud if a card gets lost. 16 characters ≈ 92 bits. */
 const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-export function newPassword(length = 12, random = n => crypto.getRandomValues(new Uint32Array(n))) {
+export function newPassword(length = 16, random = n => crypto.getRandomValues(new Uint32Array(n))) {
   return Array.from(random(length), v => ALPHABET[v % ALPHABET.length]).join("");
 }
 

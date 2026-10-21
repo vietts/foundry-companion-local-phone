@@ -76,7 +76,11 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return this.#characters().filter(a => this.#selected.has(a.id));
   }
 
-  /** One Player account per ticked character without one: named after the character, owner of it, no password. */
+  /**
+   * One Player account per ticked character without one: named after the character, owner of it.
+   * With a login page the account gets a random password right away (the cards set a new one when printed):
+   * Foundry's join page is on the internet, and a passwordless account there is open to anyone.
+   */
   static async #onCreateAccounts() {
     const missing = this.#selectedActors().filter(a => !this.#userFor(a));
     if (!missing.length) {
@@ -87,7 +91,8 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const actor of missing) {
       const name = uniqueUserName(actor.name, taken);
       taken.add(name);
-      const user = await User.create({ name, role: CONST.USER_ROLES.PLAYER, character: actor.id, password: "" });
+      const password = this.loginUrl ? newPassword() : "";
+      const user = await User.create({ name, role: CONST.USER_ROLES.PLAYER, character: actor.id, password });
       await actor.update({ [`ownership.${user.id}`]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER });
     }
     ui.notifications.info(game.i18n.format("FCP.Live.Created", { n: missing.length }));

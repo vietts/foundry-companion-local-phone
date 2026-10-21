@@ -16,7 +16,7 @@
   "FCP.Live.Menu.Hint": "Crea un account per ogni personaggio pregenerato e stampa le carte con il QR di accesso.",
   "FCP.Live.Title": "Accessi della giornata dal vivo",
   "FCP.Live.Off": "La giornata dal vivo è spenta: i giocatori vedranno il companion completo. Accendila dalle impostazioni del modulo.",
-  "FCP.Live.IntroDirect": "Spunta i personaggi in gioco. Ogni account è collegato a un personaggio e ne è proprietario. Il QR fa entrare direttamente: stampando, le password cambiano e le carte vecchie smettono di funzionare.",
+  "FCP.Live.IntroDirect": "Spunta i personaggi in gioco. Ogni account è collegato a un personaggio, ne è proprietario e ha una password casuale che conosce solo il QR. Il QR fa entrare direttamente: stampando, le password cambiano e le carte vecchie smettono di funzionare.",
   "FCP.Live.IntroJoin": "Spunta i personaggi in gioco. Ogni account è collegato a un personaggio, ne è proprietario e non ha password. Il QR apre la pagina di accesso di Foundry: il giocatore sceglie il nome scritto sulla carta e preme Entra.",
   "FCP.Live.NoAccount": "nessun account",
   "FCP.Live.NoCharacters": "Nel mondo non ci sono personaggi giocanti.",
