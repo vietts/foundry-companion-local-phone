@@ -23,7 +23,7 @@
   "FCP.Live.Create": "Crea gli account mancanti",
   "FCP.Live.Print": "Stampa le carte QR",
   "FCP.Live.PrintNow": "Stampa",
-  "FCP.Live.CardCount": "{n} carte",
+  "FCP.Live.CardCount": "Carte: {n}",
   "FCP.Live.CardDirect": "Inquadra il QR con la fotocamera del telefono.",
   "FCP.Live.CardJoin": "Inquadra il QR con la fotocamera, scegli «{name}» e premi Entra. Senza QR: {host}",
   "FCP.Live.Created": "Account creati: {n}.",
