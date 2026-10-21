@@ -151,6 +151,14 @@ export function registerSettings() {
     default: "sheet"
   });
 
+  /* "" = the mode's default (collapsed on a live day, open otherwise), then whatever the player chose on this device. */
+  game.settings.register(MODULE_ID, SETTINGS.MAP_COLLAPSED, {
+    scope: "client",
+    config: false,
+    type: String,
+    default: ""
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.RECENT_NOTES, {
     scope: "client",
     config: false,

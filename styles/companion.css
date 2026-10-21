@@ -2715,3 +2715,61 @@ body.fcp-active #notifications {
   margin: 0;
   font-size: 3vh;
 }
+
+/* ---------- Map tab: foldable minimap, targets, pad ---------- */
+
+.fcp-map-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fcp-map-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin-top: 6px;
+  padding: 0 12px;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  font: 700 11px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Above the pad the strip is a plain band, not the sticky header it is in Actions. */
+.fcp-tab[data-tab="map"] .fcp-targets {
+  position: static;
+  flex: none;
+  margin: 10px 0 0;
+  border-top: 1.5px solid var(--color-text);
+}
+
+/* Folded map: the pad takes the room, centered and bigger. */
+.fcp-map-collapsed .fcp-padpanel {
+  flex: 1 0 300px;
+  height: auto;
+}
+
+.fcp-map-collapsed .fcp-dpad {
+  right: 50%;
+  bottom: 50%;
+  transform: translate(50%, 50%);
+  width: min(300px, 80vw);
+  height: min(300px, 80vw);
+}
+
+.fcp-map-collapsed .fcp-dpad button {
+  width: 76px;
+  height: 76px;
+  font-size: 32px;
+}
+
+.fcp-map-collapsed .fcp-dpad .fcp-center {
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}

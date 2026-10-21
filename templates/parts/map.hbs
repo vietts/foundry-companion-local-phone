@@ -1,11 +1,14 @@
-<section class="fcp-tab {{#if (eq activeTab 'map')}}active{{/if}}" data-tab="map">
+<section class="fcp-tab {{#if (eq activeTab 'map')}}active{{/if}} {{#if mapCollapsed}}fcp-map-collapsed{{/if}}" data-tab="map">
   {{#unless map.hasScene}}
   <div class="fcp-map-title"><div class="fcp-kicker"><span>{{localize "FCP.Tabs.Map"}}</span><span></span></div></div>
   <div class="fcp-empty" style="padding: 16px 20px">{{localize "FCP.NoScene"}}</div>
   {{else}}
   <div class="fcp-map-title">
     <div class="fcp-kicker"><span>{{localize "FCP.ActiveScene"}}</span><span>{{map.liveName}}</span></div>
-    <h1>{{map.sceneName}}</h1>
+    <div class="fcp-map-head">
+      <h1>{{map.sceneName}}</h1>
+      <button type="button" class="fcp-map-toggle" data-action="toggleMap" aria-expanded="{{#if mapCollapsed}}false{{else}}true{{/if}}">{{#if mapCollapsed}}{{localize "FCP.Map.Show"}} <i class="ph-duotone ph-caret-down"></i>{{else}}{{localize "FCP.Map.Hide"}} <i class="ph-duotone ph-caret-up"></i>{{/if}}</button>
+    </div>
     {{#if (gt map.tokenChoices.length 1)}}
     <select name="tokenId" data-action="selectToken">
       {{#each map.tokenChoices}}<option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>{{/each}}
@@ -13,6 +16,7 @@
     {{/if}}
   </div>
 
+  {{#unless mapCollapsed}}
   <div class="fcp-mapwrap">
     <div class="fcp-minimap {{#if map.fog.on}}fogged{{/if}}" data-action="mapTap" style="--fcp-ratio: {{map.ratio}};">
       <div class="fcp-mm-layer {{#if map.background}}has-bg{{/if}} {{#if map.schematic}}schematic{{/if}} {{#if map.fog.on}}{{#unless map.fog.mask}}unexplored{{/unless}}{{/if}}" style="{{#if map.background}}background-image: url('{{map.background}}');{{/if}}{{#if map.fog.mask}} --fcp-fog: url('{{map.fog.mask}}');{{/if}}{{#if map.cells}} --fcp-cell-w: {{map.cells.w}}%; --fcp-cell-h: {{map.cells.h}}%;{{/if}}">
@@ -32,11 +36,15 @@
     </div>
   </div>
 
+  {{/unless}}
+
+  {{> "modules/foundry-companion-local-phone/templates/parts/targets.hbs"}}
+
   {{#unless map.hasToken}}
   <div class="fcp-padpanel"><div class="fcp-notice">{{localize "FCP.NoToken"}}</div></div>
   {{else}}
   <div class="fcp-mapbar">
-    <span>{{localize "FCP.Move.Hint"}}</span>
+    <span>{{#if mapCollapsed}}{{localize "FCP.Move.HintPad"}}{{else}}{{localize "FCP.Move.Hint"}}{{/if}}</span>
     <button type="button" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{map.step}}</button>
   </div>
   <div class="fcp-padpanel">

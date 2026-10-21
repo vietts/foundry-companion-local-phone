@@ -17,7 +17,8 @@ export const SETTINGS = {
   RECENT_NOTES: "recentNotes",
   KEEP_AWAKE: "keepAwake",
   LIVE_DAY: "liveDay",
-  LIVE_LOGIN_URL: "liveLoginUrl"
+  LIVE_LOGIN_URL: "liveLoginUrl",
+  MAP_COLLAPSED: "mapCollapsed"
 };
 
 /* Order of the bottom bar: what a player touches most often first, the map last. */

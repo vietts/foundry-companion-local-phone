@@ -84,6 +84,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return this.wide ? this.primaryTab : this.activeTab;
   }
 
+  /** Minimap folded away: on a live day the map is on the big screen, the phone keeps the pad and the targets. */
+  get mapCollapsed() {
+    const choice = getSetting(SETTINGS.MAP_COLLAPSED);
+    return choice ? choice === "closed" : this.live;
+  }
+
   /** Digital dice off = reference mode: nothing rolls, items open their text. */
   get diceEnabled() {
     return !!getSetting(SETTINGS.DIGITAL_DICE);
@@ -133,6 +139,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleFolder: CompanionApp.#onToggleFolder,
       quickNote: CompanionApp.#onQuickNote,
       noteHeading: CompanionApp.#onNoteHeading,
+      toggleMap: CompanionApp.#onToggleMap,
       noop: () => {}
     }
   };
@@ -325,6 +332,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
       case "map":
         context.map = this.#prepareMap();
+        context.mapCollapsed = this.mapCollapsed;
+        // Who is attacking whom: the GM sees these targets on the canvas. Only with the map folded:
+        // under an open map the strip would push the pad off a phone screen.
+        context.targets = actor && context.map.hasToken && context.mapCollapsed ? this.#prepareTargets() : null;
+        this.mapShowsTargets = !!context.targets;
         break;
     }
     return context;
@@ -955,6 +967,16 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.#moveTo(t => positionAtCenter(t, center));
   }
 
+  /** Parts that show the targets strip right now. */
+  #targetParts() {
+    return [...(this.showsTargets ? ["actions"] : []), ...(this.mapShowsTargets ? ["map"] : [])];
+  }
+
+  static async #onToggleMap() {
+    await setSetting(SETTINGS.MAP_COLLAPSED, this.mapCollapsed ? "open" : "closed");
+    this.markDirty("map");
+  }
+
   static #onStepToggle() {
     this.step = this.step >= 3 ? 1 : this.step + 1;
     this.markDirty("map");
@@ -966,13 +988,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.targetIds.has(id)) this.targetIds.delete(id);
     else this.targetIds.add(id);
     this.#syncTargets();
-    this.markDirty("actions");
+    this.markDirty(...this.#targetParts());
   }
 
   static #onClearTargets() {
     this.targetIds.clear();
     this.#syncTargets();
-    this.markDirty("actions");
+    this.markDirty(...this.#targetParts());
   }
 
   static async #onPlayVfx(event, target) {

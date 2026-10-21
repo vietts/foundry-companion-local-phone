@@ -76,7 +76,7 @@ Per eventi con giocatori nuovi e schede di carta: il telefono serve solo a muove
 
 ![Schermo al tavolo](docs/screenshots/live-schermo.png)
 
-Chi entra con uno di questi account si trova sempre sulla mappa del proprio token, su qualsiasi dispositivo; scheda, azioni, oggetti e chat restano nella barra in basso, per chi ne ha bisogno. Non ci sono pulsanti per uscire o tornare all'interfaccia desktop. Il GM e gli utenti senza personaggio (per esempio uno schermo al tavolo) non cambiano. Serve il GM collegato, come sempre per il movimento.
+Chi entra con uno di questi account si trova sempre sulla tab Mappa, su qualsiasi dispositivo: la minimappa è compressa (la mappa la guardano sullo schermo del tavolo), il pad è grande e sopra c'è la fila dei bersagli, che il GM vede sul canvas. Il pulsante **Mappa** la riapre; la scelta resta su quel telefono. Scheda, azioni, oggetti e chat restano nella barra in basso, per chi ne ha bisogno. Non ci sono pulsanti per uscire o tornare all'interfaccia desktop. Il GM e gli utenti senza personaggio (per esempio uno schermo al tavolo) non cambiano. Serve il GM collegato, come sempre per il movimento.
 
 Il QR può funzionare in due modi:
 
