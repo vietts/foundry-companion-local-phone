@@ -16,19 +16,28 @@ export function looksLikeMobile() {
 
 /**
  * Decide whether the companion interface should replace the Foundry UI on this client.
- * Precedence: URL query (?companion=1|0) > "desktop for this tab" > client setting > heuristic.
+ * Precedence: URL query (?companion=1|0) > live day player > "desktop for this tab" > client setting > heuristic.
  */
 export function shouldUseCompanion() {
   const params = new URLSearchParams(window.location.search);
   const q = params.get("companion");
   if (q === "1" || q === "true") { setDesktopForSession(false); return true; }
   if (q === "0" || q === "false") return false;
+  if (isLivePlayer()) return true;
   if (desktopForSession()) return false;
 
   const mode = getSetting(SETTINGS.MOBILE_MODE);
   if (mode === "on") return true;
   if (mode === "off") return false;
   return looksLikeMobile();
+}
+
+/**
+ * Live day: a player with an assigned character is on a phone at the table, whatever the device looks like.
+ * Players without a character (a table display, say) keep the usual rules.
+ */
+export function isLivePlayer() {
+  return !!getSetting(SETTINGS.LIVE_DAY) && !game.user.isGM && !!game.user.character;
 }
 
 /**

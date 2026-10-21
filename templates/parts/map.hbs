@@ -4,7 +4,7 @@
   <div class="fcp-empty" style="padding: 16px 20px">{{localize "FCP.NoScene"}}</div>
   {{else}}
   <div class="fcp-map-title">
-    <div class="fcp-kicker"><span>{{localize "FCP.ActiveScene"}}</span><span></span></div>
+    <div class="fcp-kicker"><span>{{localize "FCP.ActiveScene"}}</span><span>{{map.liveName}}</span></div>
     <h1>{{map.sceneName}}</h1>
     {{#if (gt map.tokenChoices.length 1)}}
     <select name="tokenId" data-action="selectToken">

@@ -1,0 +1,24 @@
+<div class="fcp-la">
+  {{#unless liveOn}}<p class="notification warning">{{localize "FCP.Live.Off"}}</p>{{/unless}}
+  <p class="hint">{{#if direct}}{{localize "FCP.Live.IntroDirect"}}{{else}}{{localize "FCP.Live.IntroJoin"}}{{/if}}</p>
+  {{#if rows.length}}
+  <ul class="fcp-la-list">
+    {{#each rows}}
+    <li>
+      <label>
+        <input type="checkbox" name="actor" value="{{this.id}}" {{#if this.checked}}checked{{/if}}>
+        <img src="{{this.img}}" alt="">
+        <span class="fcp-la-name"><b>{{this.name}}</b>{{#if this.folder}}<small>{{this.folder}}</small>{{/if}}</span>
+        <span class="fcp-la-user">{{#if this.user}}<i class="fa-solid fa-user{{#if this.active}} active{{/if}}"></i> {{this.user}}{{else}}<em>{{localize "FCP.Live.NoAccount"}}</em>{{/if}}</span>
+      </label>
+    </li>
+    {{/each}}
+  </ul>
+  {{else}}
+  <p>{{localize "FCP.Live.NoCharacters"}}</p>
+  {{/if}}
+  <footer class="form-footer">
+    <button type="button" data-action="createAccounts"><i class="fa-solid fa-user-plus"></i> {{localize "FCP.Live.Create"}}</button>
+    <button type="button" data-action="printCards"><i class="fa-solid fa-print"></i> {{localize "FCP.Live.Print"}}</button>
+  </footer>
+</div>

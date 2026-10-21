@@ -1,4 +1,4 @@
-import { MODULE_ID, SETTINGS, TABS, GM_TABS, warn } from "../constants.mjs";
+import { MODULE_ID, SETTINGS, TABS, GM_TABS, LIVE_TABS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
 import { requestMove, requestPlay } from "../socket.mjs";
@@ -6,7 +6,7 @@ import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
 import { filterCandidates, orderCandidates, isExplored, pruneTargets, failureKey } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
-import { setDesktopForSession } from "../device.mjs";
+import { setDesktopForSession, isLivePlayer } from "../device.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
 const T = `modules/${MODULE_ID}/templates/parts`;
@@ -17,6 +17,8 @@ const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
 const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map"];
 const PLAYER_HIDDEN_PARTS = ["notes"];
+/** Live day: only the map is left, and with a single tab the nav goes too. */
+const LIVE_HIDDEN_PARTS = ["notes", "sheet", "actions", "inventory", "chat", "nav"];
 
 const TAB_ICONS = {
   sheet: "ph-duotone ph-scroll",
@@ -32,6 +34,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     super(options);
     this.adapter = adapter;
     this.notes = game.user.isGM ? new GmNotes(this) : null;
+    this.live = !this.notes && isLivePlayer();
     const lastTab = getSetting(SETTINGS.LAST_TAB);
     this.activeTab = this.tabs.includes(lastTab) ? lastTab : this.tabs[0];
     this.step = 1;
@@ -56,7 +59,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Two columns (tablet): the sheet is always shown, so the active tab is one of the others. */
   get wide() {
-    return !!this.wideQuery?.matches;
+    return !this.live && !!this.wideQuery?.matches;
   }
 
   /** The GM gets notes and chat instead of a character. */
@@ -65,7 +68,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   get tabs() {
-    return this.gmMode ? GM_TABS : TABS;
+    if (this.gmMode) return GM_TABS;
+    return this.live ? LIVE_TABS : TABS;
+  }
+
+  get hiddenParts() {
+    if (this.gmMode) return GM_HIDDEN_PARTS;
+    return this.live ? LIVE_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS;
   }
 
   /** The tab pinned to the left column in two columns: the sheet, or the GM's notes. */
@@ -147,7 +156,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   get actors() {
-    return this.adapter.playableActors();
+    const actors = this.adapter.playableActors();
+    // Live day: the account belongs to one pregen, even if the player can see the others.
+    return this.live ? actors.filter(a => a.id === game.user.character?.id) : actors;
   }
 
   get actor() {
@@ -187,7 +198,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _dirty = new Set();
 
   markDirty(...parts) {
-    const hidden = this.gmMode ? GM_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS;
+    const hidden = this.hiddenParts;
     for (const p of parts) if (!hidden.includes(p)) this._dirty.add(p);
     this.refreshParts();
   }
@@ -195,7 +206,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   _configureRenderParts(options) {
     const parts = super._configureRenderParts(options);
-    for (const id of this.gmMode ? GM_HIDDEN_PARTS : PLAYER_HIDDEN_PARTS) delete parts[id];
+    for (const id of this.hiddenParts) delete parts[id];
     return parts;
   }
 
@@ -540,6 +551,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       hasScene: true,
       sceneName: scene.navName || scene.name,
+      liveName: this.live ? (token?.name ?? actor?.name ?? "") : "",
       hasToken: !!token,
       ratio: (d.sceneWidth / d.sceneHeight).toFixed(4),
       initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
@@ -586,6 +598,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const strip = el.querySelector(".fcp-targets-strip");
     if (strip && this._stripScroll) strip.scrollLeft = this._stripScroll;
     el.classList.toggle("fcp-wide", this.wide);
+    el.classList.toggle("fcp-live", this.live);
     if (options.isFirstRender) this.wideQuery?.addEventListener("change", this.#onWideChange);
 
     // Enter key on text inputs triggers the paired action.

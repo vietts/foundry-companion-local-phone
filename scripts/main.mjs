@@ -1,6 +1,6 @@
 import { MODULE_ID, SETTINGS, log } from "./constants.mjs";
 import { registerSettings, getSetting, setSetting } from "./settings.mjs";
-import { shouldUseCompanion, migrateStuckMobileMode } from "./device.mjs";
+import { shouldUseCompanion, migrateStuckMobileMode, isLivePlayer } from "./device.mjs";
 import { registerSocket } from "./socket.mjs";
 import { CompanionApp } from "./app/companion-app.mjs";
 import { getAdapter, registerAdapter } from "./systems/index.mjs";
@@ -42,7 +42,14 @@ Hooks.once("ready", async () => {
 async function maybePromptCanvas() {
   let noCanvas = false;
   try { noCanvas = game.settings.get("core", "noCanvas"); } catch (err) { return; }
-  if (noCanvas || getSetting(SETTINGS.CANVAS_PROMPTED)) return;
+  if (noCanvas) return;
+  // Live day: no question for people who have never seen Foundry, the phone just skips the canvas.
+  if (isLivePlayer()) {
+    await game.settings.set("core", "noCanvas", true);
+    window.location.reload();
+    await new Promise(() => {});
+  }
+  if (getSetting(SETTINGS.CANVAS_PROMPTED)) return;
   await setSetting(SETTINGS.CANVAS_PROMPTED, true);
   const yes = await foundry.applications.api.DialogV2.confirm({
     window: { title: game.i18n.localize("FCP.CanvasPrompt.Title") },

@@ -2612,3 +2612,53 @@ body.fcp-active #notifications {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Live day ---------- */
+
+/* No nav under the map: the pad keeps clear of the home indicator itself. */
+#fcp-app.fcp-live .fcp-padpanel {
+  height: calc(230px + var(--fcp-safe-bottom));
+  padding-bottom: var(--fcp-safe-bottom);
+}
+
+#fcp-app.fcp-live .fcp-map-title .fcp-kicker span:last-child {
+  font-weight: 700;
+}
+
+/* GM window: accounts and QR cards (Foundry's own theme, light touch). */
+.fcp-live-access .fcp-la-list {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.fcp-live-access .fcp-la-list label {
+  display: grid;
+  grid-template-columns: auto 36px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.fcp-live-access .fcp-la-list img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border: none;
+}
+
+.fcp-live-access .fcp-la-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.fcp-live-access .fcp-la-name small,
+.fcp-live-access .fcp-la-user em {
+  opacity: 0.7;
+}
+
+.fcp-live-access .fcp-la-user .active {
+  color: var(--color-level-success, #4e6b52);
+}

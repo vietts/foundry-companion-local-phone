@@ -59,6 +59,21 @@ Senza accesso a internet dal server: scarica `module.zip` dalla [pagina delle re
 
 Per forzare la modalità da desktop (per esempio per provarla): `Impostazioni → Phone Companion → Modalità companion = Sempre attiva`, oppure aggiungi `?companion=1` all'URL. Dal companion il pulsante con il monitor riporta all'interfaccia Foundry completa.
 
+## Giornata dal vivo
+
+Per eventi con giocatori nuovi e schede di carta: il telefono serve solo a muovere il token.
+
+1. Nelle impostazioni del modulo accendi **Giornata dal vivo**.
+2. Da **Accessi della giornata dal vivo → Account e QR** spunta i pregenerati e premi **Crea gli account mancanti**: un account Giocatore per personaggio, con lo stesso nome, proprietario del personaggio e collegato come suo personaggio.
+3. **Stampa le carte QR**: una carta per personaggio, da mettere sopra la scheda di carta.
+
+Chi entra con uno di questi account vede solo la mappa del proprio token, su qualsiasi dispositivo, senza pulsanti per uscire. Il GM e gli utenti senza personaggio (per esempio uno schermo al tavolo) non cambiano. Serve il GM collegato, come sempre per il movimento.
+
+Il QR può funzionare in due modi:
+
+- **Senza niente da installare** (predefinito): il QR apre la pagina di accesso di Foundry, il giocatore sceglie il nome scritto sulla carta e preme Entra. Gli account non hanno password.
+- **Accesso diretto**: pubblica `tools/live-login/index.html` sullo stesso dominio di Foundry (per esempio `https://foundry.example.com/accesso/` tramite il reverse proxy) e scrivi quell'indirizzo in **Pagina di accesso diretto**. Il QR porta utente e password nel frammento dell'indirizzo e fa entrare subito. A ogni stampa le password cambiano: le carte vecchie smettono di funzionare. Foundry da solo non può servire la pagina, perché i file `.html` dentro `Data/` escono come testo.
+
 ## Giocare senza internet
 
 Il modulo non ha bisogno di internet, ma i telefoni devono raggiungere Foundry. Se Foundry è ospitato su un server e al tavolo non c'è rete, lo si fa girare sul portatile del GM e i telefoni si collegano lì, su una Wi‑Fi senza internet (hotspot del portatile o router da viaggio). La licenza Foundry permette di usarlo su più macchine, ma non su due nello stesso momento.

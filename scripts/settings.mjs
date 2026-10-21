@@ -1,4 +1,5 @@
 import { MODULE_ID, SETTINGS } from "./constants.mjs";
+import { LiveAccessApp } from "./app/live-access.mjs";
 
 export function registerSettings() {
   game.settings.register(MODULE_ID, SETTINGS.MOBILE_MODE, {
@@ -24,6 +25,34 @@ export function registerSettings() {
     type: Boolean,
     default: true,
     onChange: () => import("./wake-lock.mjs").then(m => m.syncWakeLock())
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.LIVE_DAY, {
+    name: "FCP.Settings.LiveDay.Name",
+    hint: "FCP.Settings.LiveDay.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    requiresReload: true
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.LIVE_LOGIN_URL, {
+    name: "FCP.Settings.LiveLoginUrl.Name",
+    hint: "FCP.Settings.LiveLoginUrl.Hint",
+    scope: "world",
+    config: true,
+    type: String,
+    default: ""
+  });
+
+  game.settings.registerMenu(MODULE_ID, "liveAccess", {
+    name: "FCP.Live.Menu.Name",
+    label: "FCP.Live.Menu.Label",
+    hint: "FCP.Live.Menu.Hint",
+    icon: "fa-solid fa-qrcode",
+    type: LiveAccessApp,
+    restricted: true
   });
 
   game.settings.register(MODULE_ID, SETTINGS.CANVAS_PROMPTED, {

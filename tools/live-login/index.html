@@ -1,0 +1,63 @@
+<!doctype html>
+<!--
+  Pagina di accesso diretto per la giornata dal vivo (Phone Companion).
+
+  Il QR stampato dal modulo apre questa pagina con utente e password nel frammento (#u=...&p=...),
+  che il browser non manda a nessun server. La pagina fa il login a Foundry e apre il companion.
+
+  Deve stare sullo STESSO dominio di Foundry (es. https://foundry.example.com/accesso/), altrimenti
+  il cookie di sessione non arriva: un reverse proxy che serve questa cartella su un percorso libero basta.
+  Foundry da solo non può servirla: i file .html dentro Data/ escono come testo semplice.
+
+  Se Foundry ha un routePrefix, impostalo in data-foundry sul <body> (es. data-foundry="/vtt/").
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Accesso</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4eddc; color: #2b241c;
+         font: 18px/1.4 Georgia, "Times New Roman", serif; text-align: center; padding: 24px; box-sizing: border-box; }
+  p { max-width: 22em; }
+</style>
+</head>
+<body data-foundry="/">
+<p id="msg">Accesso in corso…</p>
+<script>
+(async () => {
+  const msg = document.getElementById("msg");
+  const fail = text => { msg.textContent = text; };
+  const params = new URLSearchParams(location.hash.slice(1));
+  const userId = params.get("u");
+  const password = params.get("p") ?? "";
+  // Toglie la password dalla barra degli indirizzi e dalla cronologia.
+  history.replaceState(null, "", location.pathname);
+  if (!userId) return fail("Questo QR non è completo. Chiedi al master una nuova carta.");
+
+  const base = new URL(document.body.dataset.foundry || "/", location.origin);
+  // Il telefono non carica la mappa di Foundry: il modulo lo farebbe comunque, così si risparmia un ricaricamento.
+  try { localStorage.setItem("core.noCanvas", "true"); } catch (err) { /* navigazione privata */ }
+
+  let response;
+  try {
+    response = await fetch(new URL("join", base), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "join", userId, password })
+    });
+  } catch (err) {
+    return fail("Foundry non risponde. Controlla la connessione e riprova.");
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok || data?.status !== "success") {
+    return fail("Questo QR non vale più (o la partita non è aperta). Chiedi al master.");
+  }
+  const game = new URL(data.redirect || "game", base);
+  game.searchParams.set("companion", "1");
+  location.replace(game.href);
+})();
+</script>
+</body>
+</html>
