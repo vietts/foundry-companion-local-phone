@@ -68,6 +68,14 @@ Per eventi con giocatori nuovi e schede di carta: il telefono serve solo a muove
 3. **Scarica il PDF con i QR**: sei carte per foglio A4, una per personaggio col nome sopra, da mettere sopra la scheda di carta.
    In alternativa, scegli lo **Schermo al tavolo** (un utente senza personaggio, per esempio quello del display) e premi il monitor accanto a un personaggio: il suo QR compare a tutto schermo sul display e sparisce quando quel personaggio entra. Il QR arriva solo a quell'utente, non agli altri collegati.
 
+| Account e QR (GM) | Il telefono del giocatore | Le carte in PDF |
+|---|---|---|
+| ![Account e QR](docs/screenshots/live-account-qr.png) | ![Telefono dal vivo](docs/screenshots/live-telefono.png) | ![Carte QR](docs/screenshots/live-pdf.png) |
+
+**Schermo al tavolo**: il QR di un personaggio a tutto schermo, finché non entra (QR sfocato nella schermata).
+
+![Schermo al tavolo](docs/screenshots/live-schermo.png)
+
 Chi entra con uno di questi account vede solo la mappa del proprio token, su qualsiasi dispositivo, senza pulsanti per uscire. Il GM e gli utenti senza personaggio (per esempio uno schermo al tavolo) non cambiano. Serve il GM collegato, come sempre per il movimento.
 
 Il QR può funzionare in due modi:
