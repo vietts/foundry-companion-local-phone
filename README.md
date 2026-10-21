@@ -65,7 +65,8 @@ Per eventi con giocatori nuovi e schede di carta: il telefono serve solo a muove
 
 1. Nelle impostazioni del modulo accendi **Giornata dal vivo**.
 2. Da **Accessi della giornata dal vivo → Account e QR** spunta i pregenerati e premi **Crea gli account mancanti**: un account Giocatore per personaggio, con lo stesso nome, proprietario del personaggio e collegato come suo personaggio.
-3. **Stampa le carte QR**: una carta per personaggio, da mettere sopra la scheda di carta.
+3. **Scarica il PDF con i QR**: sei carte per foglio A4, una per personaggio col nome sopra, da mettere sopra la scheda di carta.
+   In alternativa, scegli lo **Schermo al tavolo** (un utente senza personaggio, per esempio quello del display) e premi il monitor accanto a un personaggio: il suo QR compare a tutto schermo sul display e sparisce quando quel personaggio entra. Il QR arriva solo a quell'utente, non agli altri collegati.
 
 Chi entra con uno di questi account vede solo la mappa del proprio token, su qualsiasi dispositivo, senza pulsanti per uscire. Il GM e gli utenti senza personaggio (per esempio uno schermo al tavolo) non cambiano. Serve il GM collegato, come sempre per il movimento.
 
