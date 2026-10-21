@@ -2,6 +2,7 @@ import { MODULE_ID, SETTINGS, log } from "./constants.mjs";
 import { registerSettings, getSetting, setSetting } from "./settings.mjs";
 import { shouldUseCompanion, migrateStuckMobileMode, isLivePlayer } from "./device.mjs";
 import { registerSocket } from "./socket.mjs";
+import { registerDisplayHooks } from "./live-display.mjs";
 import { CompanionApp } from "./app/companion-app.mjs";
 import { getAdapter, registerAdapter } from "./systems/index.mjs";
 import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
@@ -19,6 +20,7 @@ Hooks.once("init", () => {
   registerAdapter(Dnd5eAdapter);
   registerAdapter(DaggerheartAdapter);
   registerSocket();
+  registerDisplayHooks();
   registerRemoteRefresh();
   // Runs on every client but only records on the active GM's (the one with a canvas).
   registerFogHooks();

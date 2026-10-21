@@ -3,6 +3,7 @@ import { getSetting } from "./settings.mjs";
 import { executeMove } from "./movement.mjs";
 import { checkPlayRequest, sanitizeTargetIds, requestUserId, vfxRequestOutcome } from "./app/targets-data.mjs";
 import { playLocally } from "./vfx.mjs";
+import { onDisplayMessage } from "./live-display.mjs";
 
 const pending = new Map();
 const TIMEOUT_MS = 6000;
@@ -27,6 +28,9 @@ async function onSocketMessage(msg, senderId) {
     case "vfxResult":
       if (msg.targetUserId !== game.user.id) return;
       return resolvePending(msg);
+    case "liveQr":
+    case "liveQrHide":
+      return onDisplayMessage(msg, senderId);
   }
 }
 

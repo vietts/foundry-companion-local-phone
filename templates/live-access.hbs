@@ -11,12 +11,24 @@
         <span class="fcp-la-name"><b>{{this.name}}</b>{{#if this.folder}}<small>{{this.folder}}</small>{{/if}}</span>
         <span class="fcp-la-user">{{#if this.user}}<i class="fa-solid fa-user{{#if this.active}} active{{/if}}"></i> {{this.user}}{{else}}<em>{{localize "FCP.Live.NoAccount"}}</em>{{/if}}</span>
       </label>
+      <button type="button" class="fcp-la-show" data-action="showOnDisplay" data-actor-id="{{this.id}}" {{#unless this.canShow}}disabled{{/unless}} data-tooltip="{{localize 'FCP.Live.Show'}}" aria-label="{{localize 'FCP.Live.Show'}}"><i class="fa-solid fa-display"></i></button>
     </li>
     {{/each}}
   </ul>
   {{else}}
   <p>{{localize "FCP.Live.NoCharacters"}}</p>
   {{/if}}
+  <div class="fcp-la-display">
+    <label>{{localize "FCP.Live.Display"}}</label>
+    {{#if displays.length}}
+    <select name="display">
+      {{#each displays}}<option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}{{#unless this.active}} ({{localize "FCP.Live.Offline"}}){{/unless}}</option>{{/each}}
+    </select>
+    <button type="button" data-action="hideDisplay"><i class="fa-solid fa-eye-slash"></i> {{localize "FCP.Live.Hide"}}</button>
+    {{else}}
+    <em>{{localize "FCP.Live.NoDisplay"}}</em>
+    {{/if}}
+  </div>
   <footer class="form-footer">
     <button type="button" data-action="createAccounts"><i class="fa-solid fa-user-plus"></i> {{localize "FCP.Live.Create"}}</button>
     <button type="button" data-action="printCards"><i class="fa-solid fa-file-pdf"></i> {{localize "FCP.Live.Print"}}</button>

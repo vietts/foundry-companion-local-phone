@@ -2,6 +2,7 @@ import { MODULE_ID, SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
 import { qrTarget, newPassword, uniqueUserName } from "./live-data.mjs";
 import { cardsPdf } from "./live-pdf.mjs";
+import { showOnDisplay, hideFromDisplay } from "../live-display.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2, DialogV2 } = foundry.applications.api;
 
@@ -18,7 +19,9 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     position: { width: 520, height: "auto" },
     actions: {
       createAccounts: LiveAccessApp.#onCreateAccounts,
-      printCards: LiveAccessApp.#onPrintCards
+      printCards: LiveAccessApp.#onPrintCards,
+      showOnDisplay: LiveAccessApp.#onShowOnDisplay,
+      hideDisplay: LiveAccessApp.#onHideDisplay
     }
   };
 
@@ -28,6 +31,13 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Characters the GM ticked; on first render, the ones that already have an account. */
   #selected = null;
+
+  /** User whose screen shows the QR codes: a non-GM without a character. */
+  #displayId = null;
+
+  #displays() {
+    return game.users.filter(u => !u.isGM && !u.character);
+  }
 
   get loginUrl() {
     return String(getSetting(SETTINGS.LIVE_LOGIN_URL) ?? "").trim();
@@ -45,7 +55,10 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const actors = this.#characters();
     this.#selected ??= new Set(actors.filter(a => this.#userFor(a)).map(a => a.id));
+    const displays = this.#displays();
+    if (!displays.some(u => u.id === this.#displayId)) this.#displayId = (displays.find(u => u.active) ?? displays[0])?.id ?? null;
     return {
+      displays: displays.map(u => ({ id: u.id, name: u.name, active: u.active, selected: u.id === this.#displayId })),
       liveOn: !!getSetting(SETTINGS.LIVE_DAY),
       direct: !!this.loginUrl,
       rows: actors.map(a => {
@@ -57,7 +70,8 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
           folder: a.folder?.name ?? "",
           user: user?.name ?? null,
           active: !!user?.active,
-          checked: this.#selected.has(a.id)
+          checked: this.#selected.has(a.id),
+          canShow: !!user && !!this.#displayId
         };
       })
     };
@@ -71,6 +85,9 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
         else this.#selected.delete(box.value);
       });
     }
+    this.element.querySelector("select[name=display]")?.addEventListener("change", ev => {
+      this.#displayId = ev.target.value;
+    });
   }
 
   #selectedActors() {
@@ -119,28 +136,58 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       if (!ok) return;
     }
-    const { default: qrcode } = await import("../vendor/qrcode.mjs");
-    const joinUrl = new URL(foundry.utils.getRoute("join"), window.location.origin).href;
-    const host = new URL(joinUrl).host;
     const cards = [];
     for (const { actor, user } of rows) {
-      let password = null;
-      if (loginUrl) {
-        password = newPassword();
-        await user.update({ password });
-      }
-      const qr = qrcode(0, "M");
-      qr.addData(qrTarget({ loginUrl, joinUrl, userId: user.id, password }));
-      qr.make();
-      const note = loginUrl
-        ? game.i18n.localize("FCP.Live.CardDirect")
-        : game.i18n.format("FCP.Live.CardJoin", { host, name: user.name });
+      const { qr, note } = await this.#issueQr(user);
       cards.push({ name: actor.name, note, qr: { count: qr.getModuleCount(), isDark: (r, c) => qr.isDark(r, c) } });
     }
     const pdf = cardsPdf(cards, { textWidth: measureText, title: game.i18n.localize("FCP.Live.Title") });
     const file = `${game.i18n.localize("FCP.Live.FileName")}-${game.world.id}.pdf`;
     foundry.utils.saveDataToFile(pdf, "application/pdf", file);
     ui.notifications.info(game.i18n.format("FCP.Live.Saved", { n: cards.length, file }));
+  }
+
+  /**
+   * The QR code that logs this user in. With a login page it sets a new password first,
+   * so any card or screen showing an older code for this user stops working.
+   */
+  async #issueQr(user) {
+    const loginUrl = this.loginUrl;
+    const { default: qrcode } = await import("../vendor/qrcode.mjs");
+    const joinUrl = new URL(foundry.utils.getRoute("join"), window.location.origin).href;
+    let password = null;
+    if (loginUrl) {
+      password = newPassword();
+      await user.update({ password });
+    }
+    const qr = qrcode(0, "M");
+    qr.addData(qrTarget({ loginUrl, joinUrl, userId: user.id, password }));
+    qr.make();
+    const note = loginUrl
+      ? game.i18n.localize("FCP.Live.CardDirect")
+      : game.i18n.format("FCP.Live.CardJoin", { host: new URL(joinUrl).host, name: user.name });
+    return { qr, note };
+  }
+
+  /** One character's QR, full screen on the display, until that character logs in or the GM hides it. */
+  static async #onShowOnDisplay(event, target) {
+    const actor = game.actors.get(target.dataset.actorId);
+    const user = actor && this.#userFor(actor);
+    if (!user || !this.#displayId) return;
+    const { qr, note } = await this.#issueQr(user);
+    const svg = qr.createSvgTag({ cellSize: 8, margin: 4, scalable: true });
+    showOnDisplay(this.#displayId, {
+      userId: user.id,
+      name: actor.name,
+      note,
+      src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+    });
+    const display = game.users.get(this.#displayId);
+    ui.notifications.info(game.i18n.format(display?.active ? "FCP.Live.Shown" : "FCP.Live.ShownOffline", { name: actor.name, display: display?.name ?? "" }));
+  }
+
+  static #onHideDisplay() {
+    hideFromDisplay();
   }
 }
 

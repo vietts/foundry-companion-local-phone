@@ -2662,3 +2662,62 @@ body.fcp-active #notifications {
 .fcp-live-access .fcp-la-user .active {
   color: var(--color-level-success, #4e6b52);
 }
+
+.fcp-live-access .fcp-la-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.fcp-live-access .fcp-la-show {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.fcp-live-access .fcp-la-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.fcp-live-access .fcp-la-display select {
+  flex: 1;
+}
+
+/* On the table display: one QR code, full screen, above the canvas and every window. */
+#fcp-live-qr {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2vh;
+  background: #fff;
+  color: #2b241c;
+  font-family: Georgia, "Times New Roman", serif;
+  text-align: center;
+}
+
+#fcp-live-qr h1 {
+  margin: 0;
+  font-size: 7vh;
+  border: none;
+  color: inherit;
+}
+
+#fcp-live-qr img {
+  width: min(70vh, 80vw);
+  height: min(70vh, 80vw);
+  border: none;
+  image-rendering: pixelated;
+}
+
+#fcp-live-qr p {
+  margin: 0;
+  font-size: 3vh;
+}
