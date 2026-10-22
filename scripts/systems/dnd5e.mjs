@@ -280,8 +280,21 @@ export class Dnd5eAdapter extends SystemAdapter {
       rests: [
         { kind: "short", label: t("FCP.Rest.Short") },
         { kind: "long", label: t("FCP.Rest.Long") }
-      ]
+      ],
+      levelUps: this.#levelUps(actor)
     };
+  }
+
+  /** One "level up" button per class below the level cap; summons and NPCs have no classes to raise. */
+  #levelUps(actor) {
+    if (actor.type !== "character") return [];
+    const cap = CONFIG.DND5E.maxLevel ?? 20;
+    if ((actor.system.details?.level ?? 0) >= cap) return [];
+    const classes = Object.values(actor.classes ?? {});
+    return classes.map(c => ({
+      classId: c.id,
+      label: classes.length > 1 ? f("FCP.D5.LevelUpClass", { cls: c.name, n: c.system.levels + 1 }) : f("FCP.D5.LevelUp", { n: c.system.levels + 1 })
+    }));
   }
 
   conditions(actor) {
@@ -498,9 +511,11 @@ export class Dnd5eAdapter extends SystemAdapter {
     const coins = this.#coins(actor);
     if (coins) groups.push({ title: t("FCP.D5.Inv.Coins"), items: [{ id: "", name: coins, img: "icons/commodities/currency/coins-plain-stack-gold.webp" }] });
 
-    // Spellbook: every spell by level, with a "prepared" switch where the spell can be prepared.
+    // Spellbook: every spell by level, with a "prepared" switch where the spell can be prepared,
+    // and a button per spellcasting class to add spells from its list.
     const spells = actor.items.filter(i => i.type === "spell");
-    if (spells.length) {
+    const adders = this.#spellAdders(actor);
+    if (spells.length || adders.length) {
       const levels = new Map();
       for (const sp of spells) {
         const lvl = sp.system.level ?? 0;
@@ -510,6 +525,7 @@ export class Dnd5eAdapter extends SystemAdapter {
       groups.push({
         title: t("FCP.D5.Spellbook"),
         spellbook: true,
+        adders,
         items: [],
         levels: Array.from(levels.keys()).sort((a, b) => a - b).map(lvl => ({
           title: lvl === 0 ? t("FCP.D5.Cantrips") : f("FCP.D5.SlotLevel", { n: lvl }),
@@ -528,6 +544,77 @@ export class Dnd5eAdapter extends SystemAdapter {
       });
     }
     return { groups };
+  }
+
+  /**
+   * Spellcasting classes and the spell list each one draws from: the subclass's own list when it has one
+   * (e.g. a third caster), otherwise the class's. Only lists registered by the system or a module count.
+   */
+  #spellSources(actor) {
+    const lists = dnd5e.registry?.spellLists;
+    if (!lists || actor.type !== "character") return [];
+    const out = [];
+    for (const cls of Object.values(actor.classes ?? {})) {
+      const sub = cls.subclass;
+      const caster = [sub, cls].find(i => i && (i.system.spellcasting?.progression ?? "none") !== "none");
+      if (!caster) continue;
+      const list = [["subclass", sub?.identifier], ["class", cls.identifier]].find(([type, id]) => id && lists.forType(type, id));
+      if (!list) continue;
+      out.push({ cls, caster, list: `${list[0]}:${list[1]}` });
+    }
+    return out;
+  }
+
+  #spellAdders(actor) {
+    const sources = this.#spellSources(actor);
+    return sources.map(({ cls }) => ({
+      classId: cls.id,
+      label: sources.length > 1 ? f("FCP.D5.AddSpellsClass", { cls: cls.name }) : t("FCP.D5.AddSpells")
+    }));
+  }
+
+  /** Highest spell level the actor can cast right now from this kind of slots (pact or leveled). */
+  #maxSpellLevel(actor, pact) {
+    const spells = actor.system.spells ?? {};
+    if (pact) return spells.pact?.max ? (spells.pact.level ?? 1) : 0;
+    for (let lvl = 9; lvl >= 1; lvl--) if (spells[`spell${lvl}`]?.max) return lvl;
+    return 0;
+  }
+
+  /**
+   * Choose spells from the class list (cantrips up to the highest castable level), leaving out the ones already
+   * in the book, then add them as the import and the sheet do: tied to the class, not prepared.
+   */
+  async #addSpells(actor, { classId }) {
+    const source = this.#spellSources(actor).find(s => s.cls.id === classId);
+    if (!source) return false;
+    const pact = source.caster.system.spellcasting?.type === "pact";
+    const known = new Set(actor.items.filter(i => i.type === "spell")
+      .map(i => (i._stats?.compendiumSource ?? i.getFlag("dnd5e", "sourceId") ?? "").split(".").pop()).filter(Boolean));
+    const uuids = await dnd5e.applications.CompendiumBrowser.select({
+      filters: { locked: { types: new Set(["spell"]), additional: {
+        spelllist: { [source.list]: 1 },
+        level: { min: 0, max: this.#maxSpellLevel(actor, pact) }
+      } } },
+      hint: f("FCP.D5.AddSpellsHint", { cls: source.cls.name }),
+      fcpExclude: known,
+      selection: { min: 1 }
+    });
+    if (!uuids?.size) return false;
+    const data = [];
+    for (const uuid of uuids) {
+      const doc = await fromUuid(uuid);
+      if (!doc) continue;
+      const item = game.items.fromCompendium(doc);
+      // dnd5e 6: method and prepared drive the "prepared" counter; sourceItem ties the spell to its class.
+      if ((item.system.level ?? 0) > 0) {
+        item.system.method = pact ? "pact" : "spell";
+        item.system.prepared = 0;
+      }
+      item.system.sourceItem = `class:${source.cls.identifier}`;
+      data.push(item);
+    }
+    return actor.createEmbeddedDocuments("Item", data);
   }
 
   /* ---------------- HP ---------------- */
@@ -657,6 +744,8 @@ export class Dnd5eAdapter extends SystemAdapter {
       case "useActivity": return this.#useActivity(actor, data);
       case "toggleItem": return this.#toggleItem(actor, data);
       case "rest": return this.rest(actor, data.kind);
+      case "levelUp": return this.#levelUp(actor, data);
+      case "addSpells": return this.#addSpells(actor, data);
       case "counter": return this.setBox(actor, data.key, Number(data.box));
       case "spendUse": return this.#spendUse(actor, data);
       case "endConcentration": return actor.endConcentration();
@@ -703,6 +792,20 @@ export class Dnd5eAdapter extends SystemAdapter {
     }
     if ("equipped" in item.system) return item.update({ "system.equipped": !item.system.equipped });
     return false;
+  }
+
+  /**
+   * Same path as the level selector on the desktop sheet: the system's advancement window walks through hit points,
+   * features, subclass and ASI, and nothing changes until its last step. Without advancements it just adds the level.
+   */
+  async #levelUp(actor, { classId }) {
+    const cls = actor.items.get(classId);
+    if (cls?.type !== "class") return false;
+    if (!game.settings.get("dnd5e", "disableAdvancements")) {
+      const manager = dnd5e.applications.advancement.AdvancementManager.forLevelChange(actor, classId, 1);
+      if (manager.steps.length) return manager.render({ force: true });
+    }
+    return cls.update({ "system.levels": cls.system.levels + 1 });
   }
 
   async rest(actor, kind) {

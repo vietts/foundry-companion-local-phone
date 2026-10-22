@@ -72,7 +72,8 @@ body.fcp-active #notifications {
  * at least 4.5:1 on the paper, so a number stays readable at arm's length in a dim room.
  * The neutral and accent scales keep their old names: they are what the component rules below read.
  */
-#fcp-app {
+#fcp-app,
+#fcp-picker {
   --color-bg: #f4eddc;
   --color-surface: #f7f1e2;
   --color-text: #2b241c;
@@ -129,7 +130,7 @@ body.fcp-active #notifications {
   -webkit-user-select: none;
 }
 
-:where(#fcp-app) * {
+:where(#fcp-app, #fcp-picker) * {
   box-sizing: border-box;
 }
 
@@ -138,7 +139,7 @@ body.fcp-active #notifications {
  * These resets sit in the "modules" layer, after Foundry's "elements" layer, so `all: unset` wins over all of it.
  * They use :where() so the component classes below always override them.
  */
-:where(#fcp-app) button {
+:where(#fcp-app, #fcp-picker) button {
   all: unset;
   box-sizing: border-box;
   display: block;
@@ -149,23 +150,23 @@ body.fcp-active #notifications {
   -webkit-tap-highlight-color: transparent;
 }
 
-:where(#fcp-app) button:active {
+:where(#fcp-app, #fcp-picker) button:active {
   filter: brightness(0.92);
 }
 
-:where(#fcp-app) button:focus-visible,
-:where(#fcp-app) input:focus-visible,
-:where(#fcp-app) select:focus-visible {
+:where(#fcp-app, #fcp-picker) button:focus-visible,
+:where(#fcp-app, #fcp-picker) input:focus-visible,
+:where(#fcp-app, #fcp-picker) select:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-:where(#fcp-app) button:disabled {
+:where(#fcp-app, #fcp-picker) button:disabled {
   opacity: 0.45;
 }
 
-:where(#fcp-app) input,
-:where(#fcp-app) select {
+:where(#fcp-app, #fcp-picker) input,
+:where(#fcp-app, #fcp-picker) select {
   all: unset;
   box-sizing: border-box;
   display: block;
@@ -182,23 +183,24 @@ body.fcp-active #notifications {
   -webkit-user-select: text;
 }
 
-:where(#fcp-app) select {
+:where(#fcp-app, #fcp-picker) select {
   appearance: auto;
 }
 
-#fcp-app input::placeholder {
+#fcp-app input::placeholder,
+#fcp-picker input::placeholder {
   color: var(--color-neutral-600);
   opacity: 1;
 }
 
-:where(#fcp-app) :is(h1, h2, h3, h4, h5, h6) {
+:where(#fcp-app, #fcp-picker) :is(h1, h2, h3, h4, h5, h6) {
   color: inherit;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-:where(#fcp-app) i[class*="ph-"] {
+:where(#fcp-app, #fcp-picker) i[class*="ph-"] {
   line-height: 1;
 }
 
@@ -887,6 +889,58 @@ body.fcp-active #notifications {
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
+}
+
+.fcp-levelups {
+  margin-top: 10px;
+}
+
+/* "Add spells" in the spellbook: under the filter, full width, a dashed box like an empty slot to fill. */
+#fcp-app .fcp-add-spells {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--fcp-tap);
+  margin-bottom: 12px;
+  border: 1.5px dashed var(--color-accent);
+  color: var(--color-accent);
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* The level up window (advancement.mjs switches it to dnd5e's light theme): bigger text and controls to tap. */
+body.fcp-active .application.fcp-advancement {
+  font-size: 15px;
+}
+
+body.fcp-active .application.fcp-advancement [data-application-part="manager"] nav {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.fcp-active .application.fcp-advancement button,
+body.fcp-active .application.fcp-advancement select,
+body.fcp-active .application.fcp-advancement input:not([type="checkbox"]) {
+  min-height: 44px;
+}
+
+body.fcp-active .application.fcp-advancement [data-application-part="manager"] nav button {
+  flex: 1 1 40%;
+}
+
+/* dnd5e windows opened from the phone (level up and the compendium browser of its ASI/feat step):
+   full width under the safe area, scrolling inside, instead of 460 px wide and off screen. */
+@media (max-width: 739px) {
+  body.fcp-active .application.advancement.manager,
+  body.fcp-active .application.compendium-browser {
+    left: 8px !important;
+    top: calc(var(--fcp-safe-top) + 8px) !important;
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - var(--fcp-safe-top) - 16px);
+  }
 }
 
 .fcp-btn {
@@ -2772,4 +2826,182 @@ body.fcp-active #notifications {
   width: 64px;
   height: 64px;
   font-size: 20px;
+}
+
+/* ---------- Phone picker (dnd5e choices: spells, feats, subclass) ---------- */
+
+/* Same tokens and resets as the app (selectors above), but above every Foundry window: it opens from one. */
+#fcp-picker {
+  z-index: 9000;
+  padding: calc(var(--fcp-safe-top) + 12px) 16px calc(var(--fcp-safe-bottom) + 12px);
+  gap: 12px;
+}
+
+.fcp-picker-loading,
+.fcp-pk-empty {
+  margin: auto;
+  color: var(--color-neutral-700);
+  font-style: italic;
+}
+
+.fcp-pk-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1.5px solid var(--color-text);
+  padding-bottom: 12px;
+}
+
+.fcp-pk-kicker {
+  font: 700 11px var(--font-heading);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.fcp-pk-title h2 {
+  margin: 2px 0 0;
+  border: none;
+  font: 700 20px var(--font-heading);
+  line-height: 1.2;
+}
+
+.fcp-pk-list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fcp-pk-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fcp-pk-group {
+  margin: 14px 0 4px;
+  border: none;
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-neutral-700);
+}
+
+.fcp-pk-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+.fcp-pk-row.on {
+  background: var(--color-accent-100);
+}
+
+#fcp-picker .fcp-pk-choose {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 6px 4px;
+}
+
+.fcp-pk-choose img {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid var(--color-neutral-400);
+}
+
+.fcp-pk-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.fcp-pk-name {
+  font-weight: 600;
+}
+
+.fcp-pk-sub,
+.fcp-pk-pre {
+  font-size: 13px;
+  color: var(--color-neutral-700);
+}
+
+.fcp-pk-pre.bad {
+  color: var(--color-accent-700);
+}
+
+.fcp-pk-check {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  font-weight: 700;
+}
+
+.fcp-pk-row.on .fcp-pk-check {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+#fcp-picker .fcp-pk-info {
+  width: var(--fcp-tap);
+  height: var(--fcp-tap);
+  display: grid;
+  place-items: center;
+  font: italic 700 18px var(--font-quote);
+  color: var(--color-accent);
+}
+
+.fcp-pk-desc {
+  grid-column: 1 / -1;
+  padding: 4px 4px 12px 52px;
+  font-family: var(--font-quote);
+  font-size: 15px;
+  line-height: 1.45;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.fcp-pk-desc p {
+  margin: 0 0 8px;
+}
+
+.fcp-pk-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1.5px solid var(--color-text);
+  padding-top: 12px;
+}
+
+.fcp-pk-count {
+  flex: 1;
+  font-weight: 600;
+}
+
+#fcp-picker .fcp-pk-foot button {
+  min-height: 46px;
+  padding: 6px 16px;
+  text-align: center;
+  font: 700 12px var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--fcp-lift);
+}
+
+#fcp-picker .fcp-pk-foot button.fcp-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
 }

@@ -234,5 +234,13 @@
     {{/each}}
   </div>
   {{/if}}
+
+  {{#if sheet.levelUps.length}}
+  <div class="fcp-rests fcp-levelups">
+    {{#each sheet.levelUps}}
+    <button type="button" data-action="levelUp" data-class-id="{{this.classId}}">{{this.label}}</button>
+    {{/each}}
+  </div>
+  {{/if}}
   {{/unless}}
 </section>

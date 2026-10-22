@@ -24,6 +24,9 @@
       <button type="button" class="{{#if (eq ../spellFilter 'all')}}active{{/if}}" data-action="spellFilter" data-filter="all">{{localize "FCP.D5.All"}}</button>
       <button type="button" class="{{#if (eq ../spellFilter 'prepared')}}active{{/if}}" data-action="spellFilter" data-filter="prepared">{{localize "FCP.D5.OnlyPrepared"}}</button>
     </div>
+    {{#each this.adders}}
+    <button type="button" class="fcp-add-spells" data-action="addSpells" data-class-id="{{this.classId}}"><i class="ph-duotone ph-plus"></i> {{this.label}}</button>
+    {{/each}}
     {{#each this.levels}}
     <div class="fcp-spell-level">
       <div class="fcp-sublabel">{{this.title}}</div>

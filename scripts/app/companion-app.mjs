@@ -116,6 +116,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       useItem: CompanionApp.#onAdapterAction,
       toggleItem: CompanionApp.#onAdapterAction,
       rest: CompanionApp.#onAdapterAction,
+      levelUp: CompanionApp.#onAdapterAction,
+      addSpells: CompanionApp.#onAdapterAction,
       spendUse: CompanionApp.#onAdapterAction,
       endConcentration: CompanionApp.#onAdapterAction,
       switchPane: CompanionApp.#onSwitchPane,
@@ -294,7 +296,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (context.panes) {
           // Sections tagged with a pane show only under their sub-tab; untagged ones always.
           context.sheet.sections = (context.sheet.sections ?? []).filter(s => !s.pane || s.pane === this.sheetPane);
-          if (context.sheet.restsPane && context.sheet.restsPane !== this.sheetPane) context.sheet.rests = [];
+          if (context.sheet.restsPane && context.sheet.restsPane !== this.sheetPane) context.sheet.rests = context.sheet.levelUps = [];
         }
         for (const section of context.sheet.sections ?? []) {
           for (const tile of section.tiles ?? []) {

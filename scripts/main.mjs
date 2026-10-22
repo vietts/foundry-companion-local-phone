@@ -12,6 +12,8 @@ import { fogRecorder, registerFogHooks } from "./fog.mjs";
 import { registerDocSheet } from "./journal/doc-sheet.mjs";
 import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
 import { startWakeLock } from "./wake-lock.mjs";
+import { installPicker } from "./app/picker.mjs";
+import { installAdvancementTheme } from "./app/advancement.mjs";
 
 let app = null;
 
@@ -76,6 +78,11 @@ function activateCompanion() {
   const adapter = getAdapter();
   log(`companion mode on (system adapter: ${adapter.constructor.id})`);
   document.body.classList.add("fcp-active");
+  // dnd5e choices (spells and feats while leveling up, subclass) open as a phone list, not the compendium browser.
+  if (game.system.id === "dnd5e") {
+    installPicker();
+    installAdvancementTheme();
+  }
   app = new CompanionApp(adapter);
   app.render({ force: true });
   registerRefreshHooks();
