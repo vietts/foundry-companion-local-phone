@@ -14,16 +14,24 @@ export function looksLikeMobile() {
   return (coarse && touch && shortSide < 1000) || (uaMobile && touch);
 }
 
+/** Same threshold as Foundry's own "resolution too low" warning (1024x700 CSS pixels). */
+export function isLowResolution() {
+  const minW = foundry.Game?.MIN_WINDOW_WIDTH ?? 1024;
+  const minH = foundry.Game?.MIN_WINDOW_HEIGHT ?? 700;
+  return window.innerWidth < minW || window.innerHeight < minH;
+}
+
 /**
  * Decide whether the companion interface should replace the Foundry UI on this client.
- * Precedence: URL query (?companion=1|0) > live day player > "desktop for this tab" > client setting > heuristic.
+ * Precedence: URL query (?companion=1|0) > live day player on a small window > "desktop for this tab" > client setting > heuristic.
+ * The live day setting is world-wide: it forces the companion only where Foundry itself would warn about low resolution.
  */
 export function shouldUseCompanion() {
   const params = new URLSearchParams(window.location.search);
   const q = params.get("companion");
   if (q === "1" || q === "true") { setDesktopForSession(false); return true; }
   if (q === "0" || q === "false") return false;
-  if (isLivePlayer()) return true;
+  if (isLivePlayer() && isLowResolution()) return true;
   if (desktopForSession()) return false;
 
   const mode = getSetting(SETTINGS.MOBILE_MODE);
