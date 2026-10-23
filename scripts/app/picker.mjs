@@ -48,10 +48,7 @@ async function fetchEntries(CB, options) {
     index: !(validate && fullDocuments),
     indexFields: new Set(["system.source", "system.level", "system.school", "system.type"])
   });
-  // The companion's own requests can leave out what the character already has (e.g. spells in the book).
-  const exclude = options.fcpExclude;
-  const shown = exclude?.size ? entries.filter(e => !exclude.has(e.uuid.split(".").pop())) : entries;
-  return { browser, entries: shown, documentClass: context.filters.documentClass };
+  return { browser, entries, documentClass: context.filters.documentClass };
 }
 
 /** Prerequisite check from the caller (e.g. a feat that needs Strength 13): disabled when invalid and enforced. */

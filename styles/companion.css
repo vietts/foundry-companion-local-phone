@@ -134,6 +134,151 @@ body.fcp-active #notifications {
   box-sizing: border-box;
 }
 
+/* ---------- Class spells (spell-step.mjs): the picker's look, with BG3-style counters ---------- */
+
+/* On a desktop it is a centered sheet over the table, not the whole screen. */
+@media (min-width: 900px) {
+  #fcp-picker.fcp-ss {
+    inset: 5vh auto 5vh 50%;
+    width: min(760px, 92vw);
+    transform: translateX(-50%);
+    padding: 20px 24px;
+    border: 1.5px solid var(--color-text);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.fcp-ss-counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fcp-ss-chip {
+  padding: 4px 10px;
+  border: 1.5px solid var(--color-text);
+  background: var(--color-surface);
+  font-size: 14px;
+}
+
+.fcp-ss-chip b {
+  font: 700 16px var(--font-heading);
+}
+
+/* Still something to choose: the spot color, as BG3 lights up the empty slots. */
+.fcp-ss-chip.open {
+  border-color: var(--color-accent);
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+
+.fcp-ss-chip.over {
+  border-color: var(--color-accent-700);
+  background: var(--color-accent-700);
+  color: var(--color-bg);
+}
+
+.fcp-ss-chip.warn {
+  border-color: var(--color-accent-2-700);
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-900);
+}
+
+.fcp-ss-help {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-neutral-700);
+}
+
+.fcp-ss-title {
+  margin: 16px 0 0;
+  padding: 6px 0;
+  border: none;
+  border-bottom: 1.5px solid var(--color-text);
+  font: 700 15px var(--font-heading);
+  letter-spacing: 0.06em;
+}
+
+.fcp-ss-section:first-child .fcp-ss-title {
+  margin-top: 4px;
+}
+
+/* The character's own spells sit on a slightly darker paper, so the two blocks read apart at a glance. */
+.fcp-ss-Mine {
+  padding: 0 8px 8px;
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-300);
+}
+
+.fcp-ss-Choose .fcp-ss-title {
+  color: var(--color-neutral-700);
+}
+
+/* Footer on a phone: what is left to choose on its own line, the two buttons below. */
+.fcp-ss .fcp-pk-foot {
+  flex-wrap: wrap;
+}
+
+.fcp-ss .fcp-pk-count {
+  flex: 1 0 100%;
+}
+
+#fcp-picker.fcp-ss .fcp-pk-foot button {
+  flex: 1;
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  .fcp-ss .fcp-pk-count {
+    flex: 1;
+  }
+
+  #fcp-picker.fcp-ss .fcp-pk-foot button {
+    flex: none;
+  }
+}
+
+.fcp-ss-state {
+  flex: none;
+  max-width: 40%;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.fcp-ss-row.is-prepared,
+.fcp-ss-row.is-known {
+  background: var(--color-accent-100);
+}
+
+.fcp-ss-row.is-prepared .fcp-ss-state,
+.fcp-ss-row.is-known .fcp-ss-state {
+  color: var(--color-accent-700);
+}
+
+.fcp-ss-row.is-book {
+  background: var(--color-neutral-100);
+}
+
+.fcp-ss-row.is-always .fcp-ss-state {
+  color: var(--color-green);
+}
+
+/* What this session changes is marked on the left, so the list reads as a draft until Confirm. */
+.fcp-ss-row.changed {
+  box-shadow: inset 4px 0 0 var(--color-accent);
+}
+
+.fcp-ss-row.is-none.changed .fcp-ss-state {
+  color: var(--color-accent-700);
+  text-decoration: line-through;
+}
+
+.fcp-ss-row.locked .fcp-pk-choose {
+  opacity: 0.75;
+}
+
 /*
  * Foundry restyles every button and field (height, background, border, glow on hover/focus/.active).
  * These resets sit in the "modules" layer, after Foundry's "elements" layer, so `all: unset` wins over all of it.

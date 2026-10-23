@@ -1,6 +1,7 @@
 import { SystemAdapter, signed, equipToggle, plainText } from "./base.mjs";
 import { SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
+import { spellSources, openSpellStep } from "../app/spell-step.mjs";
 
 const t = key => game.i18n.localize(key);
 const f = (key, data) => game.i18n.format(key, data);
@@ -512,7 +513,7 @@ export class Dnd5eAdapter extends SystemAdapter {
     if (coins) groups.push({ title: t("FCP.D5.Inv.Coins"), items: [{ id: "", name: coins, img: "icons/commodities/currency/coins-plain-stack-gold.webp" }] });
 
     // Spellbook: every spell by level, with a "prepared" switch where the spell can be prepared,
-    // and a button per spellcasting class to add spells from its list.
+    // and a button per spellcasting class to choose spells from its list (spell-step.mjs).
     const spells = actor.items.filter(i => i.type === "spell");
     const adders = this.#spellAdders(actor);
     if (spells.length || adders.length) {
@@ -546,75 +547,12 @@ export class Dnd5eAdapter extends SystemAdapter {
     return { groups };
   }
 
-  /**
-   * Spellcasting classes and the spell list each one draws from: the subclass's own list when it has one
-   * (e.g. a third caster), otherwise the class's. Only lists registered by the system or a module count.
-   */
-  #spellSources(actor) {
-    const lists = dnd5e.registry?.spellLists;
-    if (!lists || actor.type !== "character") return [];
-    const out = [];
-    for (const cls of Object.values(actor.classes ?? {})) {
-      const sub = cls.subclass;
-      const caster = [sub, cls].find(i => i && (i.system.spellcasting?.progression ?? "none") !== "none");
-      if (!caster) continue;
-      const list = [["subclass", sub?.identifier], ["class", cls.identifier]].find(([type, id]) => id && lists.forType(type, id));
-      if (!list) continue;
-      out.push({ cls, caster, list: `${list[0]}:${list[1]}` });
-    }
-    return out;
-  }
-
   #spellAdders(actor) {
-    const sources = this.#spellSources(actor);
+    const sources = spellSources(actor);
     return sources.map(({ cls }) => ({
       classId: cls.id,
       label: sources.length > 1 ? f("FCP.D5.AddSpellsClass", { cls: cls.name }) : t("FCP.D5.AddSpells")
     }));
-  }
-
-  /** Highest spell level the actor can cast right now from this kind of slots (pact or leveled). */
-  #maxSpellLevel(actor, pact) {
-    const spells = actor.system.spells ?? {};
-    if (pact) return spells.pact?.max ? (spells.pact.level ?? 1) : 0;
-    for (let lvl = 9; lvl >= 1; lvl--) if (spells[`spell${lvl}`]?.max) return lvl;
-    return 0;
-  }
-
-  /**
-   * Choose spells from the class list (cantrips up to the highest castable level), leaving out the ones already
-   * in the book, then add them as the import and the sheet do: tied to the class, not prepared.
-   */
-  async #addSpells(actor, { classId }) {
-    const source = this.#spellSources(actor).find(s => s.cls.id === classId);
-    if (!source) return false;
-    const pact = source.caster.system.spellcasting?.type === "pact";
-    const known = new Set(actor.items.filter(i => i.type === "spell")
-      .map(i => (i._stats?.compendiumSource ?? i.getFlag("dnd5e", "sourceId") ?? "").split(".").pop()).filter(Boolean));
-    const uuids = await dnd5e.applications.CompendiumBrowser.select({
-      filters: { locked: { types: new Set(["spell"]), additional: {
-        spelllist: { [source.list]: 1 },
-        level: { min: 0, max: this.#maxSpellLevel(actor, pact) }
-      } } },
-      hint: f("FCP.D5.AddSpellsHint", { cls: source.cls.name }),
-      fcpExclude: known,
-      selection: { min: 1 }
-    });
-    if (!uuids?.size) return false;
-    const data = [];
-    for (const uuid of uuids) {
-      const doc = await fromUuid(uuid);
-      if (!doc) continue;
-      const item = game.items.fromCompendium(doc);
-      // dnd5e 6: method and prepared drive the "prepared" counter; sourceItem ties the spell to its class.
-      if ((item.system.level ?? 0) > 0) {
-        item.system.method = pact ? "pact" : "spell";
-        item.system.prepared = 0;
-      }
-      item.system.sourceItem = `class:${source.cls.identifier}`;
-      data.push(item);
-    }
-    return actor.createEmbeddedDocuments("Item", data);
   }
 
   /* ---------------- HP ---------------- */
@@ -745,7 +683,7 @@ export class Dnd5eAdapter extends SystemAdapter {
       case "toggleItem": return this.#toggleItem(actor, data);
       case "rest": return this.rest(actor, data.kind);
       case "levelUp": return this.#levelUp(actor, data);
-      case "addSpells": return this.#addSpells(actor, data);
+      case "addSpells": return openSpellStep(actor, data.classId);
       case "counter": return this.setBox(actor, data.key, Number(data.box));
       case "spendUse": return this.#spendUse(actor, data);
       case "endConcentration": return actor.endConcentration();

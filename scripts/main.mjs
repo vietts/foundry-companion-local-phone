@@ -14,6 +14,7 @@ import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
 import { startWakeLock } from "./wake-lock.mjs";
 import { installPicker } from "./app/picker.mjs";
 import { installAdvancementTheme } from "./app/advancement.mjs";
+import { installSpellStep } from "./app/spell-step.mjs";
 
 let app = null;
 
@@ -28,6 +29,8 @@ Hooks.once("init", () => {
   registerFogHooks();
   game.modules.get(MODULE_ID).api = {
     getApp: () => app, getAdapter, registerAdapter, CompanionApp,
+    /** Class spells window, e.g. from a macro: `api.openSpellStep(actor)` (first caster class) or `(actor, classId)`. */
+    openSpellStep: (actor, classId) => import("./app/spell-step.mjs").then(m => m.openSpellStep(actor, classId)),
     /** Forget what the party explored on a scene, e.g. from a macro: `game.modules.get("foundry-companion-local-phone").api.resetFog()` */
     resetFog: scene => fogRecorder.reset(scene)
   };
@@ -42,6 +45,8 @@ Hooks.once("ready", async () => {
   // Journal entries open as a document. The system's sheet stays available under "Configure Sheet".
   const base = registerDocSheet();
   log(`journal document sheet built over ${base.name}`);
+  // Class spells after a level up: on every client, the level up can run on a desktop as well as on a phone.
+  if (game.system.id === "dnd5e") installSpellStep();
   await migrateStuckMobileMode();
   if (!shouldUseCompanion()) return;
   await maybePromptCanvas();
