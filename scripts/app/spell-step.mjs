@@ -173,20 +173,22 @@ class SpellStep {
       // Spells above the castable level stay hidden, unless the character already has them.
       if (level > maxLevel && !item) continue;
       seen.add(key);
-      this.rows.push(this.#row(e.uuid, e.name, e.img, level, e.system?.school, item));
+      this.rows.push(this.#row(e.uuid, e.name, e.img, level, e.system?.school, item, e.system?.identifier));
     }
     // Class spells on the sheet that are not on the list (another book, a homebrew): shown, never touched.
     for (const [key, item] of owned) {
       if (seen.has(key)) continue;
-      this.rows.push({ ...this.#row(item.uuid, item.name, item.img, item.system.level ?? 0, item.system.school, item), locked: true });
+      this.rows.push({ ...this.#row(item.uuid, item.name, item.img, item.system.level ?? 0, item.system.school, item, item.system.identifier), locked: true });
     }
     this.rows.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, game.i18n.lang));
   }
 
-  #row(uuid, name, img, level, school, item) {
+  #row(uuid, name, img, level, school, item, identifier) {
     const prepared = item?.system.prepared ?? 0;
     const state = !item ? "none" : level === 0 ? "known" : prepared === 2 ? "always" : prepared ? "prepared" : "book";
-    return { uuid, name, img, level, school, item, from: state, state, locked: state === "always" };
+    // The search also knows the English name, from the identifier ("faerie-fire" finds Luminescenza).
+    const search = fold(`${name} ${String(identifier ?? "").replaceAll("-", " ")}`);
+    return { uuid, name, img, level, school, item, search, from: state, state, locked: state === "always" };
   }
 
   /* ----- Counters ----- */
@@ -325,7 +327,7 @@ class SpellStep {
    */
   renderList() {
     const q = fold(this.query);
-    const rows = q ? this.rows.filter(r => fold(r.name).includes(q)) : this.rows;
+    const rows = q ? this.rows.filter(r => r.search.includes(q)) : this.rows;
     const mine = rows.filter(r => this.isMine(r));
     const rest = rows.filter(r => !this.isMine(r));
     const byLevel = list => {
