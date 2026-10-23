@@ -547,8 +547,15 @@ export class Dnd5eAdapter extends SystemAdapter {
     return { groups };
   }
 
+  /**
+   * One "choose spells" button per spellcasting class. Right after a page load dnd5e may not have loaded the spell
+   * lists yet: then every class that casts gets its button anyway, and the window waits for the lists.
+   */
   #spellAdders(actor) {
-    const sources = spellSources(actor);
+    let sources = spellSources(actor);
+    if (!sources.length && actor.type === "character") sources = Object.values(actor.classes ?? {})
+      .filter(cls => [cls, cls.subclass].some(i => i && (i.system.spellcasting?.progression ?? "none") !== "none"))
+      .map(cls => ({ cls }));
     return sources.map(({ cls }) => ({
       classId: cls.id,
       label: sources.length > 1 ? f("FCP.D5.AddSpellsClass", { cls: cls.name }) : t("FCP.D5.AddSpells")

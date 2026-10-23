@@ -496,6 +496,30 @@ export function installSpellStep() {
     }, 250);
   });
 
+  // In the sheet's Spells tab, under each class's spellcasting card (the one showing "prepared 4/7"): where players
+  // look for it. The lists may still be loading right after a page load, hence the wait.
+  Hooks.on("renderCharacterActorSheet", async (sheet, element) => {
+    const actor = sheet.actor;
+    if (!actor?.isOwner) return;
+    const sources = await waitForSources(actor);
+    const cards = [...element.querySelectorAll('.tab[data-tab="spells"] .spellcasting.card')];
+    for (const s of sources) {
+      const card = cards.length === 1 && sources.length === 1 ? cards[0]
+        : cards.find(c => c.querySelector(".header h3")?.textContent.includes(s.cls.name));
+      if (!card || card.querySelector(".fcp-ss-open")) continue;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fcp-ss-open";
+      button.innerHTML = `<i class="fa-solid fa-book-sparkles"></i> ${escape(t("FCP.D5.AddSpells"))}`;
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        openSpellStep(actor, s.cls.id);
+      });
+      card.append(button);
+    }
+  });
+
   Hooks.on("getHeaderControlsCharacterActorSheet", (sheet, controls) => {
     const actor = sheet.actor;
     if (!actor?.isOwner) return;

@@ -214,6 +214,14 @@ body.fcp-active #notifications {
   color: var(--color-neutral-700);
 }
 
+/* The button in the desktop sheet's spellcasting card: full width under the class's numbers. */
+.spellcasting.card .fcp-ss-open {
+  width: calc(100% - 16px);
+  margin: 4px 8px 8px;
+  justify-content: center;
+  gap: 6px;
+}
+
 /* Footer on a phone: what is left to choose on its own line, the two buttons below. */
 .fcp-ss .fcp-pk-foot {
   flex-wrap: wrap;
