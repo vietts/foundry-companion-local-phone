@@ -499,6 +499,20 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #fog = { src: null, sceneId: null, data: null };
 
   /**
+   * New explored area on the active scene: update the minimap's mask where it is drawn. Only the targets strips
+   * (`parts`) need a redraw, since fog decides which tokens can be targeted; a missing minimap falls back to a redraw.
+   */
+  onFogChanged(scene, parts = []) {
+    const src = getSetting(SETTINGS.MAP_FOG) ? scene.getFlag(MODULE_ID, FOG_FLAG) ?? null : null;
+    const layer = this.element?.querySelector(".fcp-minimap .fcp-mm-layer");
+    if (!layer) return this.markDirty("map", ...parts);
+    if (src) layer.style.setProperty("--fcp-fog", `url('${src}')`);
+    else layer.style.removeProperty("--fcp-fog");
+    layer.classList.toggle("unexplored", !!getSetting(SETTINGS.MAP_FOG) && !src);
+    if (parts.length) this.markDirty(...parts);
+  }
+
+  /**
    * With fog on, `{ test, pending }`: `test(token)` says whether the token's center is explored, `pending` that
    * no mask of this scene is decoded yet. Null when fog is off.
    */
@@ -533,7 +547,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const ctx = el.getContext("2d");
       ctx.drawImage(img, 0, 0);
       this.#fog.data = ctx.getImageData(0, 0, el.width, el.height);
-      this.markDirty("actions");
+      // Only the targets strips read the mask: redraw where one is shown.
+      const parts = [...(this.showsTargets ? ["actions"] : []), ...(this.mapShowsTargets ? ["map"] : [])];
+      if (parts.length) this.markDirty(...parts);
     };
     img.onerror = () => warn("could not read the explored area for the targets strip");
     img.src = src;
@@ -743,14 +759,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       log.appendChild(html);
     }
+    // Keep only what is on screen: a long session would otherwise hold every message ever rendered.
+    const ids = new Set(messages.map(m => m.id));
+    for (const id of this._chatCache.keys()) if (!ids.has(id)) this._chatCache.delete(id);
     log.scrollTop = log.scrollHeight;
   }
 
   /** Called by hooks when a chat message changes. */
-  onChatChanged(message, { deleted = false } = {}) {
+  onChatChanged(message, { deleted = false, created = false } = {}) {
     this._chatCache.delete(message.id);
     if (!deleted && !message.visible) return;
-    if (this.activeTab !== "chat" && !deleted) {
+    // Only new messages are unread: an edit (a roll resolving, a card updating) is not news.
+    if (this.activeTab !== "chat" && created) {
       this.unreadChat++;
       this.markDirty("nav");
     }

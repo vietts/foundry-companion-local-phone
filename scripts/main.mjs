@@ -8,13 +8,13 @@ import { getAdapter, registerAdapter } from "./systems/index.mjs";
 import { Dnd5eAdapter } from "./systems/dnd5e.mjs";
 import { DaggerheartAdapter } from "./systems/daggerheart.mjs";
 import { activeScene } from "./movement.mjs";
-import { fogRecorder, registerFogHooks } from "./fog.mjs";
+import { fogRecorder, registerFogHooks, FOG_FLAG } from "./fog.mjs";
 import { registerDocSheet } from "./journal/doc-sheet.mjs";
 import { registerRemoteRefresh } from "./journal/doc-editor.mjs";
 import { startWakeLock } from "./wake-lock.mjs";
 import { installPicker } from "./app/picker.mjs";
 import { installAdvancementTheme } from "./app/advancement.mjs";
-import { installSpellStep } from "./app/spell-step.mjs";
+import { installSpellStep, openSpellStep } from "./app/spell-step.mjs";
 import { installRecovery, reportError } from "./errors.mjs";
 
 let app = null;
@@ -31,7 +31,7 @@ Hooks.once("init", () => {
   game.modules.get(MODULE_ID).api = {
     getApp: () => app, getAdapter, registerAdapter, CompanionApp,
     /** Class spells window, e.g. from a macro: `api.openSpellStep(actor)` (first caster class) or `(actor, classId)`. */
-    openSpellStep: (actor, classId) => import("./app/spell-step.mjs").then(m => m.openSpellStep(actor, classId)),
+    openSpellStep: (actor, classId) => openSpellStep(actor, classId),
     /** Forget what the party explored on a scene, e.g. from a macro: `game.modules.get("foundry-companion-local-phone").api.resetFog()` */
     resetFog: scene => fogRecorder.reset(scene)
   };
@@ -100,10 +100,23 @@ function isCurrentActor(doc) {
   return doc && app?.actor && doc.id === app.actor.id;
 }
 
+/** True when a scene update carries nothing but the module's explored-area flag. */
+function onlyFogChanged(changes) {
+  const keys = Object.keys(changes).filter(k => k !== "_id");
+  if (keys.length !== 1 || keys[0] !== "flags") return false;
+  const flags = Object.keys(changes.flags ?? {});
+  if (flags.length !== 1 || flags[0] !== MODULE_ID) return false;
+  return Object.keys(changes.flags[MODULE_ID] ?? {}).every(k => k === FOG_FLAG || k === `-=${FOG_FLAG}`);
+}
+
 function registerRefreshHooks() {
   const actorParts = ["header", "sheet", "actions", "inventory"];
 
-  Hooks.on("updateActor", actor => { if (isCurrentActor(actor)) app.markDirty(...actorParts); });
+  Hooks.on("updateActor", (actor, changes) => {
+    if (isCurrentActor(actor)) app.markDirty(...actorParts);
+    // A character just given to (or taken from) this player: the character picker has to know.
+    else if ("ownership" in changes) app.markDirty(...actorParts);
+  });
   for (const hook of ["createItem", "updateItem", "deleteItem"]) {
     Hooks.on(hook, item => { if (isCurrentActor(item.parent)) app.markDirty(...actorParts); });
   }
@@ -114,7 +127,7 @@ function registerRefreshHooks() {
     });
   }
 
-  Hooks.on("createChatMessage", message => app.onChatChanged(message));
+  Hooks.on("createChatMessage", message => app.onChatChanged(message, { created: true }));
   Hooks.on("updateChatMessage", message => app.onChatChanged(message));
   Hooks.on("deleteChatMessage", message => app.onChatChanged(message, { deleted: true }));
 
@@ -125,6 +138,9 @@ function registerRefreshHooks() {
     Hooks.on(hook, token => { if (token.parent?.id === activeScene()?.id) app.markDirty(...sceneParts()); });
   }
   Hooks.on("updateScene", (scene, changes) => {
+    // The GM saves the explored area every few seconds while the party moves: swap the mask in place instead of
+    // redrawing map and actions on every phone (heat and battery on cheap phones, taps lost mid-redraw).
+    if (scene.id === activeScene()?.id && onlyFogChanged(changes)) return app.onFogChanged(scene, targetParts());
     if ("active" in changes || scene.id === activeScene()?.id) app.markDirty(...sceneParts());
   });
   for (const hook of ["createCombat", "updateCombat", "deleteCombat", "createCombatant", "updateCombatant", "deleteCombatant"]) {

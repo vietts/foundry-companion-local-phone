@@ -1,7 +1,7 @@
 import { SystemAdapter, signed, equipToggle, plainText } from "./base.mjs";
 import { SETTINGS } from "../constants.mjs";
 import { getSetting } from "../settings.mjs";
-import { spellSources, openSpellStep } from "../app/spell-step.mjs";
+import { spellSources, openSpellStep, isCaster } from "../app/spell-step.mjs";
 
 const t = key => game.i18n.localize(key);
 const f = (key, data) => game.i18n.format(key, data);
@@ -554,7 +554,7 @@ export class Dnd5eAdapter extends SystemAdapter {
   #spellAdders(actor) {
     let sources = spellSources(actor);
     if (!sources.length && actor.type === "character") sources = Object.values(actor.classes ?? {})
-      .filter(cls => [cls, cls.subclass].some(i => i && (i.system.spellcasting?.progression ?? "none") !== "none"))
+      .filter(isCaster)
       .map(cls => ({ cls }));
     return sources.map(({ cls }) => ({
       classId: cls.id,

@@ -29,8 +29,23 @@ const fold = s => String(s ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, ""
  */
 const THIRD_CASTERS = {
   "eldritch-knight": { list: "wizard", cantrips: { 3: 2, 10: 3 } },
-  trickster: { list: "wizard", cantrips: { 3: 2, 10: 3 } }
+  // The 2024 Player's Handbook calls it "trickster"; the long form covers compendiums that spell it out.
+  trickster: { list: "wizard", cantrips: { 3: 2, 10: 3 } },
+  "arcane-trickster": { list: "wizard", cantrips: { 3: 2, 10: 3 } }
 };
+
+/** Highest spell level a class reaches on its own (2024 tables), for multiclass characters. */
+const OWN_MAX_LEVEL = {
+  full: level => Math.min(9, Math.ceil(level / 2)),
+  half: level => Math.min(5, Math.ceil(level / 4)),
+  artificer: level => Math.min(5, Math.ceil(level / 4)),
+  third: level => byLevel({ 3: 1, 7: 2, 13: 3, 19: 4 }, level) ?? 0
+};
+
+/** A class casts when it or its subclass has a spellcasting progression. */
+export function isCaster(cls) {
+  return [cls, cls?.subclass].some(i => i && (i.system.spellcasting?.progression ?? "none") !== "none");
+}
 
 /**
  * Spellcasting classes of an actor, each with the list it draws from and its counters.
@@ -41,6 +56,7 @@ export function spellSources(actor) {
   const lists = globalThis.dnd5e?.registry?.spellLists;
   if (!lists || actor?.type !== "character") return [];
   const out = [];
+  const multiclass = Object.values(actor.classes ?? {}).filter(isCaster).length > 1;
   for (const cls of Object.values(actor.classes ?? {})) {
     const sub = cls.subclass;
     const caster = [sub, cls].find(i => i && (i.system.spellcasting?.progression ?? "none") !== "none");
@@ -49,6 +65,10 @@ export function spellSources(actor) {
     const found = lists.forType("class", cls.identifier) ?? (third && lists.forType("class", third.list));
     if (!found) continue;
     const pact = caster.system.spellcasting?.type === "pact";
+    // The slot table is the whole character's: a Wizard 1 / Cleric 5 has 3rd-level slots but learns 1st-level wizard spells.
+    let maxLevel = maxSpellLevel(actor, pact);
+    const own = OWN_MAX_LEVEL[caster.system.spellcasting?.progression];
+    if (multiclass && !pact && own) maxLevel = Math.min(maxLevel, own(cls.system.levels));
     out.push({
       cls, sub, caster, list: found, pact,
       book: cls.identifier === "wizard",
@@ -56,7 +76,7 @@ export function spellSources(actor) {
       tags: new Set([`class:${cls.identifier}`, sub && `subclass:${sub.identifier}`].filter(Boolean)),
       cantrips: cantripsKnown(actor, cls, sub) ?? byLevel(third?.cantrips, cls.system.levels),
       prepared: caster.system.spellcasting?.preparation?.max ?? null,
-      maxLevel: maxSpellLevel(actor, pact)
+      maxLevel
     });
   }
   return out;
@@ -101,7 +121,8 @@ let current = null;
 
 /** Open the class spells window for one class of the actor (the first caster class when omitted). */
 export async function openSpellStep(actor, classId) {
-  const sources = await waitForSources(actor);
+  if (!hasAllSources(actor, classId)) ui.notifications.info(t("FCP.Spells.Waiting"));
+  const sources = await waitForSources(actor, classId);
   const source = sources.find(s => s.cls.id === classId) ?? (classId ? null : sources[0]);
   if (!source) {
     ui.notifications.info(t("FCP.Spells.NoCaster"));
@@ -112,17 +133,29 @@ export async function openSpellStep(actor, classId) {
   return current.open();
 }
 
+/** Classes already waited for in vain (homebrew without a list): do not poll again on every sheet render. */
+const missing = new Set();
+
+/** Whether the lists of the wanted class (or of every casting class) are already there. */
+function hasAllSources(actor, classId = null) {
+  const found = new Set(spellSources(actor).map(s => s.cls.id));
+  const wanted = classId ? [classId] : Object.values(actor?.classes ?? {}).filter(isCaster).map(c => c.id);
+  return wanted.every(id => found.has(id) || missing.has(`${actor.id}.${id}`));
+}
+
 /**
  * dnd5e fills the spell list registry after "ready", page by page, and on this world it never reports itself ready
  * (`dnd5e.registry.ready` stays pending), so wait for the lists themselves: a few seconds at most after a page load.
+ * A multiclass caster waits for every class's list (or the one asked for), not just the first that shows up.
  */
-async function waitForSources(actor) {
-  const caster = Object.values(actor?.classes ?? {}).some(c =>
-    [c, c.subclass].some(i => i && (i.system.spellcasting?.progression ?? "none") !== "none"));
-  let sources = spellSources(actor);
-  for (let i = 0; caster && !sources.length && i < 40; i++) {
+async function waitForSources(actor, classId = null) {
+  for (let i = 0; !hasAllSources(actor, classId) && i < 40; i++) {
     await new Promise(resolve => setTimeout(resolve, 500));
-    sources = spellSources(actor);
+  }
+  const sources = spellSources(actor);
+  const found = new Set(sources.map(s => s.cls.id));
+  for (const cls of Object.values(actor?.classes ?? {})) {
+    if (isCaster(cls) && !found.has(cls.id)) missing.add(`${actor.id}.${cls.id}`);
   }
   return sources;
 }
@@ -185,7 +218,8 @@ class SpellStep {
 
   #row(uuid, name, img, level, school, item, identifier) {
     const prepared = item?.system.prepared ?? 0;
-    const state = !item ? "none" : level === 0 ? "known" : prepared === 2 ? "always" : prepared ? "prepared" : "book";
+    // Always prepared first: a cantrip granted by the subclass is locked and does not count, like a leveled spell.
+    const state = !item ? "none" : prepared === 2 ? "always" : level === 0 ? "known" : prepared ? "prepared" : "book";
     // The search also knows the English name, from the identifier ("faerie-fire" finds Luminescenza).
     const search = fold(`${name} ${String(identifier ?? "").replaceAll("-", " ")}`);
     return { uuid, name, img, level, school, item, search, from: state, state, locked: state === "always" };
@@ -248,10 +282,12 @@ class SpellStep {
       await this.load();
     } catch (err) {
       console.error(`${MODULE_ID} | class spells failed to load`, err);
+      if (this.root) ui.notifications.error(t("FCP.Spells.LoadError"));
       this.close();
-      ui.notifications.error(t("FCP.Spells.LoadError"));
       return null;
     }
+    // Closed while loading (a second tap opened another one): nothing to draw.
+    if (!this.root) return null;
     this.render();
     return this;
   }
@@ -418,9 +454,11 @@ class SpellStep {
    * prepared or not), prepared switched in place, forgotten cantrips and spells removed.
    */
   async apply() {
-    const create = [];
+    const button = this.root.querySelector("[data-confirm]");
+    button.disabled = true;
     const update = [];
     const remove = [];
+    const added = [];
     const method = this.source.pact ? "pact" : "spell";
     for (const r of this.changes()) {
       if (r.state === "none") {
@@ -428,31 +466,35 @@ class SpellStep {
         continue;
       }
       const prepared = r.state === "prepared" ? 1 : 0;
-      if (r.item) {
-        update.push({ _id: r.item.id, "system.prepared": prepared });
-        continue;
-      }
-      const doc = await fromUuid(r.uuid);
-      if (!doc) continue;
-      const item = game.items.fromCompendium(doc);
-      // dnd5e 6: method and prepared drive the "prepared" counter; sourceItem ties the spell to its class.
-      if (r.level > 0) {
-        item.system.method = method;
-        item.system.prepared = prepared;
-      }
-      item.system.sourceItem = `class:${this.source.cls.identifier}`;
-      create.push(item);
+      if (r.item) update.push({ _id: r.item.id, "system.prepared": prepared });
+      else added.push({ r, prepared });
     }
-    const button = this.root.querySelector("[data-confirm]");
-    button.disabled = true;
     try {
-      if (remove.length) await this.actor.deleteEmbeddedDocuments("Item", remove);
-      if (update.length) await this.actor.updateEmbeddedDocuments("Item", update);
+      const docs = await Promise.all(added.map(({ r }) => fromUuid(r.uuid)));
+      const create = [];
+      added.forEach(({ r, prepared }, i) => {
+        if (!docs[i]) return;
+        const item = game.items.fromCompendium(docs[i]);
+        // dnd5e 6: method and prepared drive the "prepared" counter; sourceItem ties the spell to its class.
+        if (r.level > 0) {
+          item.system.method = method;
+          item.system.prepared = prepared;
+        }
+        item.system.sourceItem = `class:${this.source.cls.identifier}`;
+        create.push(item);
+      });
+      // New spells first, removals last: if a step fails the character may have one spell too many, never one too few.
       if (create.length) await this.actor.createEmbeddedDocuments("Item", create);
+      if (update.length) await this.actor.updateEmbeddedDocuments("Item", update);
+      if (remove.length) await this.actor.deleteEmbeddedDocuments("Item", remove);
     } catch (err) {
       console.error(`${MODULE_ID} | class spells failed to apply`, err);
       ui.notifications.error(t("FCP.Spells.ApplyError"));
-      button.disabled = false;
+      // Part of it may have gone through: show the sheet as it is now, so a retry starts from the truth.
+      if (this.root) {
+        await this.load().catch(() => null);
+        if (this.root) this.render();
+      }
       return;
     }
     ui.notifications.info(f("FCP.Spells.Done", { name: this.actor.name }));
@@ -487,14 +529,15 @@ export function installSpellStep() {
   Hooks.on("dnd5e.advancementManagerComplete", manager => {
     const actor = manager.actor;
     if (!actor?.isOwner || actor.type !== "character") return;
-    // The class that just went up: every step of a level change carries it (`step.class.item`, on the clone).
-    const clsId = manager.steps?.find(s => s.class?.item)?.class.item.id;
+    // Only a class going up: its forward steps carry it (`step.class.item`, on the clone). Feats, backgrounds,
+    // species, level downs and deleted classes have no such step and must not pop the window up.
+    const clsId = manager.steps?.find(s => (s.type === "forward") && s.class?.item)?.class.item.id;
     const id = clsId && actor.items.get(clsId)?.type === "class" ? clsId : null;
+    if (!id) return;
     // Let the sheet settle on the new level (slots, scale values) before reading the counters.
     setTimeout(() => {
       const sources = spellSources(actor);
-      const source = sources.find(s => s.cls.id === id) ?? (id ? null : sources[0]);
-      if (source) openSpellStep(actor, source.cls.id);
+      if (sources.some(s => s.cls.id === id)) openSpellStep(actor, id);
     }, 250);
   });
 

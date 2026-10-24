@@ -335,5 +335,6 @@
   "FCP.Error.Where.context": "sheet data",
   "FCP.Error.Where.render": "opening",
   "FCP.Error.Where.hp": "damage and healing",
-  "FCP.Error.Where.general": "general error"
+  "FCP.Error.Where.general": "general error",
+  "FCP.Spells.Waiting": "Loading the spell lists…"
 }

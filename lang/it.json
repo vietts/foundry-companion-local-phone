@@ -335,5 +335,6 @@
   "FCP.Error.Where.context": "dati della scheda",
   "FCP.Error.Where.render": "apertura",
   "FCP.Error.Where.hp": "danni e cure",
-  "FCP.Error.Where.general": "errore generico"
+  "FCP.Error.Where.general": "errore generico",
+  "FCP.Spells.Waiting": "Carico le liste degli incantesimi…"
 }
