@@ -15,6 +15,7 @@ import { startWakeLock } from "./wake-lock.mjs";
 import { installPicker } from "./app/picker.mjs";
 import { installAdvancementTheme } from "./app/advancement.mjs";
 import { installSpellStep } from "./app/spell-step.mjs";
+import { installRecovery, reportError } from "./errors.mjs";
 
 let app = null;
 
@@ -88,8 +89,9 @@ function activateCompanion() {
     installPicker();
     installAdvancementTheme();
   }
+  installRecovery();
   app = new CompanionApp(adapter);
-  app.render({ force: true });
+  app.render({ force: true }).catch(err => reportError("render", err));
   registerRefreshHooks();
   startWakeLock();
 }

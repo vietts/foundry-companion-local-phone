@@ -3158,3 +3158,48 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   border-color: var(--color-accent);
   color: var(--color-bg);
 }
+
+/* Recovery: a reload button outside the companion window, so it survives a window Foundry threw away. */
+#fcp-reload {
+  display: none;
+}
+body.fcp-active #fcp-reload {
+  all: unset;
+  position: fixed;
+  right: 8px;
+  bottom: calc(var(--fcp-safe-bottom) + 72px);
+  z-index: 99999;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(43, 36, 28, 0.55);
+  color: #f4eddc;
+  font-size: 14px;
+  cursor: pointer;
+}
+body.fcp-active #fcp-reload:active { background: rgba(43, 36, 28, 0.85); }
+
+/* A part that failed to render: the other tabs keep working. */
+.fcp-part-error .fcp-error-card {
+  margin: 16px;
+  padding: 14px;
+  border: 1px solid #a4372a;
+  border-radius: 6px;
+  background: #fbefe9;
+  color: #2b241c;
+}
+.fcp-part-error .fcp-error-card strong { display: block; margin-bottom: 6px; color: #a4372a; }
+.fcp-part-error .fcp-error-card p { margin: 0 0 10px; font-size: 13px; word-break: break-word; }
+
+/* Any other Foundry window opened from the phone (Daggerheart armor question, rests, roll setup):
+   never wider than the screen, so its buttons stay reachable. */
+@media (max-width: 739px) {
+  body.fcp-active .application:not(#fcp-app):not(#fcp-picker) {
+    left: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - var(--fcp-safe-top) - 16px);
+  }
+}

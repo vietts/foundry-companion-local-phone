@@ -174,6 +174,15 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = game.actors.get(target.dataset.actorId);
     const user = actor && this.#userFor(actor);
     if (!user || !this.#displayId) return;
+    // A new code means a new password: the printed card of this character stops working.
+    if (this.loginUrl) {
+      const ok = await foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.localize("FCP.Live.ShowOnDisplay") },
+        content: `<p>${game.i18n.format("FCP.Live.ShowNewPassword", { name: foundry.utils.escapeHTML(actor.name) })}</p>`,
+        rejectClose: false
+      });
+      if (!ok) return;
+    }
     const { qr, note } = await this.#issueQr(user);
     const svg = qr.createSvgTag({ cellSize: 8, margin: 4, scalable: true });
     showOnDisplay(this.#displayId, {
@@ -187,7 +196,8 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static #onHideDisplay() {
-    hideFromDisplay();
+    // After a reload of the GM's page the module no longer knows what is shown: ask the selected display anyway.
+    hideFromDisplay(this.#displayId);
   }
 }
 

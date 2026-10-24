@@ -1,18 +1,20 @@
 import { MODULE_ID, SETTINGS, TABS, GM_TABS, warn } from "../constants.mjs";
 import { getSetting, setSetting } from "../settings.mjs";
 import { activeScene, actorTokens, ownedTokens, visibleMinimapTokens, shiftedPosition, positionAtCenter } from "../movement.mjs";
-import { requestMove, requestPlay } from "../socket.mjs";
+import { requestMove, requestPlay, noticeOnce } from "../socket.mjs";
 import { vfxApi, hasEffect, resolveActionId } from "../vfx.mjs";
 import { filterCandidates, orderCandidates, isExplored, pruneTargets, failureKey } from "./targets-data.mjs";
 import { FOG_FLAG } from "../fog.mjs";
 import { GmNotes } from "./gm-notes.mjs";
 import { setDesktopForSession, isLivePlayer } from "../device.mjs";
+import { reportError, errorPart } from "../errors.mjs";
 
 const { HandlebarsApplicationMixin, ApplicationV2 } = foundry.applications.api;
 const T = `modules/${MODULE_ID}/templates/parts`;
 const VIDEO_RE = /\.(webm|mp4|m4v|ogv|ogg)(\?.*)?$/i;
 /** Tablet layout: the sheet stays on the left, the other tabs open on the right. Phones in landscape stay single-column. */
 const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
+const MOVE_LIMIT_MS = 20000;
 
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
 const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map"];
@@ -191,6 +193,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Re-render only some parts, coalescing bursts of updates. */
   refreshParts = foundry.utils.debounce(() => {
     if (!this._dirty.size) return;
+    // A failed render throws the window away: build it again from scratch instead of waiting forever.
+    if (this.state === CompanionApp.RENDER_STATES.ERROR) {
+      this._dirty.clear();
+      this.render({ force: true }).catch(err => reportError("render", err, this.actor));
+      return;
+    }
     if (!this.rendered) {
       // Mid-render (or not rendered yet): try again shortly instead of dropping the update.
       if (this.state === CompanionApp.RENDER_STATES.RENDERING) setTimeout(() => this.refreshParts(), 120);
@@ -221,6 +229,39 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async _prepareContext(options) {
+    try {
+      return await this.#prepareSharedContext(options);
+    } catch (err) {
+      // The shared context feeds every part: without a fallback the window would freeze on the old screen.
+      reportError("context", err, this.actor);
+      return {
+        panes: null, actor: null, actors: [], header: { hp: null, stats: [] },
+        headerInfo: { left: game.i18n.localize("FCP.Title"), right: "", summary: "", pin: "", menu: false, exits: !this.live },
+        dice: false, conditions: [], conditionsActive: false, activeTab: this.activeTab, headerTab: this.headerTab, wide: this.wide,
+        tabs: this.tabs.map(id => ({ id, label: game.i18n.localize(`FCP.Tabs.${id.capitalize()}`), icon: TAB_ICONS[id], active: id === this.activeTab }))
+      };
+    }
+  }
+
+  /**
+   * One part at a time: in Foundry an error in any part removes the whole window. Here the broken part shows an
+   * error card with a reload button, the other tabs keep working, and the GM is told.
+   * @override
+   */
+  async _renderHTML(context, options) {
+    const rendered = {};
+    for (const partId of options.parts) {
+      try {
+        Object.assign(rendered, await super._renderHTML(context, { ...options, parts: [partId] }));
+      } catch (err) {
+        const message = reportError(partId, err, this.actor);
+        rendered[partId] = errorPart(partId, message, partId === this.activeTab);
+      }
+    }
+    return rendered;
+  }
+
+  async #prepareSharedContext(options) {
     // Two columns: the primary tab is always shown on the left, so the right column opens on
     // Actions for players (as before GM notes) and on Chat for the GM.
     if (this.wide && this.activeTab === this.primaryTab) this.activeTab = this.gmMode ? "chat" : "actions";
@@ -820,9 +861,20 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const input = this.element.querySelector("input[name=hpAmount]");
     const amount = Math.abs(Number(input?.value) || 0);
     if (!amount) return;
-    if (Number(target.dataset.sign) < 0) await this.adapter.applyDamage(actor, amount);
-    else await this.adapter.applyHealing(actor, amount);
-    input.value = "";
+    try {
+      const result = Number(target.dataset.sign) < 0
+        ? await this.adapter.applyDamage(actor, amount)
+        : await this.adapter.applyHealing(actor, amount);
+      // Daggerheart answers null or [] when nothing was applied (armor question unanswered or closed):
+      // keep the number so the player can try again.
+      if ((result === null) || (Array.isArray(result) && !result.length)) {
+        ui.notifications.warn(game.i18n.localize("FCP.HpNotApplied"));
+        return;
+      }
+      input.value = "";
+    } catch (err) {
+      ui.notifications.error(game.i18n.format("FCP.Error.Action", { message: reportError("hp", err, actor) }));
+    }
   }
 
   static #onSetMode(event, target) {
@@ -903,11 +955,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const text = input?.value.trim();
     if (!text) return;
     input.value = "";
-    if (typeof ui.chat?.processMessage === "function") {
-      await ui.chat.processMessage(text);
-    } else {
-      const speaker = ChatMessage.implementation.getSpeaker({ actor: this.actor, token: this.token });
-      await ChatMessage.implementation.create({ content: text, speaker });
+    try {
+      if (typeof ui.chat?.processMessage === "function") {
+        await ui.chat.processMessage(text);
+      } else {
+        const speaker = ChatMessage.implementation.getSpeaker({ actor: this.actor, token: this.token });
+        await ChatMessage.implementation.create({ content: text, speaker });
+      }
+    } catch (err) {
+      // Give the text back: it is gone from the field and was never sent.
+      if (input.isConnected && !input.value) input.value = text;
+      ui.notifications.error(game.i18n.format("FCP.Error.Action", { message: reportError("chat", err, this.actor) }));
     }
   }
 
@@ -929,9 +987,15 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!position) return;
       this.#setPadEnabled(false);
       try {
-        const result = await requestMove(token, position);
-        if (result?.constrained) ui.notifications.warn(game.i18n.localize("FCP.MoveBlocked"));
-        else if (result?.validated === false) ui.notifications.info(game.i18n.localize("FCP.MoveUnchecked"));
+        // A move that never settles (an update lost on flaky wifi) must not hold every later tap behind it.
+        let stuck;
+        const limit = new Promise(resolve => { stuck = setTimeout(() => resolve({ ok: false, reason: "stuck" }), MOVE_LIMIT_MS); });
+        const result = await Promise.race([requestMove(token, position), limit]);
+        clearTimeout(stuck);
+        if (result?.reason === "timeout") noticeOnce("FCP.MoveNoAnswer", "warn");
+        else if (result?.reason === "stuck") noticeOnce("FCP.MoveStuck", "warn");
+        else if (result?.constrained) ui.notifications.warn(game.i18n.localize("FCP.MoveBlocked"));
+        else if (result?.validated === false) noticeOnce("FCP.MoveUnchecked");
       } catch (err) {
         warn("move failed", err);
       } finally {

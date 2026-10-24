@@ -16,9 +16,10 @@ export function showOnDisplay(displayId, { userId, name, src, note }) {
   game.socket.emit(SOCKET_NAME, { type: "liveQr", name, src, note }, { recipients: [displayId] });
 }
 
-export function hideFromDisplay() {
-  if (!shown) return;
-  game.socket.emit(SOCKET_NAME, { type: "liveQrHide" }, { recipients: [shown.displayId] });
+export function hideFromDisplay(displayId = null) {
+  const target = shown?.displayId ?? displayId;
+  if (!target) return;
+  game.socket.emit(SOCKET_NAME, { type: "liveQrHide" }, { recipients: [target] });
   shown = null;
 }
 
@@ -44,5 +45,7 @@ export function onDisplayMessage(msg, senderId) {
   const note = document.createElement("p");
   note.textContent = msg.note ?? "";
   el.append(title, img, note);
+  // Anyone at the table can clear the screen with a tap, should the GM's page lose track of it.
+  el.addEventListener("click", () => el.remove());
   document.body.append(el);
 }
