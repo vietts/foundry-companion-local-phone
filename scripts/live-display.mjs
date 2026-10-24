@@ -47,5 +47,6 @@ export function onDisplayMessage(msg, senderId) {
   el.append(title, img, note);
   // Anyone at the table can clear the screen with a tap, should the GM's page lose track of it.
   el.addEventListener("click", () => el.remove());
-  document.body.append(el);
+  // Not on the body: Monk's Common Display hides every child of the body except its own list (#interface among them).
+  (document.getElementById("interface") ?? document.body).append(el);
 }
