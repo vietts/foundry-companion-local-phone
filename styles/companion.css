@@ -2982,6 +2982,109 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   font-size: 20px;
 }
 
+/* ---------- Phone sideways: a controller ---------- */
+
+/*
+ * Turning a phone sideways covers the app with a big pad and whose token it moves: nothing to scroll.
+ * Tablets are not affected (their landscape is taller than 500 px and keeps the two columns).
+ */
+.fcp-sidepad {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  #fcp-app .fcp-sidepad {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 12px max(env(safe-area-inset-right, 0px), 20px) 12px max(env(safe-area-inset-left, 0px), 20px);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .fcp-sidepad-pad {
+    flex: none;
+    width: min(88vh, 330px);
+    height: min(88vh, 330px);
+  }
+
+  .fcp-sidepad .fcp-dpad {
+    position: static;
+    width: 100%;
+    height: 100%;
+  }
+
+  .fcp-sidepad .fcp-dpad button {
+    width: 28%;
+    height: 28%;
+    font-size: 36px;
+  }
+
+  .fcp-sidepad .fcp-dpad .fcp-center {
+    width: 22%;
+    height: 22%;
+    font-size: 20px;
+  }
+
+  .fcp-sidepad-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .fcp-sidepad-portrait {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-text);
+    background: var(--color-surface) center / cover no-repeat;
+    box-shadow: var(--fcp-lift);
+  }
+
+  .fcp-sidepad-info h1 {
+    margin: 0;
+    font: 700 22px var(--font-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .fcp-sidepad-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .fcp-sidepad-tools button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--fcp-tap);
+    padding: 6px 14px;
+    border: 1.5px solid var(--color-text);
+    background: var(--color-surface);
+    box-shadow: var(--fcp-lift);
+    color: var(--color-text);
+    font: 700 11px var(--font-heading);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: var(--radius-sm);
+  }
+
+  .fcp-sidepad-hint {
+    margin: 0;
+    font: italic 400 13px var(--font-quote);
+    color: var(--color-neutral-700);
+  }
+}
+
 /* ---------- Phone picker (dnd5e choices: spells, feats, subclass) ---------- */
 
 /* Same tokens and resets as the app (selectors above), but above every Foundry window: it opens from one. */

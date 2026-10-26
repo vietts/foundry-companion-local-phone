@@ -78,6 +78,14 @@
   content: "\e08f";
   margin-left: -1em;
 }
+.ph-duotone.ph-arrows-out:before {
+  content: "\e0a2";
+  opacity: 0.2;
+}
+.ph-duotone.ph-arrows-out:after {
+  content: "\e0a3";
+  margin-left: -1em;
+}
 .ph-duotone.ph-arrow-up-left:before {
   content: "\e090";
   opacity: 0.2;

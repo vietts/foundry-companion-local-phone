@@ -1,0 +1,32 @@
+<section class="fcp-sidepad">
+  {{#if pad.hasToken}}
+  <div class="fcp-sidepad-pad">
+    <div class="fcp-dpad">
+      <button type="button" data-action="move" data-dx="-1" data-dy="-1" aria-label="↖"><i class="ph-duotone ph-arrow-up-left"></i></button>
+      <button type="button" data-action="move" data-dx="0" data-dy="-1" aria-label="↑"><i class="ph-duotone ph-arrow-up"></i></button>
+      <button type="button" data-action="move" data-dx="1" data-dy="-1" aria-label="↗"><i class="ph-duotone ph-arrow-up-right"></i></button>
+      <button type="button" data-action="move" data-dx="-1" data-dy="0" aria-label="←"><i class="ph-duotone ph-arrow-left"></i></button>
+      <div class="fcp-center">{{pad.initial}}</div>
+      <button type="button" data-action="move" data-dx="1" data-dy="0" aria-label="→"><i class="ph-duotone ph-arrow-right"></i></button>
+      <button type="button" data-action="move" data-dx="-1" data-dy="1" aria-label="↙"><i class="ph-duotone ph-arrow-down-left"></i></button>
+      <button type="button" data-action="move" data-dx="0" data-dy="1" aria-label="↓"><i class="ph-duotone ph-arrow-down"></i></button>
+      <button type="button" data-action="move" data-dx="1" data-dy="1" aria-label="↘"><i class="ph-duotone ph-arrow-down-right"></i></button>
+    </div>
+  </div>
+  <div class="fcp-sidepad-info">
+    {{#if pad.img}}<div class="fcp-sidepad-portrait" style="background-image: url('{{pad.img}}');"></div>{{/if}}
+    <h1>{{pad.name}}</h1>
+    {{#if pad.sceneName}}<div class="fcp-kicker"><span>{{pad.sceneName}}</span></div>{{/if}}
+    <div class="fcp-sidepad-tools">
+      <button type="button" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{pad.step}}</button>
+      {{#if pad.fullscreen}}<button type="button" data-action="fullscreen"><i class="ph-duotone ph-arrows-out"></i> {{localize "FCP.Pad.Fullscreen"}}</button>{{/if}}
+    </div>
+    <p class="fcp-sidepad-hint">{{localize "FCP.Pad.Hint"}}</p>
+  </div>
+  {{else}}
+  <div class="fcp-sidepad-info">
+    <div class="fcp-notice">{{localize "FCP.NoToken"}}</div>
+    <p class="fcp-sidepad-hint">{{localize "FCP.Pad.Hint"}}</p>
+  </div>
+  {{/if}}
+</section>

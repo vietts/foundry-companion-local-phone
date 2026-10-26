@@ -336,5 +336,7 @@
   "FCP.Error.Where.render": "apertura",
   "FCP.Error.Where.hp": "danni e cure",
   "FCP.Error.Where.general": "errore generico",
-  "FCP.Spells.Waiting": "Carico le liste degli incantesimi…"
+  "FCP.Spells.Waiting": "Carico le liste degli incantesimi…",
+  "FCP.Pad.Hint": "Gira il telefono in verticale per tornare alla scheda.",
+  "FCP.Pad.Fullscreen": "Schermo intero"
 }

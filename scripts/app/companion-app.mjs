@@ -17,7 +17,7 @@ const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
 const MOVE_LIMIT_MS = 20000;
 
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
-const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map"];
+const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map", "pad"];
 const PLAYER_HIDDEN_PARTS = ["notes"];
 
 const TAB_ICONS = {
@@ -54,9 +54,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.targetIds = new Set();
     this.wideQuery = window.matchMedia?.(WIDE_QUERY) ?? null;
     this.#onWideChange = () => this.render();
+    this.#onFullscreenChange = () => this.markDirty("pad");
   }
 
   #onWideChange;
+  #onFullscreenChange;
 
   /** Two columns (tablet): the sheet is always shown, so the active tab is one of the others. */
   get wide() {
@@ -144,6 +146,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       quickNote: CompanionApp.#onQuickNote,
       noteHeading: CompanionApp.#onNoteHeading,
       toggleMap: CompanionApp.#onToggleMap,
+      fullscreen: CompanionApp.#onFullscreen,
       noop: () => {}
     }
   };
@@ -156,7 +159,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     inventory: { template: `${T}/items.hbs`, scrollable: [""] },
     chat: { template: `${T}/chat.hbs`, scrollable: [""] },
     map: { template: `${T}/map.hbs`, scrollable: [""] },
-    nav: { template: `${T}/nav.hbs` }
+    nav: { template: `${T}/nav.hbs` },
+    // Phone turned sideways: a controller with a big pad over everything else (shown by CSS only).
+    pad: { template: `${T}/pad.hbs` }
   };
 
   /* -------------------------------------------- */
@@ -212,6 +217,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _dirty = new Set();
 
   markDirty(...parts) {
+    // The sideways pad shows the same token as the map: whatever moves the map refreshes it too.
+    if (parts.includes("map")) parts.push("pad");
     const hidden = this.hiddenParts;
     for (const p of parts) if (!hidden.includes(p)) this._dirty.add(p);
     this.refreshParts();
@@ -372,6 +379,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       case "chat":
         // In two columns the header belongs to the sheet, so the chat carries its own dice bar.
         context.chat = { ...this.#diceBar(), messageDraft: this.#draft("message") };
+        break;
+      case "pad":
+        context.pad = this.#preparePad();
         break;
       case "map":
         context.map = this.#prepareMap();
@@ -577,6 +587,22 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return portrait && !VIDEO_RE.test(portrait) ? portrait : "icons/svg/mystery-man.svg";
   }
 
+  /** Only what the sideways pad shows: whose token it moves and where. */
+  #preparePad() {
+    const scene = activeScene();
+    const token = this.token;
+    return {
+      hasToken: !!token,
+      name: token?.name ?? this.actor?.name ?? "",
+      img: token ? this.#tokenImage(token) : this.actor?.img ?? "",
+      initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
+      sceneName: scene ? scene.navName || scene.name : "",
+      step: this.step,
+      // iPhone Safari has no fullscreen for pages: the button would do nothing there.
+      fullscreen: !!document.fullscreenEnabled && !document.fullscreenElement
+    };
+  }
+
   #prepareMap() {
     const scene = activeScene();
     if (!scene) return { hasScene: false };
@@ -669,7 +695,10 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (strip && this._stripScroll) strip.scrollLeft = this._stripScroll;
     el.classList.toggle("fcp-wide", this.wide);
     el.classList.toggle("fcp-live", this.live);
-    if (options.isFirstRender) this.wideQuery?.addEventListener("change", this.#onWideChange);
+    if (options.isFirstRender) {
+      this.wideQuery?.addEventListener("change", this.#onWideChange);
+      document.addEventListener("fullscreenchange", this.#onFullscreenChange);
+    }
 
     // Enter key on text inputs triggers the paired action.
     for (const input of el.querySelectorAll("input[data-enter]")) {
@@ -717,6 +746,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Saves, then disposes the editor: its update hook and autosave timer must not outlive the app.
     this.notes?.dispose();
     this.wideQuery?.removeEventListener("change", this.#onWideChange);
+    document.removeEventListener("fullscreenchange", this.#onFullscreenChange);
     super._onClose(options);
   }
 
@@ -1061,6 +1091,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onToggleMap() {
     await setSetting(SETTINGS.MAP_COLLAPSED, this.mapCollapsed ? "open" : "closed");
     this.markDirty("map");
+  }
+
+  /** Android: full screen hides the browser bars, then the screen can stay sideways. */
+  static async #onFullscreen() {
+    try {
+      await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+      await screen.orientation?.lock?.("landscape").catch(() => {});
+    } catch (err) {
+      warn("fullscreen refused", err);
+    }
+    this.markDirty("pad");
   }
 
   static #onStepToggle() {

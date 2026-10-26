@@ -336,5 +336,7 @@
   "FCP.Error.Where.render": "opening",
   "FCP.Error.Where.hp": "damage and healing",
   "FCP.Error.Where.general": "general error",
-  "FCP.Spells.Waiting": "Loading the spell lists…"
+  "FCP.Spells.Waiting": "Loading the spell lists…",
+  "FCP.Pad.Hint": "Turn the phone upright to get back to the sheet.",
+  "FCP.Pad.Fullscreen": "Full screen"
 }
