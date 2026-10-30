@@ -349,5 +349,9 @@
   "FCP.Pad.Hint": "Turn the phone upright to get back to the sheet.",
   "FCP.Pad.Fullscreen": "Full screen",
   "FCP.TapToRoll": "tap to roll",
-  "FCP.D5.Proficient": "proficient"
+  "FCP.D5.Proficient": "proficient",
+  "FCP.Vfx.Only": "Effect only",
+  "FCP.Vfx.Hint": "tap who you want to hit",
+  "FCP.Vfx.ChosenOne": "1 chosen · clear",
+  "FCP.Vfx.ChosenMany": "{n} chosen · clear"
 }

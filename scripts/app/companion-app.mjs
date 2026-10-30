@@ -443,11 +443,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
       case "actions":
         context.tabId = "actions";
-        {
-          const prepared = actor ? await this.adapter.prepareActions(actor) : { groups: [] };
-          context.groups = prepared.groups;
-          context.useInBody = !!prepared.useInBody;
-        }
+        // One use button per row, for every system: the old `useInBody` (dnd5e: open the row, then Use) is gone.
+        context.groups = actor ? (await this.adapter.prepareActions(actor)).groups : [];
         await this.#decorateItems(actor, context.groups);
         context.targets = actor && this.#decorateVfx(actor, context.groups) ? this.#prepareTargets() : null;
         this.showsTargets = !!context.targets;
@@ -600,6 +597,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         mine: t.id === origin.id
       })),
       count: this.targetIds.size,
+      countLabel: game.i18n.format(this.targetIds.size === 1 ? "FCP.Vfx.ChosenOne" : "FCP.Vfx.ChosenMany", { n: this.targetIds.size }),
       color: game.user.color?.css ?? String(game.user.color ?? "")
     };
   }

@@ -349,5 +349,9 @@
   "FCP.Pad.Hint": "Gira il telefono in verticale per tornare alla scheda.",
   "FCP.Pad.Fullscreen": "Schermo intero",
   "FCP.TapToRoll": "tocca per tirare",
-  "FCP.D5.Proficient": "competente"
+  "FCP.D5.Proficient": "competente",
+  "FCP.Vfx.Only": "Solo effetto",
+  "FCP.Vfx.Hint": "tocca chi vuoi colpire",
+  "FCP.Vfx.ChosenOne": "1 scelto · azzera",
+  "FCP.Vfx.ChosenMany": "{n} scelti · azzera"
 }

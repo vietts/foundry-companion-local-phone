@@ -339,7 +339,8 @@ export class Dnd5eAdapter extends SystemAdapter {
     const acts = source.system?.activities ? Array.from(source.system.activities) : [source];
     const attack = acts.find(a => a.type === "attack");
     const toHit = attack?.labels?.toHit ?? (source.hasAttack ? source.labels?.toHit : null);
-    if (toHit) return { text: toHit, hint: t("FCP.D5.ToHit") };
+    // `hit`: the use button shows the to-hit itself ("⚔ +7"); a save DC goes in the line under the name.
+    if (toHit) return { text: toHit, hint: t("FCP.D5.ToHit"), hit: true };
     const save = acts.find(a => a.type === "save")?.save;
     const dc = save?.dc?.value;
     if (!dc) return null;
@@ -428,7 +429,7 @@ export class Dnd5eAdapter extends SystemAdapter {
     reactions.sort((a, b) => a.name.localeCompare(b.name));
     if (reactions.length) groups.unshift({ title: t("FCP.D5.Reactions"), items: reactions });
 
-    return { groups, useInBody: true };
+    return { groups };
   }
 
   /** Activation type of an item: its only activity's, or the first one's. */

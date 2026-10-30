@@ -1684,31 +1684,66 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 /* ---------- Item lists (actions, inventory) ---------- */
 
+/* The group title sits on the page, its rows in one card under it. */
 .fcp-group {
-  margin-bottom: 20px;
+  margin-bottom: var(--fcp-s4);
 }
 
-.fcp-item {
-  border-bottom: 1px solid var(--color-neutral-300);
-}
-
-.fcp-row {
-  width: 100%;
+.fcp-group-head {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 11px 8px 11px 0;
-  transition: background 0.12s ease;
+  align-items: center;
+  gap: var(--fcp-s2);
+  min-height: 28px;
+  margin: 0 var(--fcp-s1) var(--fcp-s2);
 }
 
-.fcp-item.expanded > .fcp-row-line {
-  background: var(--color-surface);
+.fcp-group-head .fcp-label {
+  flex: 1;
+  margin: 0;
 }
 
+/* Slots of a spell level, on the title row: filled = available, same pips as on the sheet. */
+.fcp-group-slots {
+  flex: none;
+  margin-right: -5px;
+}
+
+.fcp-group-slots .fcp-boxes {
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.fcp-group-slots .fcp-box {
+  flex: none;
+  width: 30px;
+}
+
+.fcp-group-slots .fcp-box::before {
+  inset: 13px 6px;
+  border-radius: 50%;
+}
+
+.fcp-group-card {
+  background: var(--fcp-card);
+  border-radius: var(--fcp-r-card);
+  box-shadow: var(--fcp-shadow);
+  overflow: hidden;
+}
+
+.fcp-item + .fcp-item {
+  border-top: 1px solid var(--fcp-line);
+}
+
+.fcp-item.expanded {
+  background: #fbf7ef;
+}
+
+/* One row: picture, name and what it does, then one pill that does it. Tapping the row opens the text. */
 .fcp-row-line {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--fcp-s2);
+  padding-right: var(--fcp-s3);
 }
 
 .fcp-row-line > .fcp-row {
@@ -1716,22 +1751,22 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   min-width: 0;
 }
 
-.fcp-item.expanded {
-  border-bottom-color: var(--color-text);
+.fcp-row {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: var(--fcp-s3);
+  padding: var(--fcp-s2) 0 var(--fcp-s2) var(--fcp-s4);
 }
 
-.fcp-row.fcp-inactive {
-  opacity: 0.55;
-}
-
-.fcp-row > img,
-.fcp-row > span:first-child:not(.fcp-row-main) {
+.fcp-row > img {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border: 0;
-  border-radius: 50%;
-  background: var(--color-surface);
+  border-radius: var(--fcp-r-ctl);
+  background: var(--fcp-track);
   object-fit: cover;
 }
 
@@ -1742,69 +1777,98 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 .fcp-row-title {
   display: block;
-  font: 600 15.5px/1.25 var(--font-body);
+  font: 600 16px/1.25 var(--font-body);
 }
 
 .fcp-row-meta {
   display: block;
-  font: 400 12.5px/1.35 var(--font-quote);
-  color: var(--color-neutral-700);
+  margin-top: 2px;
+  font: 500 13px/1.3 var(--font-body);
+  color: var(--fcp-muted);
+}
+
+.fcp-row-meta em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--fcp-ink-2);
+}
+
+/* An unequipped weapon: quieter, still readable. */
+.fcp-row.fcp-inactive .fcp-row-title {
+  color: var(--fcp-ink-2);
+}
+
+.fcp-row.fcp-inactive > img {
+  opacity: 0.55;
 }
 
 .fcp-row-right {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 2px;
-  font: 600 14px var(--font-body);
-  color: var(--color-neutral-700);
+  gap: var(--fcp-s2);
 }
 
+/* Uses left: a counter, not a button. */
 .fcp-uses {
-  font: 500 12px var(--font-body);
-  color: var(--color-text);
+  padding: 4px 8px;
   border: 0;
-  padding: 3px 6px;
+  border-radius: 999px;
+  background: var(--fcp-track);
+  font: 700 14px var(--font-num);
+  color: var(--fcp-ink-2);
   white-space: nowrap;
 }
 
-/* Total to-hit / save DC: the number players forget, so it is the loudest thing on the row.
-   Not .fcp-badge: that name is the chat unread dot, absolutely positioned. */
+/* Reference mode (no dice): the to-hit / DC as plain text on a neutral pill. */
 .fcp-tohit {
-  font: 700 16px var(--font-body);
-  color: var(--color-text);
-  background: var(--color-accent-100, transparent);
-  border: 2px solid var(--color-accent-700, var(--color-text));
-  padding: 2px 7px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fcp-track);
+  font: 700 15px var(--font-num);
+  color: var(--fcp-ink);
   white-space: nowrap;
 }
 
 .fcp-chevron {
-  color: var(--color-accent-700);
-  font-size: 15px;
-  padding-top: 8px;
+  color: var(--fcp-muted);
+  font-size: 16px;
 }
 
-.fcp-row-right button {
-  width: var(--fcp-tap);
-  height: var(--fcp-tap);
-  display: flex;
+/* The one thing on the row that plays: Attack with the to-hit, Cast, Use. */
+#fcp-app .fcp-use {
+  flex: none;
+  min-width: 76px;
+  min-height: var(--fcp-tap);
+  padding: 0 var(--fcp-s3);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
+  gap: 6px;
+  border-radius: 999px;
+  background: var(--fcp-act);
+  color: #fff;
+  font: 600 15px var(--font-body);
+  text-align: center;
+}
+
+.fcp-use b {
+  font: 700 17px var(--font-num);
+}
+
+.fcp-use i {
+  font-size: 17px;
 }
 
 .fcp-item-body {
-  padding: 0 8px 14px 46px;
-  background: var(--color-surface);
+  padding: 0 var(--fcp-s4) var(--fcp-s4) calc(var(--fcp-s4) + 40px + var(--fcp-s3));
+  background: transparent;
 }
 
 .fcp-item-desc {
   font: 400 15px/1.55 var(--font-quote);
-  margin: 0 0 10px;
+  margin: 0 0 var(--fcp-s3);
   text-wrap: pretty;
   user-select: text;
   -webkit-user-select: text;
@@ -1817,11 +1881,11 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 .fcp-item-desc :is(h1, h2, h3, h4, h5, h6) {
   font: 600 15px/1.3 var(--font-body);
   margin: 10px 0 4px;
-  color: var(--color-text);
+  color: var(--fcp-ink);
 }
 
 .fcp-item-desc a {
-  color: var(--color-accent-700);
+  color: var(--fcp-act);
 }
 
 .fcp-item-desc :is(ul, ol) {
@@ -1837,151 +1901,26 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-item-desc :is(th, td) {
-  border: 1px solid var(--color-neutral-300);
+  border: 1px solid var(--fcp-line-2);
   padding: 3px 6px;
-  color: var(--color-text);
+  color: var(--fcp-ink);
   text-align: left;
 }
 
 .fcp-item-desc :is(th) {
-  background: var(--color-neutral-200);
+  background: var(--fcp-track);
 }
 
 .fcp-item-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--fcp-s2);
 }
 
-.fcp-use-row {
-  padding: 0 0 12px 46px;
-}
-
-.fcp-use-row .fcp-primary {
-  width: 100%;
-}
-
-/* ---------- Targets strip and play button (effects from the phone) ---------- */
-
-.fcp-targets {
-  position: sticky;
-  top: -8px; /* the tab's top padding */
-  z-index: 2;
-  margin: -8px -20px 16px;
-  padding: 10px 20px 12px;
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--fcp-line);
-}
-
-.fcp-targets-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 28px;
-}
-
-.fcp-targets-clear {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 0;
-  background: var(--color-surface);
-  font: 600 13px var(--font-body);
-}
-
-.fcp-targets-empty {
-  padding: 6px 0;
-  font: 400 13px/1.35 var(--font-quote);
-  color: var(--color-neutral-700);
-}
-
-.fcp-targets-strip {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  padding: 6px 2px 2px;
-}
-
-.fcp-target {
-  flex: none;
-  width: 58px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  scroll-snap-align: start;
-}
-
-.fcp-target-img {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--color-surface) center / cover no-repeat;
-  box-shadow: 0 0 0 2px var(--color-text);
-}
-
-.fcp-target.hostile .fcp-target-img { box-shadow: 0 0 0 2px var(--color-accent); }
-.fcp-target.friendly .fcp-target-img,
-.fcp-target.mine .fcp-target-img { box-shadow: 0 0 0 2px var(--color-green); }
-
-.fcp-target.on .fcp-target-img {
-  box-shadow: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--fcp-user, var(--color-accent));
-}
-
-.fcp-target.on .fcp-target-img::after {
-  content: "✓";
-  position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--color-text);
-  color: var(--color-bg);
-  font: 700 12px/1 var(--font-body);
-}
-
-.fcp-target-name {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 500 11.5px var(--font-body);
-}
-
-.fcp-play {
-  flex: none;
-  width: var(--fcp-tap);
-  height: var(--fcp-tap);
-  display: grid;
-  place-items: center;
-  border: 0;
-  background: var(--color-accent);
-  box-shadow: var(--fcp-lift);
-}
-
-.fcp-play-icon {
+/* «Effect only»: the visual effect on the big screen, no roll. Neutral, it does not play the game. */
+#fcp-app .fcp-play svg.fcp-ico {
   width: 14px;
-  height: 16px;
-  margin-left: 3px;
-  background: var(--color-bg);
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-
-.fcp-play:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--color-shadow);
-}
-
-.fcp-play:disabled {
-  opacity: 0.45;
+  height: 14px;
 }
 
 .fcp-play.playing {
@@ -1989,8 +1928,206 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 @keyframes fcp-play-pulse {
-  from { background: var(--color-accent); }
-  to { background: var(--color-accent-500); }
+  from { background: var(--fcp-track); }
+  to { background: var(--fcp-line-2); }
+}
+
+/* ---------- Targets: a card that scrolls away with the list ---------- */
+
+.fcp-targets {
+  margin: 0 0 var(--fcp-s4);
+  padding: var(--fcp-s3) var(--fcp-s4) var(--fcp-s3);
+}
+
+.fcp-targets-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fcp-s2);
+  min-height: var(--fcp-tap);
+  margin-top: -6px;
+}
+
+.fcp-targets-head .fcp-label {
+  margin: 0;
+}
+
+#fcp-app .fcp-targets-clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--fcp-tap);
+  margin-right: -8px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font: 600 14px var(--font-body);
+  color: var(--fcp-act);
+}
+
+.fcp-targets-empty {
+  padding: 4px 0;
+  font: 400 15px/1.4 var(--font-quote);
+  color: var(--fcp-ink-2);
+}
+
+.fcp-targets-strip {
+  display: flex;
+  gap: var(--fcp-s2);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  margin: 0 -4px;
+  padding: 6px 4px 2px;
+}
+
+.fcp-target {
+  flex: none;
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  scroll-snap-align: start;
+  font: 500 12px var(--font-body);
+  color: var(--fcp-ink-2);
+}
+
+.fcp-target-img {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--fcp-track) center / cover no-repeat;
+  box-shadow: 0 0 0 2px var(--fcp-card), 0 0 0 3.5px var(--fcp-ring, var(--fcp-line-2));
+}
+
+.fcp-target.hostile { --fcp-ring: #d9a8a2; }
+.fcp-target.friendly,
+.fcp-target.mine { --fcp-ring: #a9c4ad; }
+
+.fcp-target.on {
+  color: var(--fcp-act-ink);
+  font-weight: 700;
+}
+
+.fcp-target.on .fcp-target-img {
+  box-shadow: 0 0 0 2px var(--fcp-card), 0 0 0 5px var(--fcp-act);
+}
+
+.fcp-target.on .fcp-target-img::after {
+  content: "✓";
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--fcp-act);
+  color: #fff;
+  font: 700 12px/1 var(--font-body);
+  box-shadow: 0 0 0 2px var(--fcp-card);
+}
+
+.fcp-target-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Spellbook (inventory, dnd5e) ---------- */
+
+.fcp-spellbook input[name=spellQuery] {
+  margin-bottom: var(--fcp-s2);
+}
+
+.fcp-spellbook .fcp-segmented {
+  margin-bottom: var(--fcp-s3);
+}
+
+.fcp-spellbook .fcp-group-card {
+  padding: var(--fcp-s1) var(--fcp-s4) var(--fcp-s2);
+}
+
+.fcp-spell-level + .fcp-spell-level {
+  margin-top: var(--fcp-s2);
+}
+
+.fcp-spell-level .fcp-sublabel {
+  margin: var(--fcp-s3) 0 0;
+}
+
+.fcp-spell {
+  display: flex;
+  align-items: center;
+  gap: var(--fcp-s3);
+  min-height: 52px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--fcp-line);
+}
+
+.fcp-spell:last-child {
+  border-bottom: 0;
+}
+
+.fcp-spell-name {
+  display: block;
+  font: 600 15px/1.25 var(--font-body);
+}
+
+.fcp-spell small {
+  display: block;
+  margin-top: 1px;
+  font: 500 12px/1.3 var(--font-body);
+  color: var(--fcp-muted);
+}
+
+.fcp-spell em {
+  flex: none;
+  font: italic 400 14px var(--font-quote);
+  color: var(--fcp-muted);
+}
+
+/* Prepared switch: 52 × 44 to tap, the track you see is 30 px high. Green = on, as everywhere. */
+.fcp-switch {
+  flex: none;
+  position: relative;
+  width: 52px;
+  height: var(--fcp-tap);
+  border: 0;
+  background: none;
+}
+
+.fcp-switch::before {
+  content: "";
+  position: absolute;
+  inset: 7px 0;
+  border-radius: 15px;
+  background: var(--fcp-line-2);
+  transition: background 0.14s ease;
+}
+
+.fcp-switch i {
+  position: absolute;
+  top: 11px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 1px 2px rgba(31, 26, 20, 0.25);
+  transition: left 0.14s ease;
+}
+
+.fcp-switch.on::before {
+  background: var(--fcp-act);
+}
+
+.fcp-switch.on i {
+  left: 26px;
 }
 
 /* ---------- Chat ---------- */
@@ -2538,88 +2675,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 /* Component classes set their own display, so the hidden attribute needs to win explicitly. */
 #fcp-app [hidden] {
   display: none !important;
-}
-
-/* Action rows */
-.fcp-row.big .fcp-row-title {
-  font-size: 17px;
-}
-
-#fcp-app button.fcp-primary.fcp-use-full {
-  width: 100%;
-}
-
-/* Spellbook */
-.fcp-spellbook input[name=spellQuery] {
-  margin-bottom: 8px;
-}
-
-.fcp-spell-level {
-  margin-bottom: 14px;
-}
-
-.fcp-sublabel {
-  font: 600 11px var(--font-body);
-  color: var(--color-neutral-700);
-  margin-bottom: 4px;
-}
-
-.fcp-spell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--fcp-tap);
-  padding: 8px 0;
-  border-bottom: 1px solid var(--color-neutral-300);
-}
-
-.fcp-spell-name {
-  display: block;
-  font: 500 15px/1.25 var(--font-body);
-}
-
-.fcp-spell small {
-  display: block;
-  margin-top: 1px;
-  font: 400 11.5px/1.3 var(--font-quote);
-  color: var(--color-neutral-600);
-}
-
-.fcp-spell em {
-  flex: none;
-  font: italic 400 12px var(--font-quote);
-  color: var(--color-neutral-600);
-}
-
-.fcp-switch {
-  flex: none;
-  position: relative;
-  width: 52px;
-  height: 30px;
-  border: 0;
-  border-radius: 15px;
-  background: var(--color-neutral-200);
-  transition: background 0.14s ease;
-}
-
-.fcp-switch i {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--color-bg);
-  border: 0;
-  transition: left 0.14s ease;
-}
-
-.fcp-switch.on {
-  background: var(--color-accent);
-}
-
-.fcp-switch.on i {
-  left: 24px;
 }
 
 /* ---------- Journal as a document (Foundry's desktop sheet) ---------- */
