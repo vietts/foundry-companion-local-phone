@@ -101,8 +101,8 @@
   "FCP.ChatPlaceholder": "Say something…",
   "FCP.Move.Title": "Move",
   "FCP.Move.Hint": "Tap an arrow to move one square, or tap a spot on the map.",
-  "FCP.Map.Show": "Map",
-  "FCP.Map.Hide": "Hide",
+  "FCP.Map.Show": "Show minimap",
+  "FCP.Map.Hide": "Hide minimap",
   "FCP.Move.HintPad": "Tap an arrow to move one square.",
   "FCP.Move.Step": "Step",
   "FCP.Move.Center": "Recenter",
@@ -357,5 +357,8 @@
   "FCP.Menu": "More",
   "FCP.ExitCompanionShort": "Full Foundry interface",
   "FCP.LogOutShort": "Log out",
-  "FCP.RollMode": "Next roll mode"
+  "FCP.RollMode": "Next roll mode",
+  "FCP.Map.WelcomeTitle": "You are on the table map",
+  "FCP.Map.WelcomeText": "Tap the arrows to move your token one square. Sheet and Actions are down below.",
+  "FCP.Map.WelcomeOk": "OK"
 }

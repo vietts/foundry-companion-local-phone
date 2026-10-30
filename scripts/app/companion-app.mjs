@@ -184,6 +184,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       quickNote: CompanionApp.#onQuickNote,
       noteHeading: CompanionApp.#onNoteHeading,
       toggleMap: CompanionApp.#onToggleMap,
+      dismissWelcome: CompanionApp.#onDismissWelcome,
       fullscreen: CompanionApp.#onFullscreen,
       noop: () => {}
     }
@@ -413,7 +414,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       left: tab === "sheet" ? loc("FCP.Title") : loc(`FCP.Tabs.${tab.capitalize()}`),
       right,
-      summary: header?.summary?.[tab] ?? "",
+      // The map has no summary of its own: hit points and the rest, as in Actions.
+      summary: header?.summary?.[tab === "map" ? "actions" : tab] ?? "",
       // Actions show the pin only where opening an item sets it (dnd5e); elsewhere it belongs to the sheet.
       pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : "",
       // The «⋯» menu is on every tab: one small target instead of three buttons next to the name.
@@ -755,8 +757,10 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       hasScene: true,
       sceneName: scene.navName || scene.name,
-      liveName: this.live ? (token?.name ?? actor?.name ?? "") : "",
       hasToken: !!token,
+      // The character's portrait in the middle of the pad: whose token the arrows move.
+      img: [actor?.img, token ? this.#tokenImage(token) : null].find(src => src && !VIDEO_RE.test(src) && !src.includes("mystery-man")) ?? null,
+      welcome: this.live && !this.#welcomeSeen(),
       ratio: (d.sceneWidth / d.sceneHeight).toFixed(4),
       initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
       background,
@@ -1278,6 +1282,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Parts that show the targets strip right now. */
   #targetParts() {
     return [...(this.showsTargets ? ["actions"] : []), ...(this.mapShowsTargets ? ["map"] : [])];
+  }
+
+  static WELCOME_KEY = "fcp-map-welcome";
+
+  /** The live-day welcome on the map is shown once per device. */
+  #welcomeSeen() {
+    try { return localStorage.getItem(CompanionApp.WELCOME_KEY) === "1"; } catch (err) { return false; }
+  }
+
+  static #onDismissWelcome() {
+    try { localStorage.setItem(CompanionApp.WELCOME_KEY, "1"); } catch (err) { /* private mode: shown again next time */ }
+    this.markDirty("map");
   }
 
   static async #onToggleMap() {

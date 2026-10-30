@@ -2449,24 +2449,81 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 /* ---------- Map ---------- */
 
+/* Scene name on one line, the step next to it: no more four lines of Cinzel capitals above the pad. */
 .fcp-map-title {
   flex: none;
-  padding: calc(var(--fcp-safe-top) + 22px) 20px 10px;
-}
-
-.fcp-map-title .fcp-kicker span:first-child {
-  font-weight: 700;
-  color: var(--color-accent-700);
+  display: flex;
+  align-items: center;
+  gap: var(--fcp-s3);
+  padding: var(--fcp-s2) var(--fcp-s4) 0;
 }
 
 .fcp-map-title h1 {
-  font: 700 20px/1.15 var(--font-heading);
-  margin: 7px 0 0;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: 600 15px/1.3 var(--font-body);
+  color: var(--fcp-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.fcp-map-title select {
-  margin-top: 8px;
-  min-height: 38px;
+#fcp-app .fcp-step {
+  flex: none;
+  min-height: var(--fcp-tap);
+  padding: 0 var(--fcp-s4);
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--fcp-track);
+  font: 600 15px var(--font-body);
+  color: var(--fcp-ink);
+}
+
+.fcp-map-tokens {
+  flex: none;
+  padding: var(--fcp-s2) var(--fcp-s4) 0;
+}
+
+/* Welcome on a live day, once per device: in the page, with its own «Ok». */
+.fcp-welcome {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fcp-s3);
+  margin: var(--fcp-s2) var(--fcp-s4) 0;
+  padding: var(--fcp-s4);
+  border-radius: var(--fcp-r-card);
+  background: var(--fcp-act-tint);
+  color: var(--fcp-act-ink);
+}
+
+.fcp-welcome > div {
+  flex: 1;
+}
+
+.fcp-welcome b {
+  display: block;
+  font: 700 16px/1.3 var(--font-body);
+}
+
+.fcp-welcome p {
+  margin: 4px 0 0;
+  font: 500 15px/1.45 var(--font-body);
+}
+
+#fcp-app .fcp-welcome button {
+  flex: none;
+  min-width: 56px;
+  min-height: var(--fcp-tap);
+  padding: 0 var(--fcp-s4);
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--fcp-act);
+  color: #fff;
+  font: 700 15px var(--font-body);
 }
 
 .fcp-mapwrap {
@@ -2476,9 +2533,17 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   justify-content: center;
-  border-top: 1px solid var(--fcp-line);
-  border-bottom: 1px solid var(--fcp-line);
-  background: var(--color-neutral-200);
+  margin: var(--fcp-s3) var(--fcp-s4) 0;
+  border-radius: var(--fcp-r-card);
+  overflow: hidden;
+  background: var(--fcp-track);
+}
+
+.fcp-map-hint {
+  flex: none;
+  margin: var(--fcp-s2) var(--fcp-s4) 0;
+  font: 500 13px/1.35 var(--font-body);
+  color: var(--fcp-muted);
 }
 
 .fcp-minimap {
@@ -2594,52 +2659,23 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   pointer-events: none;
 }
 
-.fcp-mapbar {
-  flex: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px 0;
-}
-
-.fcp-mapbar span {
-  font: italic 400 13px var(--font-quote);
-  color: var(--color-neutral-700);
-}
-
-.fcp-mapbar button {
-  flex: none;
-  min-height: var(--fcp-tap);
-  padding: 6px 14px;
-  border: 0;
-  background: var(--color-surface);
-  box-shadow: var(--fcp-lift);
-  color: var(--color-text);
-  font: 700 11px var(--font-body);
-  border-radius: var(--radius-sm);
-  text-align: center;
-}
-
+/* The pad: a light disc, the four straight arrows as green discs, the character's portrait in the middle. */
 .fcp-padpanel {
   flex: none;
-  height: 230px;
+  height: 236px;
   position: relative;
-  background: var(--color-neutral-200);
-  border-top: 1px solid var(--fcp-line);
-  margin-top: 10px;
+  margin-top: var(--fcp-s2);
 }
 
 .fcp-dpad {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
-  width: 196px;
-  height: 196px;
+  right: var(--fcp-s4);
+  bottom: var(--fcp-s2);
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
-  background: var(--color-bg);
-  border: 0;
-  box-shadow: var(--fcp-lift);
+  background: var(--fcp-card);
+  box-shadow: var(--fcp-shadow), 0 6px 20px rgba(31, 26, 20, 0.08);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -2647,30 +2683,53 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-dpad button {
-  width: 52px;
-  height: 52px;
+  width: 62px;
+  height: 62px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  color: var(--color-text);
+  border-radius: 50%;
+  background: var(--fcp-act-tint);
+  font-size: 24px;
+  color: var(--fcp-act);
   text-align: center;
 }
 
+/* Diagonals: same size to tap, no disc, so the four main directions read first. */
+.fcp-dpad button.diag {
+  background: none;
+}
+
 .fcp-dpad .fcp-center {
-  width: 46px;
-  height: 46px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: var(--color-text);
-  color: var(--color-bg);
-  font: 700 15px var(--font-body);
+  background: var(--fcp-ink) center / cover no-repeat;
+  color: var(--fcp-card);
+  font: 700 18px var(--font-heading);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 0 3px var(--fcp-card), 0 0 0 5px var(--fcp-act);
 }
 
 .fcp-padpanel .fcp-notice {
-  padding: 16px 20px;
+  padding: var(--fcp-s4);
+}
+
+/* Show / hide the minimap: last on the page, a quiet text button. */
+#fcp-app .fcp-map-toggle {
+  flex: none;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--fcp-tap);
+  margin: var(--fcp-s2) 0 var(--fcp-s4);
+  padding: 0 var(--fcp-s4);
+  border-radius: 999px;
+  font: 600 15px var(--font-body);
+  color: var(--fcp-ink-2);
 }
 
 @media (min-width: 700px) {
@@ -3083,10 +3142,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 /* ---------- Live day ---------- */
 
-#fcp-app.fcp-live .fcp-map-title .fcp-kicker span:last-child {
-  font-weight: 700;
-}
-
 /* GM window: accounts and QR cards (Foundry's own theme, light touch). */
 .fcp-live-access .fcp-la-list {
   list-style: none;
@@ -3185,37 +3240,14 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   font-size: 3vh;
 }
 
-/* ---------- Map tab: foldable minimap, targets, pad ---------- */
+/* ---------- Map tab: folded minimap, targets under the pad ---------- */
 
-.fcp-map-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.fcp-map-toggle {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  margin-top: 6px;
-  padding: 0 12px;
-  border: 0;
-  background: var(--color-surface);
-  font: 700 11px var(--font-body);
-}
-
-/* Above the pad the strip is a plain band, not the sticky header it is in Actions. */
 .fcp-tab[data-tab="map"] .fcp-targets {
-  position: static;
   flex: none;
-  margin: 10px 0 0;
-  border-top: 1px solid var(--fcp-line);
+  margin: var(--fcp-s3) var(--fcp-s4) 0;
 }
 
-/* Folded map: the pad takes the room, centered and bigger. */
+/* Folded map (the live day default): the pad takes the room, centered and bigger. */
 .fcp-map-collapsed .fcp-padpanel {
   flex: 1 0 300px;
   height: auto;
@@ -3225,20 +3257,20 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   right: 50%;
   bottom: 50%;
   transform: translate(50%, 50%);
-  width: min(300px, 80vw);
-  height: min(300px, 80vw);
+  width: min(296px, 78vw);
+  height: min(296px, 78vw);
 }
 
 .fcp-map-collapsed .fcp-dpad button {
   width: 76px;
   height: 76px;
-  font-size: 32px;
+  font-size: 30px;
 }
 
 .fcp-map-collapsed .fcp-dpad .fcp-center {
-  width: 64px;
-  height: 64px;
-  font-size: 20px;
+  width: 80px;
+  height: 80px;
+  font-size: 22px;
 }
 
 /* ---------- Phone sideways: a controller ---------- */

@@ -101,8 +101,8 @@
   "FCP.ChatPlaceholder": "Scrivi qualcosa…",
   "FCP.Move.Title": "Muovi",
   "FCP.Move.Hint": "Tocca una freccia per muoverti di una casella, oppure tocca un punto sulla mappa.",
-  "FCP.Map.Show": "Mappa",
-  "FCP.Map.Hide": "Nascondi",
+  "FCP.Map.Show": "Mostra minimappa",
+  "FCP.Map.Hide": "Nascondi minimappa",
   "FCP.Move.HintPad": "Tocca una freccia per muoverti di una casella.",
   "FCP.Move.Step": "Passo",
   "FCP.Move.Center": "Ricentra",
@@ -357,5 +357,8 @@
   "FCP.Menu": "Altro",
   "FCP.ExitCompanionShort": "Interfaccia completa di Foundry",
   "FCP.LogOutShort": "Esci",
-  "FCP.RollMode": "Modo del prossimo tiro"
+  "FCP.RollMode": "Modo del prossimo tiro",
+  "FCP.Map.WelcomeTitle": "Sei sulla mappa del tavolo",
+  "FCP.Map.WelcomeText": "Tocca le frecce per muovere il tuo segnalino di una casella. Scheda e Azioni sono qui sotto.",
+  "FCP.Map.WelcomeOk": "Ok"
 }

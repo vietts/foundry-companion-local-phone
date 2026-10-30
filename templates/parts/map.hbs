@@ -1,20 +1,25 @@
 <section class="fcp-tab {{#if (eq activeTab 'map')}}active{{/if}} {{#if mapCollapsed}}fcp-map-collapsed{{/if}}" data-tab="map">
   {{#unless map.hasScene}}
-  <div class="fcp-map-title"><div class="fcp-kicker"><span>{{localize "FCP.Tabs.Map"}}</span><span></span></div></div>
   <div class="fcp-empty" style="padding: 16px 20px">{{localize "FCP.NoScene"}}</div>
   {{else}}
+  {{#if map.welcome}}
+  {{!-- Once per device: what this screen is for, in the page, not in a window to close. --}}
+  <div class="fcp-welcome">
+    <div><b>{{localize "FCP.Map.WelcomeTitle"}}</b><p>{{localize "FCP.Map.WelcomeText"}}</p></div>
+    <button type="button" data-action="dismissWelcome">{{localize "FCP.Map.WelcomeOk"}}</button>
+  </div>
+  {{/if}}
   <div class="fcp-map-title">
-    <div class="fcp-kicker"><span>{{localize "FCP.ActiveScene"}}</span><span>{{map.liveName}}</span></div>
-    <div class="fcp-map-head">
-      <h1>{{map.sceneName}}</h1>
-      <button type="button" class="fcp-map-toggle" data-action="toggleMap" aria-expanded="{{#if mapCollapsed}}false{{else}}true{{/if}}">{{#if mapCollapsed}}{{localize "FCP.Map.Show"}} <i class="ph-duotone ph-caret-down"></i>{{else}}{{localize "FCP.Map.Hide"}} <i class="ph-duotone ph-caret-up"></i>{{/if}}</button>
-    </div>
-    {{#if (gt map.tokenChoices.length 1)}}
+    <h1 title="{{map.sceneName}}">{{map.sceneName}}</h1>
+    {{#if map.hasToken}}<button type="button" class="fcp-step" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{map.step}}</button>{{/if}}
+  </div>
+  {{#if (gt map.tokenChoices.length 1)}}
+  <div class="fcp-map-tokens">
     <select name="tokenId" data-action="selectToken">
       {{#each map.tokenChoices}}<option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>{{/each}}
     </select>
-    {{/if}}
   </div>
+  {{/if}}
 
   {{#unless mapCollapsed}}
   <div class="fcp-mapwrap">
@@ -35,31 +40,29 @@
       {{#if map.target}}<div class="fcp-mm-target" style="left: {{map.target.left}}%; top: {{map.target.top}}%;"></div>{{/if}}
     </div>
   </div>
-
+  {{#if map.hasToken}}<p class="fcp-map-hint">{{localize "FCP.Move.Hint"}}</p>{{/if}}
   {{/unless}}
-
-  {{> "modules/foundry-companion-local-phone/templates/parts/targets.hbs"}}
 
   {{#unless map.hasToken}}
   <div class="fcp-padpanel"><div class="fcp-notice">{{localize "FCP.NoToken"}}</div></div>
   {{else}}
-  <div class="fcp-mapbar">
-    <span>{{#if mapCollapsed}}{{localize "FCP.Move.HintPad"}}{{else}}{{localize "FCP.Move.Hint"}}{{/if}}</span>
-    <button type="button" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{map.step}}</button>
-  </div>
   <div class="fcp-padpanel">
     <div class="fcp-dpad">
-      <button type="button" data-action="move" data-dx="-1" data-dy="-1" aria-label="↖"><i class="ph-duotone ph-arrow-up-left"></i></button>
+      <button type="button" class="diag" data-action="move" data-dx="-1" data-dy="-1" aria-label="↖"><i class="ph-duotone ph-arrow-up-left"></i></button>
       <button type="button" data-action="move" data-dx="0" data-dy="-1" aria-label="↑"><i class="ph-duotone ph-arrow-up"></i></button>
-      <button type="button" data-action="move" data-dx="1" data-dy="-1" aria-label="↗"><i class="ph-duotone ph-arrow-up-right"></i></button>
+      <button type="button" class="diag" data-action="move" data-dx="1" data-dy="-1" aria-label="↗"><i class="ph-duotone ph-arrow-up-right"></i></button>
       <button type="button" data-action="move" data-dx="-1" data-dy="0" aria-label="←"><i class="ph-duotone ph-arrow-left"></i></button>
-      <div class="fcp-center">{{map.initial}}</div>
+      <div class="fcp-center {{#if map.img}}has-img{{/if}}" {{#if map.img}}style="background-image: url('{{map.img}}');"{{/if}}>{{#unless map.img}}{{map.initial}}{{/unless}}</div>
       <button type="button" data-action="move" data-dx="1" data-dy="0" aria-label="→"><i class="ph-duotone ph-arrow-right"></i></button>
-      <button type="button" data-action="move" data-dx="-1" data-dy="1" aria-label="↙"><i class="ph-duotone ph-arrow-down-left"></i></button>
+      <button type="button" class="diag" data-action="move" data-dx="-1" data-dy="1" aria-label="↙"><i class="ph-duotone ph-arrow-down-left"></i></button>
       <button type="button" data-action="move" data-dx="0" data-dy="1" aria-label="↓"><i class="ph-duotone ph-arrow-down"></i></button>
-      <button type="button" data-action="move" data-dx="1" data-dy="1" aria-label="↘"><i class="ph-duotone ph-arrow-down-right"></i></button>
+      <button type="button" class="diag" data-action="move" data-dx="1" data-dy="1" aria-label="↘"><i class="ph-duotone ph-arrow-down-right"></i></button>
     </div>
   </div>
   {{/unless}}
+
+  {{> "modules/foundry-companion-local-phone/templates/parts/targets.hbs"}}
+
+  <button type="button" class="fcp-map-toggle" data-action="toggleMap" aria-expanded="{{#if mapCollapsed}}false{{else}}true{{/if}}"><i class="ph-duotone ph-caret-{{#if mapCollapsed}}down{{else}}up{{/if}}"></i>{{#if mapCollapsed}}{{localize "FCP.Map.Show"}}{{else}}{{localize "FCP.Map.Hide"}}{{/if}}</button>
   {{/unless}}
 </section>
