@@ -106,11 +106,12 @@ export class Dnd5eAdapter extends SystemAdapter {
     const walk = move.walk ?? move.speeds?.walk;
     const speed = walk ? `${num(walk)} ${move.units ?? ""}`.trim() : "—";
     const caster = !!(a.spellcasting && a.spell?.dc);
+    // Initiative last: it is the one that rolls, a green chip at the end of a row of plain numbers.
     const stats = [
       { label: t("FCP.D5.AC"), value: a.ac?.value ?? "—" },
       { label: t("FCP.D5.Prof"), value: signed(a.prof) },
-      { label: t("FCP.D5.Init"), value: signed(a.init?.total) },
-      caster ? { label: t("FCP.D5.SpellDC"), value: a.spell.dc } : { label: t("FCP.D5.Speed"), value: speed }
+      caster ? { label: t("FCP.D5.SpellDC"), value: a.spell.dc } : { label: t("FCP.D5.Speed"), value: speed },
+      { label: t("FCP.D5.Initiative"), value: signed(a.init?.total), action: "roll", data: { kind: "initiative", pin: "init" } }
     ];
 
     const d = a.death ?? {};
@@ -202,10 +203,11 @@ export class Dnd5eAdapter extends SystemAdapter {
       }))
     });
 
+    // Saves as a grid of chips under the abilities, with the short names ("Des +2").
     sections.push({
-      pane: "stats", title: t("FCP.D5.Saves"), layout: "list", variant: "compact",
+      pane: "stats", title: t("FCP.D5.Saves"), layout: "grid", cols: 3, inline: true,
       tiles: Object.entries(s.abilities).map(([key, ab]) => ({
-        label: CONFIG.DND5E.abilities[key]?.label ?? key,
+        label: game.i18n.has?.(`FCP.D5.Ab.${key}`) ? t(`FCP.D5.Ab.${key}`) : CONFIG.DND5E.abilities[key]?.label ?? key,
         value: signed(ab.save?.value ?? ab.save),
         marker: (ab.proficient ?? 0) > 0 ? "◆" : "",
         action: "roll",
@@ -222,7 +224,7 @@ export class Dnd5eAdapter extends SystemAdapter {
           label: sl.pact ? f("FCP.D5.PactLevel", { n: sl.level }) : f("FCP.D5.SlotLevel", { n: sl.level }),
           count: `${sl.value} / ${sl.max}`,
           tone: sl.pact ? "pact" : "slot",
-          boxes: boxes(sl.max, sl.max - sl.value)
+          boxes: boxes(sl.max, sl.value)
         }))
       });
     }
@@ -245,11 +247,13 @@ export class Dnd5eAdapter extends SystemAdapter {
     const conc = actor.concentration;
     const concItem = Array.from(conc?.items ?? [])[0];
     const concEffect = Array.from(conc?.effects ?? [])[0];
-    sections.push({
-      pane: "stats", title: t("FCP.D5.Other"), layout: "list", variant: "compact",
-      tiles: [{ label: t("FCP.D5.Initiative"), value: signed(a.init?.total), action: "roll", data: { kind: "initiative", pin: "init" } }],
-      concentration: concEffect ? { name: concItem?.name ?? concEffect.name, rollLabel: t("FCP.D5.ConcSave") } : null
-    });
+    // Initiative moved under the hit points: what is left here is concentration, when there is one.
+    if (concEffect) {
+      sections.push({
+        pane: "stats", title: t("FCP.D5.Other"), layout: "list", variant: "compact", tiles: [],
+        concentration: { name: concItem?.name ?? concEffect.name, rollLabel: t("FCP.D5.ConcSave") }
+      });
+    }
 
     const passives = actor.items
       .filter(i => i.type === "feat" && !(i.system.activities?.size) && !i.system.uses?.max)
@@ -393,7 +397,7 @@ export class Dnd5eAdapter extends SystemAdapter {
         // Title by spell level; pact spells show the pact pool (cast at the pact level) as their slots.
         title: lvl === 0 ? t("FCP.D5.Cantrips") : f("FCP.D5.SlotLevel", { n: lvl }),
         count: slot ? f(slot.pact ? "FCP.D5.PactCount" : "FCP.D5.SlotCount", { v: slot.value, m: slot.max, n: slot.level }) : "",
-        slots: slot ? { key: `slot:${slot.key}`, tone: slot.pact ? "pact" : "slot", boxes: boxes(slot.max, slot.max - slot.value) } : null,
+        slots: slot ? { key: `slot:${slot.key}`, tone: slot.pact ? "pact" : "slot", boxes: boxes(slot.max, slot.value) } : null,
         items: list.sort((a, b) => a.name.localeCompare(b.name)).map(sp => this.#row(sp, { actionLabel: t("FCP.D5.Cast") }))
       });
     }
@@ -607,8 +611,9 @@ export class Dnd5eAdapter extends SystemAdapter {
         const slotKey = key.slice(5);
         const slot = actor.system.spells?.[slotKey];
         if (!slot?.max) return false;
-        const spent = this.#next(slot.max - (slot.value ?? 0), n);
-        return actor.update({ [`system.spells.${slotKey}.value`]: Math.clamp(slot.max - spent, 0, slot.max) });
+        // Filled = available, like hit dice: tapping the last full slot spends it, an empty one fills up to it.
+        const value = this.#next(slot.value ?? 0, n);
+        return actor.update({ [`system.spells.${slotKey}.value`]: Math.clamp(value, 0, slot.max) });
       }
       if (key === "hd") return this.#setHitDice(actor, this.#next(a.hd?.value ?? 0, n));
       return false;

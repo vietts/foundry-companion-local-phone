@@ -433,8 +433,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
           for (const tile of section.tiles ?? []) {
             tile.zero ??= /^[+−-]?0$/.test(String(tile.value).trim());
             tile.pinned = tile.action === "pin" && this.pin?.actorId === actor?.id && this.pin?.key === tile.data?.key;
+            // «Tap to roll»: only what really rolls is green. Experiences are picked for the next roll, not rolled.
+            tile.rolls = tile.action === "roll" && tile.data?.kind !== "experience";
           }
+          section.rolls = (section.tiles ?? []).some(t => t.rolls);
         }
+        context.statTiles = this.#statTiles(context.header?.stats, actor);
         context.condPicker = this.condPicker;
         break;
       case "actions":
@@ -509,6 +513,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (tile.data?.kind === "experience") { tile.sub = null; tile.prof = false; }
       }
     }
+  }
+
+  /** The numbers under the hit points: the ones that roll (initiative) roll, or pin their recipe in reference mode. */
+  #statTiles(stats, actor) {
+    return (stats ?? []).map(s => {
+      if (s.action !== "roll") return { ...s, action: null };
+      if (this.diceEnabled) return { ...s, rolls: true };
+      const key = s.data?.pin;
+      if (!key || !this.adapter.pinText) return { ...s, action: null };
+      return { ...s, action: "pin", data: { key }, pinned: this.pin?.actorId === actor?.id && this.pin?.key === key };
+    });
   }
 
   /** Hide "use" buttons in reference mode and inline the enriched text of expanded items. */

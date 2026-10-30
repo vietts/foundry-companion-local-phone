@@ -181,13 +181,13 @@
   "FCP.D5.Summon": "Summon",
   "FCP.D5.HP": "Hit points",
   "FCP.D5.HPLeft": "left",
-  "FCP.D5.TempShort": "temp.",
+  "FCP.D5.TempShort": "temporary",
   "FCP.D5.Down": "Down · 0 HP",
   "FCP.D5.DeathHint": "Death saving throws, marked by hand.",
   "FCP.D5.Successes": "Successes",
   "FCP.D5.Failures": "Failures",
   "FCP.D5.AC": "AC",
-  "FCP.D5.Prof": "Prof.",
+  "FCP.D5.Prof": "Proficiency",
   "FCP.D5.Init": "Init.",
   "FCP.D5.Speed": "Speed",
   "FCP.D5.SpellDC": "Spell DC",
@@ -197,7 +197,7 @@
   "FCP.D5.Abilities": "Abilities",
   "FCP.D5.Saves": "Saving throws",
   "FCP.D5.Slots": "Spell slots",
-  "FCP.D5.SlotsHint": "tap to mark as spent",
+  "FCP.D5.SlotsHint": "full = available",
   "FCP.D5.SlotLevel": "Level {n}",
   "FCP.D5.PactLevel": "Pact · level {n}",
   "FCP.D5.SlotCount": "{v} / {m} slots",
@@ -347,5 +347,7 @@
   "FCP.Error.Where.general": "general error",
   "FCP.Spells.Waiting": "Loading the spell lists…",
   "FCP.Pad.Hint": "Turn the phone upright to get back to the sheet.",
-  "FCP.Pad.Fullscreen": "Full screen"
+  "FCP.Pad.Fullscreen": "Full screen",
+  "FCP.TapToRoll": "tap to roll",
+  "FCP.D5.Proficient": "proficient"
 }
