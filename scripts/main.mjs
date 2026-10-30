@@ -2,7 +2,7 @@ import { MODULE_ID, log } from "./constants.mjs";
 import { registerSettings } from "./settings.mjs";
 import { shouldUseCompanion, migrateStuckMobileMode, likelyCompanion, muteResolutionWarning, preferBrowserLanguage } from "./device.mjs";
 import { showBoot, hideBoot } from "./boot.mjs";
-import { installPhoneGuard } from "./phone-guard.mjs";
+import { installPhoneGuard, keepNoticesReadable } from "./phone-guard.mjs";
 import { registerSocket } from "./socket.mjs";
 import { registerDisplayHooks } from "./live-display.mjs";
 import { CompanionApp } from "./app/companion-app.mjs";
@@ -110,6 +110,7 @@ function activateCompanion() {
     installPicker();
     installAdvancementTheme();
   }
+  keepNoticesReadable();
   setLogContext(() => ({ tab: app?.activeTab ?? null, live: !!app?.live, companion: true, character: app?.actor?.name ?? null }));
   installRecovery();
   keepReconnecting();

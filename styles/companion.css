@@ -74,6 +74,26 @@ body.fcp-active #notifications {
   top: calc(var(--fcp-safe-top) + 8px);
   z-index: 10001;
 }
+/* On a phone a notice is something to read at once: full width, plain text, big enough. */
+@media (max-width: 739px) {
+  body.fcp-active #notifications {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    translate: none !important;
+  }
+  body.fcp-active #notifications > .notification {
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    font: 600 15px/1.35 "Montserrat", system-ui, sans-serif !important;
+    white-space: normal !important;
+    opacity: 1 !important;
+  }
+}
 
 /* ---------- Tokens («Tavolo», scoped so they never leak into Foundry) ---------- */
 

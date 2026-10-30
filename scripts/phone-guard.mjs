@@ -12,6 +12,21 @@ const ANSWER_NO = [
   "CRLNGN_UI.ui.carouselWelcome.title"
 ];
 
+/** Body classes other modules use to restyle Foundry's notices in ways a phone cannot read. */
+const NOTICE_CLASSES = ["crlngn-compact-notifications"];
+
+/**
+ * Carolingian's compact notices are closed pills at the top: on a phone only a colour change showed, and a player
+ * never read "not enough Hope" or "connection lost". In the companion the notices stay plain and readable.
+ */
+export function keepNoticesReadable() {
+  const strip = () => {
+    for (const cls of NOTICE_CLASSES) if (document.body.classList.contains(cls)) document.body.classList.remove(cls);
+  };
+  strip();
+  new MutationObserver(strip).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+}
+
 export function installPhoneGuard() {
   Hooks.on("renderDialogV2", (app, element) => {
     const title = app.options?.window?.title ?? app.title ?? "";
