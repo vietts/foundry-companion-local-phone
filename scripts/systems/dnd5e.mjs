@@ -752,6 +752,7 @@ export class Dnd5eAdapter extends SystemAdapter {
   async #useItem(actor, { itemId }) {
     const item = actor.items.get(itemId);
     if (!item) return false;
+    this.#attackMode(item);
     return item.use({ event: {} }, this.#dialog(), {});
   }
 
@@ -759,7 +760,32 @@ export class Dnd5eAdapter extends SystemAdapter {
     const item = actor.items.get(String(itemId).split(".")[0]);
     const act = item?.system.activities?.get(activity);
     if (!act) return false;
+    this.#attackMode(item);
     return act.use({ event: {} }, this.#dialog(), {});
+  }
+
+  /**
+   * The attack roll comes after the activity, from dnd5e itself, with no way to pass options: the phone's
+   * advantage or disadvantage goes in through the attack hook, for the next attack of this item only.
+   * Added to what features and effects already grant, never removing it.
+   */
+  #attackMode(item) {
+    const adv = this.#adv();
+    if (!adv.advantage && !adv.disadvantage) return;
+    const name = "dnd5e.preRollAttackV2";
+    let id = null;
+    const off = () => { if (id !== null) Hooks.off(name, id); id = null; };
+    id = Hooks.on(name, config => {
+      if (config.subject?.item !== item) return;
+      for (const roll of config.rolls ?? []) {
+        roll.options ??= {};
+        if (adv.advantage) roll.options.advantage = true;
+        if (adv.disadvantage) roll.options.disadvantage = true;
+      }
+      off();
+    });
+    // An activity that never rolls (or a closed usage window) must not leave the hook for a later attack.
+    setTimeout(off, 120_000);
   }
 
   async #toggleItem(actor, { itemId }) {

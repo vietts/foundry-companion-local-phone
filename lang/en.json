@@ -154,6 +154,7 @@
   "FCP.DH.HPMarked": "HP marked",
   "FCP.DH.HPShort": "HP",
   "FCP.DH.Hope": "Hope",
+  "FCP.DH.NotEnoughHope": "The chosen experiences need {n} Hope.",
   "FCP.DH.Stress": "Stress",
   "FCP.DH.ArmorLabel": "Armor",
   "FCP.DH.DiceRecipe": "{trait} {mod} · d12 Hope + d12 Fear {mod}",

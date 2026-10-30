@@ -58,6 +58,8 @@ export class SystemAdapter {
 
   /** Roll mode currently selected on the phone (adv/dis/normal for dnd5e). */
   mode = "normal";
+  /** The mode a roll goes back to once done: advantage or a reaction is chosen for one roll, not for the evening. */
+  defaultMode = "normal";
 
   /** Actors this user may play with. Owned characters first. */
   playableActors() {

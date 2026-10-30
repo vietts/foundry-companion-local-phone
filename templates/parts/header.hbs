@@ -33,11 +33,11 @@
   </div>
   {{#if (eq headerTab 'sheet')}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
   {{#if (eq headerTab 'actions')}}{{#if headerInfo.pin}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}{{/if}}
-  {{#if dice}}{{#if header.modes}}{{#unless (eq headerTab 'inventory')}}
+  {{#if dice}}{{#if header.modes}}{{#if (or (eq headerTab 'sheet') (eq headerTab 'actions'))}}
   <div class="fcp-modebar fcp-modebar-head">
     {{#each header.modes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="setMode" data-mode="{{this.key}}">{{this.label}}</button>{{/each}}
   </div>
-  {{/unless}}{{/if}}{{/if}}
+  {{/if}}{{/if}}{{/if}}
   {{#if (eq headerTab 'sheet')}}{{#if panes}}
   <div class="fcp-panes">
     {{#each panes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="switchPane" data-pane="{{this.key}}">{{this.label}}</button>{{/each}}

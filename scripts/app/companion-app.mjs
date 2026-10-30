@@ -29,6 +29,9 @@ const TAB_ICONS = {
   notes: "ph-duotone ph-scroll"
 };
 
+/** Actions that roll dice with the phone's roll mode. */
+const ROLLING_ACTIONS = new Set(["roll", "useItem", "useActivity"]);
+
 export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(adapter, options = {}) {
     super(options);
@@ -958,10 +961,19 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static #onSetMode(event, target) {
-    this.adapter.mode = target.dataset.mode;
+    this.#showMode(target.dataset.mode);
+  }
+
+  #showMode(mode) {
+    this.adapter.mode = mode;
     for (const btn of this.element.querySelectorAll(".fcp-modebar button")) {
-      btn.classList.toggle("active", btn.dataset.mode === this.adapter.mode);
+      btn.classList.toggle("active", btn.dataset.mode === mode);
     }
+  }
+
+  /** After a roll the mode goes back to normal: left on Reaction, every Daggerheart attack gave no Hope or Fear. */
+  #resetMode() {
+    if (this.adapter.mode !== this.adapter.defaultMode) this.#showMode(this.adapter.defaultMode);
   }
 
   static async #onAdapterAction(event, target) {
@@ -972,6 +984,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const result = await this.adapter.handle(actor, action, { ...target.dataset }, event);
       if (result?.rerender?.length) this.markDirty(...result.rerender);
+      if (result && ROLLING_ACTIONS.has(action) && target.dataset.kind !== "experience") this.#resetMode();
     } catch (err) {
       warn(`action ${action} failed`, err);
       ui.notifications.error(String(err.message ?? err));

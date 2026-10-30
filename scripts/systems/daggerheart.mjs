@@ -36,6 +36,7 @@ export class DaggerheartAdapter extends SystemAdapter {
   static id = "daggerheart";
 
   mode = "action"; // action | reaction | advantage | disadvantage
+  defaultMode = "action";
   selectedExperiences = new Set();
 
   isPlayable(actor) {
@@ -87,6 +88,7 @@ export class DaggerheartAdapter extends SystemAdapter {
       // Typed damage / healing goes through takeDamage / takeHealing (thresholds and armor slots).
       hpEditor: true,
       stats: [],
+      modes: this.#modes(),
       summary: {
         actions: `${t("FCP.DH.HPShort")} ${fmt("hp")} · ${t("FCP.DH.Hope")} ${fmt("hope")} · ${t("FCP.DH.Stress")} ${fmt("stress")}`,
         inventory: [`${t("FCP.DH.ArmorLabel")} ${fmt("armor")}`, this.#goldText(actor)].filter(Boolean).join(" · ")
@@ -202,12 +204,7 @@ export class DaggerheartAdapter extends SystemAdapter {
     if (s.deathMoveViable) rests.push({ kind: "deathMove", label: t("FCP.DH.DeathMove") });
 
     return {
-      modes: [
-        { key: "action", label: t("FCP.DH.Action"), active: this.mode === "action" },
-        { key: "reaction", label: t("FCP.DH.Reaction"), active: this.mode === "reaction" },
-        { key: "advantage", label: t("FCP.Advantage"), active: this.mode === "advantage" },
-        { key: "disadvantage", label: t("FCP.Disadvantage"), active: this.mode === "disadvantage" }
-      ],
+      modes: null,
       sections,
       rests,
       conditionsInline: true
@@ -445,6 +442,17 @@ export class DaggerheartAdapter extends SystemAdapter {
     return game.i18n.format("FCP.DH.DiceRecipe", { trait: label, mod: signed(actor.system.traits?.[key]?.value) });
   }
 
+  /** Roll modes, in the header bar above Sheet and Actions (like dnd5e), so they show where the attacks are. */
+  #modes() {
+    const t = key => game.i18n.localize(key);
+    return [
+      { key: "action", label: t("FCP.DH.Action"), active: this.mode === "action" },
+      { key: "reaction", label: t("FCP.DH.Reaction"), active: this.mode === "reaction" },
+      { key: "advantage", label: t("FCP.Advantage"), active: this.mode === "advantage" },
+      { key: "disadvantage", label: t("FCP.Disadvantage"), active: this.mode === "disadvantage" }
+    ];
+  }
+
   /* ---------------- Handlers ---------------- */
 
   #rollOptions() {
@@ -484,10 +492,30 @@ export class DaggerheartAdapter extends SystemAdapter {
 
     const opts = this.#rollOptions();
     const experiences = Array.from(this.selectedExperiences).filter(id => actor.system.experiences?.[id]);
+    // Each experience costs 1 Hope: without the roll window nobody else checks it.
+    const hope = actor.system.resources?.hope?.value ?? 0;
+    if (experiences.length && !opts.dialog.configure && hope < experiences.length) {
+      ui.notifications.warn(game.i18n.format("FCP.DH.NotEnoughHope", { n: experiences.length }));
+      return false;
+    }
     const config = { ...opts, roll: { ...opts.roll, trait: key, type: "trait" } };
     if (experiences.length) config.experiences = experiences;
 
-    const result = await actor.rollTrait(key, config);
+    // The roll window empties config.experiences when it is built: tick the phone's ones in it, as a tap would.
+    const hook = experiences.length && opts.dialog.configure ? Hooks.on("renderD20RollDialog", app => {
+      Hooks.off("renderD20RollDialog", hook);
+      app.config.experiences = [...experiences];
+      app.config.costs = [...(app.config.costs ?? []), ...experiences.map(id => ({
+        extKey: id, key: "hope", value: 1, name: actor.system.experiences?.[id]?.name
+      }))];
+      app.render();
+    }) : null;
+    let result;
+    try {
+      result = await actor.rollTrait(key, config);
+    } finally {
+      if (hook !== null) Hooks.off("renderD20RollDialog", hook);
+    }
     if (!result) return false;
 
     // Mirror what the system sheet does after a roll: apply queued hope/fear/stress changes and costs.
