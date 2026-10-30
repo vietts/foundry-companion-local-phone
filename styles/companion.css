@@ -3309,3 +3309,66 @@ body.fcp-active:has(#fcp-app) #fcp-reload { display: none; }
     max-height: calc(100dvh - var(--fcp-safe-top) - 16px);
   }
 }
+
+/* Waiting screen while Foundry loads on a phone (scripts/boot.mjs): same look as the login page in tools/live-login. */
+#fcp-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  background: #f3ede1;
+  color: #1f1a14;
+  font: 500 16px/1.4 Montserrat, system-ui, sans-serif;
+  text-align: center;
+  transition: opacity 0.25s ease;
+}
+#fcp-boot.fcp-boot-out { opacity: 0; pointer-events: none; }
+#fcp-boot .fcp-boot-face {
+  width: 104px;
+  height: 104px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: #fffcf6 center / cover no-repeat;
+  box-shadow: 0 0 0 4px #fffcf6, 0 0 0 6px #e2d8c4, 0 10px 30px rgba(31, 26, 20, 0.18);
+  display: grid;
+  place-items: center;
+  font: 600 40px/1 Cinzel, serif;
+  color: #6b6052;
+}
+#fcp-boot .fcp-boot-hello { margin: 0; color: #6b6052; font-size: 15px; }
+#fcp-boot h1 { margin: 2px 0 20px; border: 0; font: 700 26px/1.15 Cinzel, serif; color: inherit; overflow-wrap: anywhere; }
+#fcp-boot .fcp-boot-card {
+  width: min(380px, 100%);
+  padding: 16px;
+  border-radius: 14px;
+  background: #fffcf6;
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(31, 26, 20, 0.06), 0 4px 16px rgba(31, 26, 20, 0.05);
+}
+#fcp-boot ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+#fcp-boot li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; color: #6b6052; font-weight: 600; }
+#fcp-boot li small { display: block; font-weight: 500; font-size: 13px; }
+#fcp-boot li.now, #fcp-boot li.done { color: #1f1a14; }
+#fcp-boot .fcp-boot-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #ddd3c2;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+#fcp-boot li.done .fcp-boot-dot { background: #1d5c63; border-color: #1d5c63; color: #fff; }
+#fcp-boot li.now .fcp-boot-dot { border-color: #e2eeed; border-top-color: #1d5c63; animation: fcp-boot-spin 0.9s linear infinite; }
+#fcp-boot .fcp-boot-bar { height: 6px; margin-top: 16px; border-radius: 3px; background: #ebe3d3; overflow: hidden; }
+#fcp-boot .fcp-boot-bar i { display: block; height: 100%; width: 40%; border-radius: 3px; background: #1d5c63; animation: fcp-boot-load 1.6s ease-in-out infinite alternate; }
+#fcp-boot .fcp-boot-tip { width: min(360px, 100%); margin: 16px 0 0; color: #6b6052; font: 400 15px/1.45 "Source Serif 4", Georgia, serif; }
+@keyframes fcp-boot-spin { to { transform: rotate(360deg); } }
+@keyframes fcp-boot-load { from { width: 35%; } to { width: 85%; } }
+@media (prefers-reduced-motion: reduce) {
+  #fcp-boot li.now .fcp-boot-dot, #fcp-boot .fcp-boot-bar i { animation: none; }
+}

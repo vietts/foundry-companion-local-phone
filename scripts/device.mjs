@@ -14,6 +14,34 @@ export function looksLikeMobile() {
   return (coarse && touch && shortSide < 1000) || (uaMobile && touch);
 }
 
+/**
+ * At `init`, before the user and the settings are known: will this client most likely open the companion?
+ * Asked by the URL (`?companion=1`, the QR login) or a phone. Used for what must happen early (waiting screen,
+ * Foundry's resolution warning); the real decision is still shouldUseCompanion() at `ready`.
+ */
+export function likelyCompanion() {
+  const q = new URLSearchParams(window.location.search).get("companion");
+  if (q === "0" || q === "false") return false;
+  return q === "1" || q === "true" || looksLikeMobile();
+}
+
+/**
+ * Foundry warns in red, for good, that the screen is too small: true for its own interface, not for the companion.
+ * It is the first thing a player saw. The warning is created as usual (core keeps its id to remove it later)
+ * and taken off the screen at once.
+ */
+export function muteResolutionWarning() {
+  const proto = foundry.applications?.ui?.Notifications?.prototype;
+  if (!proto || proto.fcpMuted) return;
+  const error = proto.error;
+  proto.error = function (message, options) {
+    const notification = error.call(this, message, options);
+    if (typeof message === "string" && message.startsWith("ERROR.RESOLUTION.")) notification?.remove?.();
+    return notification;
+  };
+  proto.fcpMuted = true;
+}
+
 /** Same threshold as Foundry's own "resolution too low" warning (1024x700 CSS pixels). */
 export function isLowResolution() {
   const minW = foundry.Game?.MIN_WINDOW_WIDTH ?? 1024;

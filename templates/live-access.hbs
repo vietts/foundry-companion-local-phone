@@ -1,5 +1,12 @@
 <div class="fcp-la">
   {{#unless liveOn}}<p class="notification warning">{{localize "FCP.Live.Off"}}</p>{{/unless}}
+  {{#if loginMissing}}
+  <div class="notification error fcp-la-login">
+    <p>{{localize "FCP.Live.NoLoginPage"}}</p>
+    {{#if loginFound}}<button type="button" data-action="useLoginPage"><i class="fa-solid fa-check"></i> {{localize "FCP.Live.UseLoginPage"}} <code>{{loginPath}}</code></button>
+    {{else}}<p>{{localize "FCP.Live.NoLoginPageHelp"}}</p>{{/if}}
+  </div>
+  {{/if}}
   <p class="hint">{{#if direct}}{{localize "FCP.Live.IntroDirect"}}{{else}}{{localize "FCP.Live.IntroJoin"}}{{/if}}</p>
   {{#if rows.length}}
   <ul class="fcp-la-list">

@@ -21,6 +21,7 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       createAccounts: LiveAccessApp.#onCreateAccounts,
       printCards: LiveAccessApp.#onPrintCards,
       showOnDisplay: LiveAccessApp.#onShowOnDisplay,
+      useLoginPage: LiveAccessApp.#onUseLoginPage,
       hideDisplay: LiveAccessApp.#onHideDisplay
     }
   };
@@ -46,6 +47,20 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return String(getSetting(SETTINGS.LIVE_LOGIN_URL) ?? "").trim();
   }
 
+  /** The usual place of the login page next to Foundry (tools/live-login). */
+  static DEFAULT_LOGIN_PATH = "/accesso/";
+
+  /** Whether the login page answers at its usual place: checked once per window, only when no address is set. */
+  #probe = null;
+
+  async #loginPageFound() {
+    // Foundry answers unknown paths too (redirects, its own pages): only our page, recognised by its content, counts.
+    this.#probe ??= fetch(new URL(LiveAccessApp.DEFAULT_LOGIN_PATH, window.location.origin), { cache: "no-store", credentials: "omit", redirect: "manual" })
+      .then(async r => r.ok && (await r.text()).includes("Phone Companion"))
+      .catch(() => false);
+    return this.#probe;
+  }
+
   #characters() {
     return game.actors.filter(a => a.type === "character")
       .sort((a, b) => (a.folder?.name ?? "").localeCompare(b.folder?.name ?? "") || a.name.localeCompare(b.name));
@@ -60,11 +75,17 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#selected ??= new Set(actors.filter(a => { const u = this.#userFor(a); return u && !u.active; }).map(a => a.id));
     const displays = this.#displays();
     if (!displays.some(u => u.id === this.#displayId)) this.#displayId = null;
+    const liveOn = !!getSetting(SETTINGS.LIVE_DAY);
+    const direct = !!this.loginUrl;
     return {
-      displays: displays.map(u => ({ id: u.id, name: u.name, active: u.active, selected: u.id === this.#displayId })),
+      // Without a login page the cards open Foundry's own join page: user list, password, warnings. Say it loudly.
+      loginMissing: liveOn && !direct,
+      loginFound: liveOn && !direct && await this.#loginPageFound(),
+      loginPath: LiveAccessApp.DEFAULT_LOGIN_PATH,
       noDisplay: !this.#displayId,
-      liveOn: !!getSetting(SETTINGS.LIVE_DAY),
-      direct: !!this.loginUrl,
+      displays: displays.map(u => ({ id: u.id, name: u.name, active: u.active, selected: u.id === this.#displayId })),
+      liveOn,
+      direct,
       rows: actors.map(a => {
         const user = this.#userFor(a);
         return {
@@ -135,6 +156,14 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
     const loginUrl = this.loginUrl;
+    if (!loginUrl && getSetting(SETTINGS.LIVE_DAY)) {
+      const ok = await DialogV2.confirm({
+        window: { title: game.i18n.localize("FCP.Live.Print") },
+        content: `<p>${game.i18n.localize("FCP.Live.NoLoginPageConfirm")}</p>`,
+        rejectClose: false
+      });
+      if (!ok) return;
+    }
     if (loginUrl) {
       const playing = rows.filter(r => r.user.active).map(r => foundry.utils.escapeHTML(r.actor.name));
       let content = `<p>${game.i18n.localize("FCP.Live.NewPasswordsWarning")}</p>`;
@@ -176,7 +205,8 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const joinUrl = new URL(foundry.utils.getRoute("join"), window.location.origin).href;
     const password = loginUrl ? newPassword() : null;
     const qr = qrcode(0, "M");
-    qr.addData(qrTarget({ loginUrl, joinUrl, userId: user.id, password }));
+    const actor = user.character;
+    qr.addData(qrTarget({ loginUrl, joinUrl, userId: user.id, password, name: actor?.name ?? user.name, img: actor?.img ?? "" }));
     qr.make();
     const note = loginUrl
       ? game.i18n.localize("FCP.Live.CardDirect")
@@ -220,6 +250,12 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
     });
     ui.notifications.info(game.i18n.format("FCP.Live.Shown", { name: actor.name, display: display.name }));
+  }
+
+  static async #onUseLoginPage() {
+    await setSetting(SETTINGS.LIVE_LOGIN_URL, LiveAccessApp.DEFAULT_LOGIN_PATH);
+    ui.notifications.info(game.i18n.format("FCP.Live.LoginPageSet", { path: LiveAccessApp.DEFAULT_LOGIN_PATH }));
+    this.render();
   }
 
   static #onHideDisplay() {

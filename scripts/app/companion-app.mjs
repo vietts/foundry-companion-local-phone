@@ -1007,6 +1007,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Desktop UI for this tab only: the next login (or a new tab) is back on the companion. */
   static async #onExit() {
     setDesktopForSession(true);
+    // The phone switched the canvas off for the companion: the desktop interface needs its map back.
+    try { await game.settings.set("core", "noCanvas", false); } catch (err) { /* setting missing: nothing to undo */ }
     const url = new URL(window.location.href);
     url.searchParams.delete("companion");
     window.location.replace(url.toString());

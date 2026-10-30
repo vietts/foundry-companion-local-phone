@@ -2,8 +2,10 @@
 <!--
   Pagina di accesso diretto per la giornata dal vivo (Phone Companion).
 
-  Il QR stampato dal modulo apre questa pagina con utente e password nel frammento (#u=...&p=...),
-  che il browser non manda a nessun server. La pagina fa il login a Foundry e apre il companion.
+  Il QR stampato dal modulo apre questa pagina con utente, password, nome e ritratto del personaggio nel frammento
+  (#u=...&p=...&n=...&i=...), che il browser non manda a nessun server. La pagina fa il login a Foundry e apre il
+  companion; nome e ritratto restano nella sessionStorage, così il modulo mostra la stessa schermata mentre Foundry
+  carica: dal QR alla prima schermata il giocatore vede una pagina sola, senza niente da toccare.
 
   Deve stare sullo STESSO dominio di Foundry (es. https://foundry.example.com/accesso/), altrimenti
   il cookie di sessione non arriva: un reverse proxy che serve questa cartella su un percorso libero basta.
@@ -14,49 +16,145 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
-<title>Accesso</title>
+<meta name="theme-color" content="#f3ede1">
+<title>Al tavolo</title>
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4eddc; color: #2b241c;
-         font: 18px/1.4 Georgia, "Times New Roman", serif; text-align: center; padding: 24px; box-sizing: border-box; }
-  p { max-width: 22em; }
+  @font-face { font-family: "Cinzel"; src: url("/modules/foundry-companion-local-phone/styles/vendor/cinzel-latin-wght-normal.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+  @font-face { font-family: "Montserrat"; src: url("/modules/foundry-companion-local-phone/styles/vendor/montserrat-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Source Serif 4"; src: url("/modules/foundry-companion-local-phone/styles/vendor/source-serif-4-latin-wght-normal.woff2") format("woff2"); font-weight: 200 900; font-display: swap; }
+  :root { --bg: #f3ede1; --card: #fffcf6; --ink: #1f1a14; --muted: #6b6052; --line: #ebe3d3; --act: #1d5c63; --act-soft: #e2eeed; --bad: #a3302a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); }
+  body { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+         font: 500 16px/1.4 Montserrat, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { width: 100%; max-width: 380px; text-align: center; }
+  .face { width: 104px; height: 104px; margin: 0 auto 16px; border-radius: 50%; background: var(--card) center/cover no-repeat;
+          box-shadow: 0 0 0 4px var(--card), 0 0 0 6px #e2d8c4, 0 10px 30px rgba(31, 26, 20, .18);
+          display: grid; place-items: center; font: 600 40px/1 Cinzel, serif; color: var(--muted); }
+  .hello { margin: 0; color: var(--muted); font-size: 15px; }
+  h1 { margin: 2px 0 20px; font: 700 26px/1.15 Cinzel, serif; overflow-wrap: anywhere; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px; text-align: left; box-shadow: 0 1px 2px rgba(31, 26, 20, .06), 0 4px 16px rgba(31, 26, 20, .05); }
+  ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; color: var(--muted); font-weight: 600; }
+  li small { display: block; font-weight: 500; font-size: 13px; }
+  li.now, li.done { color: var(--ink); }
+  .dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; border: 2px solid #ddd3c2; }
+  li.done .dot { background: var(--act); border-color: var(--act); color: #fff; }
+  li.now .dot { border-color: var(--act-soft); border-top-color: var(--act); animation: spin .9s linear infinite; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); margin-top: 16px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 35%; border-radius: 3px; background: var(--act); transition: width .6s ease; }
+  .tip { margin: 16px 8px 0; color: var(--muted); font: 400 15px/1.45 "Source Serif 4", Georgia, serif; }
+  .err h2 { margin: 0 0 6px; color: var(--bad); font-size: 18px; }
+  .err p { margin: 0 0 16px; font: 400 16px/1.45 "Source Serif 4", Georgia, serif; }
+  .err small { display: block; margin-top: 12px; color: var(--muted); font: 400 14px/1.45 "Source Serif 4", Georgia, serif; }
+  button { all: unset; box-sizing: border-box; display: block; width: 100%; min-height: 48px; padding: 12px; border-radius: 10px;
+           background: var(--act); color: #fff; font-weight: 600; text-align: center; cursor: pointer; }
+  [hidden] { display: none !important; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { li.now .dot { animation: none; } }
 </style>
 </head>
 <body data-foundry="/">
-<p id="msg">Accesso in corso…</p>
+<main>
+  <div class="face" id="face" aria-hidden="true"></div>
+  <p class="hello" id="hello" hidden>Ciao, sei</p>
+  <h1 id="name">Al tavolo</h1>
+  <section class="card" id="steps" aria-live="polite">
+    <ol>
+      <li id="s1" class="now"><span class="dot"></span><span>Ti stiamo riconoscendo…</span></li>
+      <li id="s2"><span class="dot">2</span><span>Apro il tavolo<small>la prima volta ci vuole circa mezzo minuto</small></span></li>
+      <li id="s3"><span class="dot">3</span><span>Il tuo segnalino sulla mappa</span></li>
+    </ol>
+    <div class="bar"><i id="bar"></i></div>
+  </section>
+  <p class="tip" id="tip">Tieni il telefono acceso e non chiudere questa pagina. Non devi toccare niente.</p>
+  <section class="card err" id="error" role="alert" hidden>
+    <h2 id="errTitle"></h2>
+    <p id="errText"></p>
+    <button type="button" id="retry">Riprova</button>
+    <small>Se non cambia, chiedi al master di mostrarti di nuovo il tuo QR sullo schermo del tavolo.</small>
+  </section>
+</main>
 <script>
-(async () => {
-  const msg = document.getElementById("msg");
-  const fail = text => { msg.textContent = text; };
+(() => {
+  const $ = id => document.getElementById(id);
   const params = new URLSearchParams(location.hash.slice(1));
   const userId = params.get("u");
   const password = params.get("p") ?? "";
-  // Toglie la password dalla barra degli indirizzi e dalla cronologia.
-  history.replaceState(null, "", location.pathname);
-  if (!userId) return fail("Questo QR non è completo. Chiedi al master una nuova carta.");
-
+  const name = (params.get("n") ?? "").slice(0, 80);
   const base = new URL(document.body.dataset.foundry || "/", location.origin);
-  // Il telefono non carica la mappa di Foundry: il modulo lo farebbe comunque, così si risparmia un ricaricamento.
-  try { localStorage.setItem("core.noCanvas", "true"); } catch (err) { /* navigazione privata */ }
+  // Only an image of this same site: the QR is printed by the GM, but a photo of it should not load anything else.
+  let img = params.get("i") ?? "";
+  try { img = img && new URL(img, base).origin === location.origin ? new URL(img, base).pathname : ""; } catch (err) { img = ""; }
+  // Toglie la password dalla barra degli indirizzi e dalla cronologia (il frammento resta solo in memoria).
+  history.replaceState(null, "", location.pathname);
 
-  let response;
-  try {
-    response = await fetch(new URL("join", base), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "join", userId, password })
-    });
-  } catch (err) {
-    return fail("Foundry non risponde. Controlla la connessione e riprova.");
+  if (name) {
+    $("hello").hidden = false;
+    $("name").textContent = name;
+    $("face").textContent = name.trim().charAt(0).toUpperCase();
   }
-  const data = await response.json().catch(() => null);
-  if (!response.ok || data?.status !== "success") {
-    return fail("Questo QR non vale più (o la partita non è aperta). Chiedi al master.");
+  if (img) {
+    const probe = new Image();
+    probe.onload = () => { $("face").textContent = ""; $("face").style.backgroundImage = `url("${img.replace(/"/g, "%22")}")`; };
+    probe.src = img;
   }
-  const game = new URL(data.redirect || "game", base);
-  game.searchParams.set("companion", "1");
-  location.replace(game.href);
+
+  const step = n => {
+    for (let i = 1; i <= 3; i++) {
+      const li = $(`s${i}`);
+      li.className = i < n ? "done" : i === n ? "now" : "";
+      li.querySelector(".dot").textContent = i < n ? "✓" : i === n ? "" : String(i);
+    }
+    $("s1").lastElementChild.textContent = n > 1 ? "Ti abbiamo riconosciuto" : "Ti stiamo riconoscendo…";
+    $("bar").style.width = `${[0, 35, 65, 90][n]}%`;
+  };
+
+  const fail = (title, text) => {
+    $("steps").hidden = true;
+    $("tip").hidden = true;
+    $("error").hidden = false;
+    $("errTitle").textContent = title;
+    $("errText").textContent = text;
+  };
+
+  async function enter() {
+    $("error").hidden = true;
+    $("steps").hidden = false;
+    $("tip").hidden = false;
+    step(1);
+    if (!userId) return fail("Questo QR non si legge bene", "Prova a inquadrarlo di nuovo, da più vicino.");
+
+    // Il telefono non carica la mappa di Foundry: il modulo lo farebbe comunque, così si risparmia un ricaricamento.
+    try { localStorage.setItem("core.noCanvas", "true"); } catch (err) { /* navigazione privata */ }
+
+    let response;
+    try {
+      response = await fetch(new URL("join", base), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "join", userId, password })
+      });
+    } catch (err) {
+      return fail("Il tavolo non risponde", "Controlla di essere collegato al wifi, poi tocca Riprova.");
+    }
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.status !== "success") {
+      return fail("Questa carta non vale più", "Il master ha stampato carte nuove, oppure la partita non è ancora aperta.");
+    }
+
+    step(2);
+    // Il modulo legge questi dati appena parte e tiene la stessa schermata finché la scheda non è pronta.
+    try { sessionStorage.setItem("fcp-boot", JSON.stringify({ name, img, at: Date.now() })); } catch (err) { /* navigazione privata */ }
+    const game = new URL(data.redirect || "game", base);
+    game.searchParams.set("companion", "1");
+    location.replace(game.href);
+  }
+
+  $("retry").addEventListener("click", enter);
+  enter();
 })();
 </script>
 </body>

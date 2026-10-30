@@ -1,6 +1,7 @@
-import { MODULE_ID, SETTINGS, log } from "./constants.mjs";
-import { registerSettings, getSetting, setSetting } from "./settings.mjs";
-import { shouldUseCompanion, migrateStuckMobileMode, isLivePlayer } from "./device.mjs";
+import { MODULE_ID, log } from "./constants.mjs";
+import { registerSettings } from "./settings.mjs";
+import { shouldUseCompanion, migrateStuckMobileMode, likelyCompanion, muteResolutionWarning } from "./device.mjs";
+import { showBoot, hideBoot } from "./boot.mjs";
 import { registerSocket } from "./socket.mjs";
 import { registerDisplayHooks } from "./live-display.mjs";
 import { CompanionApp } from "./app/companion-app.mjs";
@@ -20,6 +21,11 @@ import { installRecovery, reportError } from "./errors.mjs";
 let app = null;
 
 Hooks.once("init", () => {
+  // A phone gets the waiting screen and no "resolution too low" error: the companion is made for that screen.
+  if (likelyCompanion()) {
+    showBoot();
+    muteResolutionWarning();
+  }
   registerSettings();
   registerAdapter(Dnd5eAdapter);
   registerAdapter(DaggerheartAdapter);
@@ -49,35 +55,23 @@ Hooks.once("ready", async () => {
   // Class spells after a level up: on every client, the level up can run on a desktop as well as on a phone.
   if (game.system.id === "dnd5e") installSpellStep();
   await migrateStuckMobileMode();
-  if (!shouldUseCompanion()) return;
+  if (!shouldUseCompanion()) return hideBoot();
   await maybePromptCanvas();
   activateCompanion();
 });
 
+/**
+ * The companion never shows Foundry's map, so a phone does not load it: no question asked (it was the one window a
+ * player met before their sheet, in Carolingian's style, and nobody knew what to answer). The desktop button turns
+ * the canvas back on before leaving, since the desktop needs it.
+ */
 async function maybePromptCanvas() {
   let noCanvas = false;
   try { noCanvas = game.settings.get("core", "noCanvas"); } catch (err) { return; }
   if (noCanvas) return;
-  // Live day: no question for people who have never seen Foundry, the phone just skips the canvas.
-  if (isLivePlayer()) {
-    await game.settings.set("core", "noCanvas", true);
-    window.location.reload();
-    await new Promise(() => {});
-  }
-  if (getSetting(SETTINGS.CANVAS_PROMPTED)) return;
-  await setSetting(SETTINGS.CANVAS_PROMPTED, true);
-  const yes = await foundry.applications.api.DialogV2.confirm({
-    window: { title: game.i18n.localize("FCP.CanvasPrompt.Title") },
-    content: game.i18n.localize("FCP.CanvasPrompt.Content"),
-    yes: { label: game.i18n.localize("FCP.CanvasPrompt.Yes"), default: true },
-    no: { label: game.i18n.localize("FCP.CanvasPrompt.No") },
-    rejectClose: false
-  });
-  if (yes) {
-    await game.settings.set("core", "noCanvas", true);
-    window.location.reload();
-    await new Promise(() => {}); // never resolve: page is reloading
-  }
+  await game.settings.set("core", "noCanvas", true);
+  window.location.reload();
+  await new Promise(() => {}); // never resolve: page is reloading
 }
 
 /**
@@ -104,7 +98,10 @@ function activateCompanion() {
   installRecovery();
   keepReconnecting();
   app = new CompanionApp(adapter);
-  app.render({ force: true }).catch(err => reportError("render", err));
+  app.render({ force: true }).then(hideBoot, err => {
+    hideBoot();
+    reportError("render", err);
+  });
   registerRefreshHooks();
   startWakeLock();
 }
