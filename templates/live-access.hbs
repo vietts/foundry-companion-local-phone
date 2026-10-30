@@ -22,6 +22,7 @@
     <label>{{localize "FCP.Live.Display"}}</label>
     {{#if displays.length}}
     <select name="display">
+      {{#if noDisplay}}<option value="" selected>{{localize "FCP.Live.ChooseDisplay"}}</option>{{/if}}
       {{#each displays}}<option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}{{#unless this.active}} ({{localize "FCP.Live.Offline"}}){{/unless}}</option>{{/each}}
     </select>
     <button type="button" data-action="hideDisplay"><i class="fa-solid fa-eye-slash"></i> {{localize "FCP.Live.Hide"}}</button>

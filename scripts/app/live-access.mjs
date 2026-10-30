@@ -1,5 +1,5 @@
 import { MODULE_ID, SETTINGS } from "../constants.mjs";
-import { getSetting } from "../settings.mjs";
+import { getSetting, setSetting } from "../settings.mjs";
 import { qrTarget, newPassword, uniqueUserName } from "./live-data.mjs";
 import { cardsPdf } from "./live-pdf.mjs";
 import { showOnDisplay, hideFromDisplay } from "../live-display.mjs";
@@ -29,11 +29,14 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     body: { template: `modules/${MODULE_ID}/templates/live-access.hbs`, scrollable: [".fcp-la-list"] }
   };
 
-  /** Characters the GM ticked; on first render, the ones that already have an account. */
+  /**
+   * Characters the GM ticked; on first render, those with an account nobody is using right now.
+   * A new password ends the sessions of that account: reprinting one lost card must not log out the whole table.
+   */
   #selected = null;
 
-  /** User whose screen shows the QR codes: a non-GM without a character. */
-  #displayId = null;
+  /** User whose screen shows the QR codes: a non-GM without a character, chosen by the GM and remembered. */
+  #displayId = getSetting(SETTINGS.LIVE_DISPLAY) || null;
 
   #displays() {
     return game.users.filter(u => !u.isGM && !u.character);
@@ -54,11 +57,12 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext(options) {
     const actors = this.#characters();
-    this.#selected ??= new Set(actors.filter(a => this.#userFor(a)).map(a => a.id));
+    this.#selected ??= new Set(actors.filter(a => { const u = this.#userFor(a); return u && !u.active; }).map(a => a.id));
     const displays = this.#displays();
-    if (!displays.some(u => u.id === this.#displayId)) this.#displayId = (displays.find(u => u.active) ?? displays[0])?.id ?? null;
+    if (!displays.some(u => u.id === this.#displayId)) this.#displayId = null;
     return {
       displays: displays.map(u => ({ id: u.id, name: u.name, active: u.active, selected: u.id === this.#displayId })),
+      noDisplay: !this.#displayId,
       liveOn: !!getSetting(SETTINGS.LIVE_DAY),
       direct: !!this.loginUrl,
       rows: actors.map(a => {
@@ -71,7 +75,8 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
           user: user?.name ?? null,
           active: !!user?.active,
           checked: this.#selected.has(a.id),
-          canShow: !!user && !!this.#displayId
+          // Showing a code changes the password: not for someone playing with that account right now.
+          canShow: !!user && !user.active && !!this.#displayId
         };
       })
     };
@@ -85,8 +90,10 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
         else this.#selected.delete(box.value);
       });
     }
-    this.element.querySelector("select[name=display]")?.addEventListener("change", ev => {
-      this.#displayId = ev.target.value;
+    this.element.querySelector("select[name=display]")?.addEventListener("change", async ev => {
+      this.#displayId = ev.target.value || null;
+      await setSetting(SETTINGS.LIVE_DISPLAY, this.#displayId ?? "");
+      this.render();
     });
   }
 
@@ -129,44 +136,59 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     const loginUrl = this.loginUrl;
     if (loginUrl) {
+      const playing = rows.filter(r => r.user.active).map(r => foundry.utils.escapeHTML(r.actor.name));
+      let content = `<p>${game.i18n.localize("FCP.Live.NewPasswordsWarning")}</p>`;
+      if (playing.length) content += `<p><strong>${game.i18n.format("FCP.Live.PlayingWarning", { n: playing.length, names: playing.join(", ") })}</strong></p>`;
       const ok = await DialogV2.confirm({
         window: { title: game.i18n.localize("FCP.Live.Print") },
-        content: `<p>${game.i18n.localize("FCP.Live.NewPasswordsWarning")}</p>`,
+        content,
         rejectClose: false
       });
       if (!ok) return;
     }
-    const cards = [];
-    for (const { actor, user } of rows) {
-      const { qr, note } = await this.#issueQr(user);
-      cards.push({ name: actor.name, note, qr: { count: qr.getModuleCount(), isDark: (r, c) => qr.isDark(r, c) } });
+    // The PDF is built before any password changes: if it fails, the cards already on the table keep working.
+    const issued = [];
+    for (const { actor, user } of rows) issued.push({ actor, user, ...(await this.#makeQr(user)) });
+    const build = list => cardsPdf(list.map(({ actor, note, qr }) => ({
+      name: actor.name, note, qr: { count: qr.getModuleCount(), isDark: (r, c) => qr.isDark(r, c) }
+    })), { textWidth: measureText, title: game.i18n.localize("FCP.Live.Title") });
+    let pdf = build(issued);
+    const done = [];
+    for (const card of issued) {
+      try {
+        if (card.password !== null) await card.user.update({ password: card.password });
+        done.push(card);
+      } catch (err) {
+        ui.notifications.error(game.i18n.format("FCP.Live.PasswordFailed", { name: card.actor.name }));
+      }
     }
-    const pdf = cardsPdf(cards, { textWidth: measureText, title: game.i18n.localize("FCP.Live.Title") });
+    if (!done.length) return;
+    if (done.length !== issued.length) pdf = build(done);
     const file = `${game.i18n.localize("FCP.Live.FileName")}-${game.world.id}.pdf`;
     foundry.utils.saveDataToFile(pdf, "application/pdf", file);
-    ui.notifications.info(game.i18n.format("FCP.Live.Saved", { n: cards.length, file }));
+    ui.notifications.info(game.i18n.format("FCP.Live.Saved", { n: done.length, file }));
   }
 
-  /**
-   * The QR code that logs this user in. With a login page it sets a new password first,
-   * so any card or screen showing an older code for this user stops working.
-   */
-  async #issueQr(user) {
+  /** The QR code that logs this user in, and with a login page the new password it carries (not set yet). */
+  async #makeQr(user) {
     const loginUrl = this.loginUrl;
     const { default: qrcode } = await import("../vendor/qrcode.mjs");
     const joinUrl = new URL(foundry.utils.getRoute("join"), window.location.origin).href;
-    let password = null;
-    if (loginUrl) {
-      password = newPassword();
-      await user.update({ password });
-    }
+    const password = loginUrl ? newPassword() : null;
     const qr = qrcode(0, "M");
     qr.addData(qrTarget({ loginUrl, joinUrl, userId: user.id, password }));
     qr.make();
     const note = loginUrl
       ? game.i18n.localize("FCP.Live.CardDirect")
       : game.i18n.format("FCP.Live.CardJoin", { host: new URL(joinUrl).host, name: user.name });
-    return { qr, note };
+    return { qr, note, password };
+  }
+
+  /** A QR code with its password already set: any card or screen showing an older code for this user stops working. */
+  async #issueQr(user) {
+    const made = await this.#makeQr(user);
+    if (made.password !== null) await user.update({ password: made.password });
+    return made;
   }
 
   /** One character's QR, full screen on the display, until that character logs in or the GM hides it. */
@@ -174,6 +196,12 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const actor = game.actors.get(target.dataset.actorId);
     const user = actor && this.#userFor(actor);
     if (!user || !this.#displayId) return;
+    const display = game.users.get(this.#displayId);
+    // Nobody would see it, and the password would change for nothing.
+    if (!display?.active) {
+      ui.notifications.warn(game.i18n.format("FCP.Live.ShownOffline", { name: actor.name, display: display?.name ?? "" }));
+      return;
+    }
     // A new code means a new password: the printed card of this character stops working.
     if (this.loginUrl) {
       const ok = await foundry.applications.api.DialogV2.confirm({
@@ -191,8 +219,7 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
       note,
       src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
     });
-    const display = game.users.get(this.#displayId);
-    ui.notifications.info(game.i18n.format(display?.active ? "FCP.Live.Shown" : "FCP.Live.ShownOffline", { name: actor.name, display: display?.name ?? "" }));
+    ui.notifications.info(game.i18n.format("FCP.Live.Shown", { name: actor.name, display: display.name }));
   }
 
   static #onHideDisplay() {

@@ -18,6 +18,7 @@ export const SETTINGS = {
   KEEP_AWAKE: "keepAwake",
   LIVE_DAY: "liveDay",
   LIVE_LOGIN_URL: "liveLoginUrl",
+  LIVE_DISPLAY: "liveDisplay",
   MAP_COLLAPSED: "mapCollapsed"
 };
 

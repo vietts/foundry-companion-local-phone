@@ -46,6 +46,14 @@ export function registerSettings() {
     default: ""
   });
 
+  // The table display chosen in the live day window: never guessed, so a QR cannot land on a player's phone.
+  game.settings.register(MODULE_ID, SETTINGS.LIVE_DISPLAY, {
+    scope: "world",
+    config: false,
+    type: String,
+    default: ""
+  });
+
   game.settings.registerMenu(MODULE_ID, "liveAccess", {
     name: "FCP.Live.Menu.Name",
     label: "FCP.Live.Menu.Label",
