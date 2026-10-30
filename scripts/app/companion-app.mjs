@@ -14,6 +14,12 @@ const T = `modules/${MODULE_ID}/templates/parts`;
 const VIDEO_RE = /\.(webm|mp4|m4v|ogv|ogg)(\?.*)?$/i;
 /** Tablet layout: the sheet stays on the left, the other tabs open on the right. Phones in landscape stay single-column. */
 const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
+/** Same query as the CSS that shows the sideways pad. */
+const PAD_QUERY = "(orientation: landscape) and (max-height: 500px)";
+/** Parts that are tabs: a hidden one is redrawn when it is opened, not while it is out of sight. */
+const TAB_PARTS = new Set(["notes", "sheet", "actions", "inventory", "chat", "map"]);
+/** After a finger leaves the screen the click still has to arrive on the same button. */
+const TOUCH_GRACE_MS = 350;
 const MOVE_LIMIT_MS = 20000;
 
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
@@ -56,6 +62,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     /** Tokens targeted from the phone. Without a canvas `game.user.targets` stays empty, so the ids live here. */
     this.targetIds = new Set();
     this.wideQuery = window.matchMedia?.(WIDE_QUERY) ?? null;
+    this.padQuery = window.matchMedia?.(PAD_QUERY) ?? null;
     this.#onWideChange = () => this.render();
     this.#onFullscreenChange = () => this.markDirty("pad");
   }
@@ -202,6 +209,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Re-render only some parts, coalescing bursts of updates. */
   refreshParts = foundry.utils.debounce(() => {
     if (!this._dirty.size) return;
+    // A button replaced between finger down and up loses the tap: redraw once the finger is off the screen.
+    if (this.#touching) return;
     // A failed render throws the window away: build it again from scratch instead of waiting forever.
     if (this.state === CompanionApp.RENDER_STATES.ERROR) {
       this._dirty.clear();
@@ -219,14 +228,54 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }, 80);
 
   _dirty = new Set();
+  /** Parts changed while out of sight: drawn when they show up again (tab opened, phone turned). */
+  _stale = new Set();
+  #touching = false;
+  #touchTimer = null;
 
   markDirty(...parts) {
     // The sideways pad shows the same token as the map: whatever moves the map refreshes it too.
     if (parts.includes("map")) parts.push("pad");
     const hidden = this.hiddenParts;
-    for (const p of parts) if (!hidden.includes(p)) this._dirty.add(p);
+    for (const p of parts) {
+      if (hidden.includes(p)) continue;
+      if (this.#inSight(p)) this._dirty.add(p);
+      else this._stale.add(p);
+    }
     this.refreshParts();
   }
+
+  /** Whether a part is on screen now. Before the first render everything counts as visible. */
+  #inSight(part) {
+    if (!this.rendered) return true;
+    if (part === "pad") return !!this.padQuery?.matches;
+    if (!TAB_PARTS.has(part)) return true;
+    return part === this.activeTab || (this.wide && part === this.primaryTab);
+  }
+
+  /** Draw what changed while hidden and is now in sight. */
+  #flushStale() {
+    const due = [...this._stale].filter(p => this.#inSight(p));
+    for (const p of due) this._stale.delete(p);
+    if (due.length) this.markDirty(...due);
+  }
+
+  #onPointerDown = () => {
+    this.#touching = true;
+    clearTimeout(this.#touchTimer);
+    // A lost pointerup (finger dragged off the page) must not freeze the screen.
+    this.#touchTimer = setTimeout(this.#onPointerUp, 4000);
+  };
+
+  #onPointerUp = () => {
+    clearTimeout(this.#touchTimer);
+    this.#touchTimer = setTimeout(() => {
+      this.#touching = false;
+      if (this._dirty.size) this.refreshParts();
+    }, TOUCH_GRACE_MS);
+  };
+
+  #onPadChange = () => this.#flushStale();
 
   /** @override */
   _configureRenderParts(options) {
@@ -519,6 +568,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   onFogChanged(scene, parts = []) {
     const src = getSetting(SETTINGS.MAP_FOG) ? scene.getFlag(MODULE_ID, FOG_FLAG) ?? null : null;
     const layer = this.element?.querySelector(".fcp-minimap .fcp-mm-layer");
+    // Folded minimap (the live day default): nothing to repaint but the targets strips.
+    if (!layer && this.mapCollapsed) return parts.length ? this.markDirty(...parts) : undefined;
     if (!layer) return this.markDirty("map", ...parts);
     if (src) layer.style.setProperty("--fcp-fog", `url('${src}')`);
     else layer.style.removeProperty("--fcp-fog");
@@ -688,21 +739,31 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _preRender(context, options) {
     await super._preRender(context, options);
-    // The targets strip scrolls sideways and is rebuilt when tokens move: keep its position.
-    this._stripScroll = this.element?.querySelector(".fcp-targets-strip")?.scrollLeft ?? 0;
+    // The targets strips (Actions, Map) scroll sideways and are rebuilt when tokens move: keep each one's position.
+    this._stripScroll = {};
+    for (const strip of this.element?.querySelectorAll(".fcp-targets-strip") ?? []) {
+      const part = strip.closest("[data-application-part]")?.dataset.applicationPart;
+      if (part) this._stripScroll[part] = strip.scrollLeft;
+    }
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
     const el = this.element;
-    const strip = el.querySelector(".fcp-targets-strip");
-    if (strip && this._stripScroll) strip.scrollLeft = this._stripScroll;
+    for (const strip of el.querySelectorAll(".fcp-targets-strip")) {
+      const left = this._stripScroll?.[strip.closest("[data-application-part]")?.dataset.applicationPart];
+      if (left) strip.scrollLeft = left;
+    }
     el.classList.toggle("fcp-wide", this.wide);
     el.classList.toggle("fcp-live", this.live);
     if (options.isFirstRender) {
       this.wideQuery?.addEventListener("change", this.#onWideChange);
+      this.padQuery?.addEventListener("change", this.#onPadChange);
       document.addEventListener("fullscreenchange", this.#onFullscreenChange);
+      el.addEventListener("pointerdown", this.#onPointerDown, { capture: true });
+      for (const type of ["pointerup", "pointercancel"]) el.addEventListener(type, this.#onPointerUp, { capture: true });
     }
+    if (this.moving) this.#setPadEnabled(false);
 
     // Enter key on text inputs triggers the paired action.
     for (const input of el.querySelectorAll("input[data-enter]")) {
@@ -750,7 +811,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Saves, then disposes the editor: its update hook and autosave timer must not outlive the app.
     this.notes?.dispose();
     this.wideQuery?.removeEventListener("change", this.#onWideChange);
+    this.padQuery?.removeEventListener("change", this.#onPadChange);
     document.removeEventListener("fullscreenchange", this.#onFullscreenChange);
+    clearTimeout(this.#touchTimer);
     super._onClose(options);
   }
 
@@ -806,9 +869,24 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Only new messages are unread: an edit (a roll resolving, a card updating) is not news.
     if (this.activeTab !== "chat" && created) {
       this.unreadChat++;
-      this.markDirty("nav");
+      this.#updateChatBadge();
     }
     this.refreshChatLog();
+  }
+
+  /** The unread count on the Chat button, changed in place: redrawing the nav on every roll ate taps on it. */
+  #updateChatBadge() {
+    const btn = this.element?.querySelector(".fcp-nav button[data-tab=chat]");
+    if (!btn) return;
+    const n = this.activeTab !== "chat" ? this.unreadChat : 0;
+    let badge = btn.querySelector(".fcp-badge");
+    if (!n) return badge?.remove();
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "fcp-badge";
+      btn.append(badge);
+    }
+    badge.textContent = String(n);
   }
 
   /** Refill the chat log without re-templating the part (keeps the inputs and their drafts). */
@@ -834,10 +912,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (tab === "chat") {
       this.unreadChat = 0;
-      this.markDirty("nav");
+      this.#updateChatBadge();
       this.refreshChatLog();
     }
     if (tab === "map") this.markDirty("map");
+    this.#flushStale();
     this.markDirty("header");
   }
 
@@ -1072,12 +1151,19 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
    * Queue a move. `computePosition(token)` runs when the move actually starts, so taps queued
    * while a relay round-trip is pending build on the token's updated position.
    */
+  #pendingMoves = 0;
+  moving = false;
+
   #moveTo(computePosition) {
+    // One move running and one waiting: more taps on a slow relay only made the token walk on after the player stopped.
+    if (this.#pendingMoves >= 2) return this._moveChain;
+    this.#pendingMoves++;
     const run = async () => {
       const token = this.token;
       if (!token) return;
       const position = computePosition(token);
       if (!position) return;
+      this.moving = true;
       this.#setPadEnabled(false);
       try {
         // A move that never settles (an update lost on flaky wifi) must not hold every later tap behind it.
@@ -1093,11 +1179,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         warn("move failed", err);
       } finally {
         this.mapTarget = null;
+        this.moving = false;
         this.#setPadEnabled(true);
         this.markDirty("map");
       }
     };
-    this._moveChain = this._moveChain.then(run, run);
+    const done = () => { this.#pendingMoves--; };
+    this._moveChain = this._moveChain.then(run, run).finally(done);
     return this._moveChain;
   }
 
