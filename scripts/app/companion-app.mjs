@@ -1177,6 +1177,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const btn of this.element.querySelectorAll(".fcp-modebar button")) {
       btn.classList.toggle("active", btn.dataset.mode === mode);
     }
+    // A redraw already under way (the roll just changed the character) was built with the old mode and would put
+    // it back on screen when it lands: one more redraw after it shows the real one.
+    this.markDirty("modes");
   }
 
   /** After a roll the mode goes back to normal: left on Reaction, every Daggerheart attack gave no Hope or Fear. */
