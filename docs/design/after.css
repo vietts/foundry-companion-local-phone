@@ -1,0 +1,247 @@
+/*
+ * Proposta "Tavolo" — strato sopra companion.css (che resta per font, reset e icone).
+ * Regole: niente bordi d'inchiostro; i gruppi sono carte chiare su una pagina un filo più scura;
+ * un solo colore d'azione (verde petrolio) = "tocca qui e succede qualcosa nel gioco";
+ * i colori di stato (PF, Stress, Speranza, Armatura, magia) non si usano mai per i pulsanti.
+ * Scala spazi 4 · 8 · 12 · 16 · 24 · 32. Raggi 10 (controlli) · 14 (carte) · 999 (pillole).
+ */
+#fcp-app {
+  --page: #f3ede1;
+  --card: #fffcf6;
+  --line: #ebe3d3;
+  --ink: #1f1a14;
+  --ink-2: #5b5145;
+  --muted: #73685a;
+  --act: #1d5c63;
+  --act-ink: #123f45;
+  --act-tint: #e2eeed;
+  --danger: #a3302a;
+  --danger-tint: #f9e6e3;
+  --heal: #2f6b3a;
+  --heal-tint: #e4efe4;
+  --hp: #a3302a;
+  --stress: #7a3f8f;
+  --hope: #b07a12;
+  --armor: #55657a;
+  --magic: #3f4f8f;
+  --track: #ece5d7;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --r-ctl: 10px; --r-card: 14px;
+  --num: "Source Serif 4", Georgia, serif;
+  --ui: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --shadow: 0 1px 0 rgba(31, 26, 20, 0.04), 0 1px 3px rgba(31, 26, 20, 0.08);
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--ui);
+}
+
+/* ---------- Header compatto ---------- */
+#fcp-app .x-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--s3)) var(--s4) var(--s2);
+}
+#fcp-app .x-head img {
+  width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none;
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--line);
+}
+#fcp-app .x-head.small img { width: 36px; height: 36px; }
+#fcp-app .x-who { flex: 1; min-width: 0; }
+#fcp-app .x-who b {
+  display: block; font: 700 19px/1.15 "Cinzel", Georgia, serif; letter-spacing: 0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#fcp-app .x-head.small .x-who b { font-size: 16px; }
+#fcp-app .x-who small { display: block; margin-top: 2px; font: 500 13px/1.3 var(--ui); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#fcp-app .x-more {
+  flex: none; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 22px; color: var(--ink-2);
+}
+
+/* ---------- Controllo segmentato (sotto-schede, modo di tiro) ---------- */
+#fcp-app .x-seg {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  padding: 3px; gap: 3px; border-radius: 12px; background: var(--track);
+}
+#fcp-app .x-seg button {
+  min-height: 38px; border-radius: 9px; text-align: center;
+  font: 600 14px var(--ui); color: var(--ink-2);
+  display: flex; align-items: center; justify-content: center;
+}
+#fcp-app .x-seg button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+#fcp-app .x-panes { margin: 0 var(--s4) var(--s2); }
+
+/* ---------- Corpo ---------- */
+#fcp-app .x-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: var(--s2) var(--s4) var(--s5);
+  display: flex; flex-direction: column; gap: var(--s3);
+}
+#fcp-app .x-card {
+  background: var(--card); border-radius: var(--r-card); box-shadow: var(--shadow);
+  padding: var(--s4);
+}
+#fcp-app .x-card.flush { padding: var(--s1) 0; }
+#fcp-app .x-title {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2);
+  margin: 0 0 var(--s3);
+  font: 700 12px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+#fcp-app .x-title em { font: 500 12px var(--ui); font-style: normal; letter-spacing: 0; text-transform: none; color: var(--muted); }
+#fcp-app .x-title em i { color: var(--act); font-size: 14px; vertical-align: -2px; margin-right: 3px; }
+#fcp-app .x-gtitle { margin: var(--s3) var(--s1) calc(-1 * var(--s1)); }
+
+/* ---------- Punti ferita ---------- */
+#fcp-app .x-hp { display: flex; align-items: baseline; gap: var(--s2); }
+#fcp-app .x-hp b { font: 700 48px/1 var(--num); letter-spacing: -0.02em; font-variant-numeric: lining-nums tabular-nums; }
+#fcp-app .x-hp span { font: 500 20px var(--num); color: var(--muted); }
+#fcp-app .x-hp .x-temp {
+  margin-left: auto; align-self: center;
+  padding: 4px 10px; border-radius: 999px; background: #e7ebf0; color: #3c4a5c; font: 600 13px var(--ui);
+}
+#fcp-app .x-bar { height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; display: flex; margin: var(--s3) 0 var(--s4); }
+#fcp-app .x-bar i { background: var(--hp); }
+#fcp-app .x-bar i.t { background: #8796a8; }
+#fcp-app .x-hpctl { display: grid; grid-template-columns: 52px 64px 1fr 1fr; gap: var(--s2); }
+#fcp-app .x-hpctl > * { min-height: 48px; border-radius: var(--r-ctl); display: flex; align-items: center; justify-content: center; gap: 6px; font: 600 15px var(--ui); }
+#fcp-app .x-hpctl .q { background: var(--track); color: var(--ink); }
+#fcp-app .x-hpctl input { all: unset; box-sizing: border-box; text-align: center; background: var(--page); border-radius: var(--r-ctl); font: 700 18px var(--num); box-shadow: inset 0 0 0 1px var(--line); }
+#fcp-app .x-hpctl .dmg { background: var(--danger-tint); color: var(--danger); }
+#fcp-app .x-hpctl .heal { background: var(--heal-tint); color: var(--heal); }
+#fcp-app .x-hpctl i { font-size: 18px; }
+
+/* Numeri di riferimento: solo testo, nessun riquadro. */
+#fcp-app .x-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--line); }
+#fcp-app .x-stats > * { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 48px; justify-content: center; }
+#fcp-app .x-stats b { font: 700 22px/1 var(--num); font-variant-numeric: lining-nums; }
+#fcp-app .x-stats span { font: 500 12px var(--ui); color: var(--muted); }
+
+/* ---------- Tiri: ogni numero che tira è una "tessera dado" verde petrolio ---------- */
+#fcp-app .x-rolls { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+#fcp-app .x-roll {
+  position: relative;
+  min-height: 64px; padding: var(--s2) var(--s3);
+  border-radius: 12px; background: var(--act-tint); color: var(--act-ink);
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+}
+#fcp-app .x-roll b { font: 700 24px/1 var(--num); font-variant-numeric: lining-nums; }
+#fcp-app .x-roll span { font: 600 12px var(--ui); letter-spacing: 0.02em; color: var(--act); }
+#fcp-app .x-roll.low b { opacity: 0.75; }
+#fcp-app .x-roll .dot { position: absolute; top: 9px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--act); }
+#fcp-app .x-roll .dot.two { box-shadow: -10px 0 0 var(--act); }
+#fcp-app .x-roll.row { min-height: 48px; flex-direction: row; align-items: center; justify-content: space-between; }
+#fcp-app .x-roll.row b { font-size: 20px; }
+#fcp-app .x-roll.row span { font-size: 13px; color: var(--act-ink); }
+#fcp-app .x-roll.row .dot { position: static; margin-left: auto; margin-right: 8px; }
+#fcp-app .x-roll.wide { grid-column: 1 / -1; }
+#fcp-app .x-sub { margin: var(--s4) 0 var(--s2); font: 600 13px var(--ui); color: var(--ink-2); }
+
+/* ---------- Tracciati: pallini arrotondati, area di tocco 44 ---------- */
+#fcp-app .x-track { display: flex; align-items: center; gap: var(--s3); min-height: 44px; }
+#fcp-app .x-track + .x-track { border-top: 1px solid var(--line); }
+#fcp-app .x-track > b { flex: 1; font: 600 15px var(--ui); }
+#fcp-app .x-track > b small { display: block; font: 500 12px var(--ui); color: var(--muted); }
+#fcp-app .x-pips { display: flex; gap: 0; }
+#fcp-app .x-pip { width: 34px; height: 44px; display: grid; place-items: center; }
+#fcp-app .x-pip::before {
+  content: ""; width: 24px; height: 24px; border-radius: 8px;
+  background: var(--track); box-shadow: inset 0 0 0 1.5px rgba(31, 26, 20, 0.18);
+}
+#fcp-app .x-pip.on::before { background: var(--tone, var(--ink)); box-shadow: none; }
+#fcp-app .x-count { min-width: 36px; text-align: right; font: 700 15px var(--num); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* DH: tracciati grandi, uno per riga, etichetta e conteggio sopra. */
+#fcp-app .x-meter { padding: var(--s2) 0; }
+#fcp-app .x-meter + .x-meter { border-top: 1px solid var(--line); }
+#fcp-app .x-meter header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+#fcp-app .x-meter header b { font: 600 15px var(--ui); }
+#fcp-app .x-meter header span { font: 700 15px var(--num); color: var(--ink-2); }
+#fcp-app .x-meter .x-pips { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
+#fcp-app .x-meter .x-pip { width: auto; }
+#fcp-app .x-meter .x-pip::before { width: 100%; max-width: 40px; height: 28px; margin: 0 2px; }
+
+/* ---------- Pulsanti ---------- */
+#fcp-app .x-btn {
+  min-height: 48px; padding: 0 var(--s4); border-radius: var(--r-ctl);
+  display: flex; align-items: center; justify-content: center; gap: var(--s2);
+  font: 600 15px var(--ui); background: var(--track); color: var(--ink);
+}
+#fcp-app .x-btn.ghost { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+#fcp-app .x-btn.act { background: var(--act); color: #fff; }
+#fcp-app .x-btn.act-soft { background: var(--act-tint); color: var(--act-ink); }
+#fcp-app .x-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+
+#fcp-app .x-chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+#fcp-app .x-chip { min-height: 44px; padding: 0 var(--s4); border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font: 600 14px var(--ui); background: var(--track); color: var(--ink); }
+#fcp-app .x-chip.on { background: var(--ink); color: var(--card); }
+#fcp-app .x-chip.add { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink-2); }
+#fcp-app .x-none { font: italic 400 15px var(--num); color: var(--muted); align-self: center; margin-right: 4px; }
+
+/* ---------- Azioni: righe ---------- */
+#fcp-app .x-item + .x-item { border-top: 1px solid var(--line); }
+#fcp-app .x-line { display: flex; align-items: center; gap: var(--s3); min-height: 64px; padding: var(--s2) var(--s3) var(--s2) var(--s4); }
+#fcp-app .x-line > img { width: 40px; height: 40px; border-radius: 10px; flex: none; object-fit: cover; }
+#fcp-app .x-main { flex: 1; min-width: 0; }
+#fcp-app .x-main b { display: block; font: 600 16px/1.25 var(--ui); }
+#fcp-app .x-main small { display: block; margin-top: 2px; font: 500 13px/1.3 var(--ui); color: var(--muted); }
+#fcp-app .x-main small em { font-style: normal; font-weight: 700; color: var(--ink-2); }
+#fcp-app .x-use {
+  flex: none; min-width: 76px; min-height: 44px; padding: 0 var(--s3); border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--act); color: #fff; font: 600 14px var(--ui);
+}
+#fcp-app .x-use b { font: 700 17px var(--num); }
+#fcp-app .x-use i { font-size: 17px; }
+#fcp-app .x-uses { flex: none; font: 700 14px var(--num); color: var(--ink-2); padding: 4px 8px; border-radius: 999px; background: var(--track); }
+#fcp-app .x-item.open { background: #fbf7ef; }
+#fcp-app .x-item.open:first-child { border-radius: var(--r-card) var(--r-card) 0 0; }
+#fcp-app .x-desc { padding: 0 var(--s4) var(--s4) calc(var(--s4) + 40px + var(--s3)); }
+#fcp-app .x-desc p { margin: 0 0 var(--s3); font: 400 15px/1.55 var(--num); color: var(--ink); }
+#fcp-app .x-desc .x-btn { min-height: 44px; font-size: 14px; display: inline-flex; }
+#fcp-app .x-lvl { display: flex; align-items: center; justify-content: space-between; margin: var(--s3) var(--s1) calc(-1 * var(--s1)); }
+#fcp-app .x-lvl .x-title { margin: 0; }
+#fcp-app .x-lvl .x-pips { margin-right: -6px; }
+#fcp-app .x-lvl .x-pip { width: 30px; }
+#fcp-app .x-lvl .x-pip::before { width: 18px; height: 18px; border-radius: 50%; }
+
+/* Bersagli: striscia leggera, non appiccicosa. */
+#fcp-app .x-targets { display: flex; gap: var(--s2); overflow-x: auto; scrollbar-width: none; padding: 2px; }
+#fcp-app .x-tg { flex: none; width: 56px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: 500 12px var(--ui); color: var(--ink-2); }
+#fcp-app .x-tg span { width: 44px; height: 44px; border-radius: 50%; background: center / cover; position: relative; box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--ring, var(--line)); }
+#fcp-app .x-tg.foe span { --ring: #d9a8a2; }
+#fcp-app .x-tg.on span { --ring: var(--act); box-shadow: 0 0 0 2px var(--card), 0 0 0 5px var(--act); }
+#fcp-app .x-tg.on { color: var(--act-ink); font-weight: 700; }
+#fcp-app .x-tg.on span::after { content: "✓"; position: absolute; right: -5px; bottom: -5px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--act); color: #fff; font: 700 12px/1 var(--ui); box-shadow: 0 0 0 2px var(--card); }
+#fcp-app .x-clear { font: 600 13px var(--ui); color: var(--act); min-height: 32px; padding: 0 4px; display: inline-flex; align-items: center; }
+
+/* ---------- Barra del tiro (sopra la nav, dove arriva il pollice) ---------- */
+#fcp-app .x-rollbar {
+  flex: none; display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s2) var(--s4); background: var(--page);
+  border-top: 1px solid var(--line);
+}
+#fcp-app .x-rollbar > span { flex: none; font: 600 12px var(--ui); color: var(--muted); }
+#fcp-app .x-rollbar .x-seg { flex: 1; }
+#fcp-app .x-rollbar .x-seg button { min-height: 36px; font-size: 13px; }
+#fcp-app .x-rollbar .x-seg button.on.adv { color: var(--heal); }
+
+/* ---------- Nav ---------- */
+#fcp-app .x-nav {
+  flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  padding: 6px var(--s2) calc(env(safe-area-inset-bottom, 0px) + 6px);
+  background: var(--card); box-shadow: 0 -1px 0 var(--line);
+}
+#fcp-app .x-nav button { position: relative; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: 600 12px var(--ui); color: var(--ink-2); }
+#fcp-app .x-nav .ic { width: 56px; height: 30px; border-radius: 999px; display: grid; place-items: center; font-size: 21px; }
+#fcp-app .x-nav button.on { color: var(--act-ink); font-weight: 700; }
+#fcp-app .x-nav button.on .ic { background: var(--act-tint); color: var(--act); }
+#fcp-app .x-nav .n { position: absolute; top: 2px; left: calc(50% + 10px); min-width: 18px; height: 18px; border-radius: 9px; padding: 0 5px; background: var(--danger); color: #fff; font: 700 11px/18px var(--ui); text-align: center; box-shadow: 0 0 0 2px var(--card); }
+
+#fcp-app svg.ico { width: 18px; height: 18px; flex: none; fill: currentColor; }
+#fcp-app .x-title em svg.ico { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; color: var(--act); }
+#fcp-app .x-more svg.ico { width: 24px; height: 24px; }
+#fcp-app .x-title .x-clear { text-transform: none; letter-spacing: 0; }
+#fcp-app .x-targets { padding: 6px 4px 2px; margin: -6px -4px 0; }
+#fcp-app .x-hpctl > * { min-width: 0; } #fcp-app .x-hpctl input { width: 100%; }
