@@ -1,4 +1,4 @@
-/* Phone Companion — Carta & Inchiostro: paper, ink borders, hard shadows, terracotta as the spot color. */
+/* Phone Companion — «Tavolo»: light cards on paper, no ink borders, one green for what you tap to play. */
 
 /* Fonts and icons ship with the module (no CDN): Cinzel and Montserrat for the interface, Source
    Serif 4 for quiet running text, all OFL, and Phosphor duotone (MIT). */
@@ -57,7 +57,7 @@ body.fcp-active #chat-notifications {
 body.fcp-active {
   overflow: hidden;
   overscroll-behavior: none;
-  background: #f4eddc;
+  background: #f3ede1;
 }
 
 body.fcp-active #notifications {
@@ -65,36 +65,70 @@ body.fcp-active #notifications {
   z-index: 10001;
 }
 
-/* ---------- Tokens (Carta & Inchiostro, scoped so they never leak into Foundry) ---------- */
+/* ---------- Tokens («Tavolo», scoped so they never leak into Foundry) ---------- */
 
 /*
- * Paper and ink, terracotta as the spot color, ochre for stress and sage for healing. Every value is
- * at least 4.5:1 on the paper, so a number stays readable at arm's length in a dim room.
- * The neutral and accent scales keep their old names: they are what the component rules below read.
+ * One rule of colour: petrol green means «tap here and something happens in the game» (light for the numbers
+ * to roll, solid for Use / Cast / Attack). States have colours of their own and are never buttons. Groups are
+ * light cards on a slightly darker page, with a soft shadow instead of ink borders.
+ * Spacing 4 · 8 · 12 · 16 · 24 · 32. Radii 10 (controls) · 14 (cards) · pills. Type 12 · 13 · 15 · 16 · 20 · 24 · 48.
  */
 #fcp-app,
 #fcp-picker {
-  --color-bg: #f4eddc;
-  --color-surface: #f7f1e2;
-  --color-text: #2b241c;
-  --color-accent: #8a4a3a;
-  --color-green: #4e6b52;
-  --color-shadow: rgba(43, 36, 28, 0.2);
-  --color-neutral-100: #faf5e9;
-  --color-neutral-200: #eae0c9;
-  --color-neutral-300: #d8cbae;
+  --fcp-page: #f3ede1;
+  --fcp-card: #fffcf6;
+  --fcp-line: #ebe3d3;
+  --fcp-line-2: #ddd3c0;
+  --fcp-ink: #1f1a14;
+  --fcp-ink-2: #5b5145;
+  --fcp-muted: #6b6052;
+  --fcp-act: #1d5c63;
+  --fcp-act-ink: #123f45;
+  --fcp-act-tint: #e2eeed;
+  --fcp-danger: #a3302a;
+  --fcp-danger-tint: #f9e6e3;
+  --fcp-heal: #2f6b3a;
+  --fcp-heal-tint: #e4efe4;
+  --fcp-hp: #a3302a;
+  --fcp-stress: #7a3f8f;
+  --fcp-hope: #b07a12;
+  --fcp-armor: #55657a;
+  --fcp-magic: #3f4f8f;
+  --fcp-hd: #2f6b3a;
+  --fcp-track: #ece5d7;
+  --fcp-s1: 4px;
+  --fcp-s2: 8px;
+  --fcp-s3: 12px;
+  --fcp-s4: 16px;
+  --fcp-s5: 24px;
+  --fcp-s6: 32px;
+  --fcp-r-ctl: 10px;
+  --fcp-r-card: 14px;
+  --fcp-shadow: 0 1px 0 rgba(31, 26, 20, 0.04), 0 1px 3px rgba(31, 26, 20, 0.08);
+  --font-num: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  /* The old names stay: the GM notes, the picker and the spell step read them. */
+  --color-bg: var(--fcp-page);
+  --color-surface: var(--fcp-card);
+  --color-text: var(--fcp-ink);
+  --color-accent: var(--fcp-act);
+  --color-green: var(--fcp-heal);
+  --color-shadow: rgba(31, 26, 20, 0.12);
+  --color-neutral-100: #faf6ee;
+  --color-neutral-200: var(--fcp-track);
+  --color-neutral-300: var(--fcp-line-2);
   --color-neutral-400: #bfae8c;
-  --color-neutral-500: #6b5e4b;
-  --color-neutral-600: #6b5e4b;
-  --color-neutral-700: #52483a;
+  --color-neutral-500: var(--fcp-muted);
+  --color-neutral-600: var(--fcp-muted);
+  --color-neutral-700: var(--fcp-ink-2);
   --color-neutral-800: #3a3228;
-  --color-accent-100: #f6e7e0;
-  --color-accent-200: #ecd2c7;
-  --color-accent-500: #a8604c;
-  --color-accent-600: #8a4a3a;
-  --color-accent-700: #7b4233;
-  --color-accent-800: #5e3226;
-  /* The second accent is ochre: stress, pact slots and spent uses. */
+  --color-accent-100: var(--fcp-act-tint);
+  --color-accent-200: #c9dfdd;
+  --color-accent-500: #2e7880;
+  --color-accent-600: var(--fcp-act);
+  --color-accent-700: var(--fcp-act);
+  --color-accent-800: var(--fcp-act-ink);
+  /* Ochre: pact slots and spent uses in the spell step. */
   --color-accent-2-100: #f8ecd8;
   --color-accent-2-200: #f0dcb9;
   --color-accent-2-700: #9a6320;
@@ -103,9 +137,9 @@ body.fcp-active #notifications {
   --font-heading: "Cinzel", Georgia, "Times New Roman", serif;
   --font-body: "Montserrat", "Helvetica Neue", Arial, sans-serif;
   --font-quote: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --radius-sm: 0px;
+  --radius-sm: var(--fcp-r-ctl);
   --fcp-tap: 44px;
-  --fcp-lift: 3px 3px 0 var(--color-shadow);
+  --fcp-lift: var(--fcp-shadow);
 
   /* The companion is always light: do not inherit Foundry's dark-theme text colors. */
   color-scheme: light;
@@ -124,6 +158,7 @@ body.fcp-active #notifications {
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.35;
+  font-variant-numeric: lining-nums;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -292,7 +327,8 @@ body.fcp-active #notifications {
  * These resets sit in the "modules" layer, after Foundry's "elements" layer, so `all: unset` wins over all of it.
  * They use :where() so the component classes below always override them.
  */
-:where(#fcp-app, #fcp-picker) button {
+:where(#fcp-app, #fcp-picker) button,
+:where(#fcp-app) summary {
   all: unset;
   box-sizing: border-box;
   display: block;
@@ -303,14 +339,19 @@ body.fcp-active #notifications {
   -webkit-tap-highlight-color: transparent;
 }
 
+:where(#fcp-app) summary::-webkit-details-marker {
+  display: none;
+}
+
 :where(#fcp-app, #fcp-picker) button:active {
-  filter: brightness(0.92);
+  filter: brightness(0.94);
 }
 
 :where(#fcp-app, #fcp-picker) button:focus-visible,
+:where(#fcp-app) summary:focus-visible,
 :where(#fcp-app, #fcp-picker) input:focus-visible,
 :where(#fcp-app, #fcp-picker) select:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--fcp-act);
   outline-offset: 2px;
 }
 
@@ -324,11 +365,11 @@ body.fcp-active #notifications {
   box-sizing: border-box;
   display: block;
   font: 500 15px var(--font-body);
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-text);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--fcp-lift);
+  color: var(--fcp-ink);
+  background: var(--fcp-card);
+  border: 0;
+  border-radius: var(--fcp-r-ctl);
+  box-shadow: inset 0 0 0 1.5px var(--fcp-line-2);
   min-height: var(--fcp-tap);
   padding: 8px 12px;
   width: 100%;
@@ -342,7 +383,7 @@ body.fcp-active #notifications {
 
 #fcp-app input::placeholder,
 #fcp-picker input::placeholder {
-  color: var(--color-neutral-600);
+  color: var(--fcp-muted);
   opacity: 1;
 }
 
@@ -355,6 +396,14 @@ body.fcp-active #notifications {
 
 :where(#fcp-app, #fcp-picker) i[class*="ph-"] {
   line-height: 1;
+}
+
+/* Inline icons (templates/parts/icon.hbs): the subset of Phosphor has no drop, heart, dice or «⋯». */
+#fcp-app svg.fcp-ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: currentColor;
 }
 
 /* Buttons that hold centered text or an icon. */
@@ -373,10 +422,6 @@ body.fcp-active #notifications {
   justify-content: center;
 }
 
-.fcp-btn {
-  justify-content: flex-start;
-}
-
 /* ---------- Shared type ---------- */
 
 .fcp-kicker {
@@ -387,45 +432,39 @@ body.fcp-active #notifications {
 }
 
 .fcp-kicker span:first-child {
-  font: 600 10px/1 var(--font-body);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--color-accent-700);
+  font: 700 15px/1.2 var(--font-body);
+  color: var(--fcp-ink);
 }
 
 .fcp-kicker span:last-child {
-  font: 500 10px/1 var(--font-body);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-neutral-700);
+  font: 500 13px/1.2 var(--font-body);
+  color: var(--fcp-muted);
   text-align: right;
 }
 
 .fcp-rule {
-  height: 0;
-  border-top: 2px solid var(--color-text);
-  margin: 8px 0 10px;
+  display: none;
 }
 
-/* Section titles: small caps in ink, over a hairline that runs the width of the section. */
+/* Section titles: the only uppercase in the interface, small and quiet, no rule under them. */
 .fcp-label {
-  font: 700 11.5px/1 var(--font-heading);
-  letter-spacing: 0.14em;
+  font: 700 12px/1.2 var(--font-body);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-accent-700);
-  margin: 0 0 8px;
-  padding-bottom: 5px;
-  border-bottom: 1.5px solid var(--color-text);
+  color: var(--fcp-muted);
+  margin: 0 0 var(--fcp-s3);
+  padding: 0;
+  border: 0;
 }
 
 .fcp-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--fcp-s3);
 }
 
 .fcp-empty,
 .fcp-notice {
   font: italic 500 16px/1.45 var(--font-quote);
-  color: var(--color-neutral-700);
+  color: var(--fcp-ink-2);
   padding: 16px 0;
   text-wrap: pretty;
 }
@@ -434,8 +473,8 @@ body.fcp-active #notifications {
 
 .fcp-header {
   flex: none;
-  padding: calc(var(--fcp-safe-top) + 22px) 20px 10px;
-  background: var(--color-bg);
+  padding: calc(var(--fcp-safe-top) + var(--fcp-s3)) var(--fcp-s4) var(--fcp-s2);
+  background: var(--fcp-page);
 }
 
 .fcp-header.fcp-hidden {
@@ -445,24 +484,23 @@ body.fcp-active #notifications {
 .fcp-identity {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 10px;
+  gap: var(--fcp-s3);
 }
 
 .fcp-portrait {
   flex: none;
   width: 44px;
   height: 44px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: 50%;
-  background: var(--color-surface);
-  box-shadow: var(--fcp-lift);
+  background: var(--fcp-card);
+  box-shadow: 0 0 0 2px var(--fcp-card), 0 0 0 3px var(--fcp-line);
   object-fit: cover;
 }
 
 .fcp-header.big .fcp-portrait {
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
 }
 
 .fcp-name {
@@ -470,40 +508,48 @@ body.fcp-active #notifications {
   flex: 1;
 }
 
+/* Cinzel only for names: the character here, the scene on the map. */
 .fcp-name b {
   display: block;
-  font: 700 18px/1.15 var(--font-heading);
+  font: 700 16px/1.15 var(--font-heading);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .fcp-header.big .fcp-name b {
-  font-size: 22px;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  font-size: 20px;
 }
 
 .fcp-name small {
-  display: block;
-  font: 500 12.5px/1.35 var(--font-body);
-  color: var(--color-neutral-700);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: 2px;
+  font: 500 13px/1.3 var(--font-body);
+  color: var(--fcp-ink-2);
 }
 
-.fcp-header.big .fcp-name small {
-  font-size: 13px;
-  margin-top: 3px;
-}
-
-/* What the pinned tap will roll, in the accent so it reads before anything else. */
+/* What the pinned tap will roll (reference mode): plain text on a quiet band, never the action green. */
 .fcp-pin {
-  margin-top: 8px;
-  min-height: 20px;
-  font: 600 14.5px/1.35 var(--font-body);
-  color: var(--color-accent-700);
+  margin-top: var(--fcp-s2);
+  padding: 6px 12px;
+  border-radius: var(--fcp-r-ctl);
+  background: var(--fcp-track);
+  font: 600 13px/1.35 var(--font-body);
+  color: var(--fcp-ink);
+}
+
+.fcp-pin:empty {
+  display: none;
 }
 
 .fcp-menu {
   margin-left: auto;
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .fcp-menu button {
@@ -512,9 +558,9 @@ body.fcp-active #notifications {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--color-text);
-  color: var(--color-text);
-  font-size: 18px;
+  border-radius: 50%;
+  color: var(--fcp-ink-2);
+  font-size: 20px;
 }
 
 /* ---------- Tabs ---------- */
@@ -526,7 +572,7 @@ body.fcp-active #notifications {
 .fcp-tab,
 .fcp-chat-log {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-neutral-500) transparent;
+  scrollbar-color: var(--fcp-line-2) transparent;
 }
 
 .fcp-tab.active {
@@ -535,11 +581,7 @@ body.fcp-active #notifications {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8px 20px 20px;
-}
-
-.fcp-tab[data-tab="sheet"].active {
-  padding-top: 0;
+  padding: var(--fcp-s2) var(--fcp-s4) var(--fcp-s5);
 }
 
 .fcp-tab[data-tab="map"].active {
@@ -552,19 +594,20 @@ body.fcp-active #notifications {
 .fcp-tab[data-tab="chat"].active {
   display: flex;
   flex-direction: column;
-  padding: 14px 20px 0;
+  padding: var(--fcp-s2) var(--fcp-s4) 0;
 }
 
 /* ---------- Nav ---------- */
 
+/* Where you are: a green pill behind the icon, the label in plain 12 px. Navigation, never a solid block. */
 .fcp-nav {
   flex: none;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  border-top: 2px solid var(--color-text);
-  background: var(--color-bg);
-  padding-bottom: var(--fcp-safe-bottom);
+  padding: 6px var(--fcp-s2) calc(var(--fcp-safe-bottom) + 6px);
+  background: var(--fcp-card);
+  box-shadow: 0 -1px 0 var(--fcp-line);
 }
 
 .fcp-nav button {
@@ -574,41 +617,106 @@ body.fcp-active #notifications {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  font: 700 9.5px var(--font-heading);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-neutral-600);
+  gap: 4px;
+  font: 600 12px/1.1 var(--font-body);
+  color: var(--fcp-ink-2);
   text-align: center;
 }
 
-.fcp-nav button i {
-  font-size: 20px;
+.fcp-nav-ic {
+  width: 56px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  transition: background 0.12s ease;
 }
 
-/* The section you are in is a full block of ink: readable from the far side of the table. */
+.fcp-nav button i {
+  font-size: 21px;
+}
+
 .fcp-nav button.active {
-  background: var(--color-text);
-  color: var(--color-bg);
+  color: var(--fcp-act-ink);
+  font-weight: 700;
+}
+
+.fcp-nav button.active .fcp-nav-ic {
+  background: var(--fcp-act-tint);
+  color: var(--fcp-act);
 }
 
 .fcp-badge {
   position: absolute;
-  top: 5px;
-  left: calc(50% + 6px);
+  top: 2px;
+  left: calc(50% + 10px);
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: var(--color-accent);
-  color: var(--color-bg);
-  font: 600 10px/18px var(--font-body);
+  background: var(--fcp-danger);
+  color: #fff;
+  font: 700 11px/18px var(--font-body);
   text-align: center;
+  box-shadow: 0 0 0 2px var(--fcp-card);
 }
 
-.fcp-nav button.active .fcp-badge {
-  background: var(--color-bg);
-  color: var(--color-text);
+/* ---------- Segmented controls: sheet sub-tabs, roll mode, spell filter ---------- */
+
+/*
+ * Three levels, three looks: the nav is a pill on an icon, a sub-tab or a setting is a segment that lifts
+ * out of a sunken track. Never the solid block of ink, so a filter does not look like where you are.
+ */
+.fcp-panes,
+.fcp-modebar,
+.fcp-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3px;
+  padding: 3px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fcp-track);
+}
+
+.fcp-panes {
+  margin-top: var(--fcp-s3);
+}
+
+.fcp-panes button,
+.fcp-modebar button,
+.fcp-segmented button {
+  min-height: 38px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  font: 600 14px/1.1 var(--font-body);
+  color: var(--fcp-ink-2);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fcp-panes button.active,
+.fcp-modebar button.active,
+.fcp-segmented button.active {
+  background: var(--fcp-card);
+  color: var(--fcp-ink);
+  box-shadow: var(--fcp-shadow);
+}
+
+.fcp-modebar {
+  margin: var(--fcp-s2) 0 0;
+}
+
+.fcp-modebar button {
+  font-size: 13px;
 }
 
 /* ---------- Sheet: meters ---------- */
@@ -620,7 +728,7 @@ body.fcp-active #notifications {
   gap: 10px;
   margin: 14px 0 6px;
   padding-bottom: 5px;
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 .fcp-meter + .fcp-meter .fcp-meter-head {
@@ -635,7 +743,6 @@ body.fcp-active #notifications {
 
 .fcp-meter-count {
   font: 500 12px/1 var(--font-body);
-  letter-spacing: 0.1em;
   color: var(--color-neutral-700);
   white-space: nowrap;
 }
@@ -693,13 +800,11 @@ body.fcp-active #notifications {
 }
 
 .fcp-stepper > div {
-  font: 600 17px var(--font-heading);
+  font: 600 17px var(--font-body);
 }
 
 .fcp-stepper > div small {
-  font: 700 11.5px var(--font-heading);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 700 11.5px var(--font-body);
   color: var(--color-accent-700);
   margin-right: 8px;
 }
@@ -707,12 +812,12 @@ body.fcp-active #notifications {
 .fcp-stepper button {
   width: var(--fcp-tap);
   height: var(--fcp-tap);
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
   text-align: center;
-  font: 700 20px var(--font-heading);
+  font: 700 20px var(--font-body);
 }
 
 .fcp-quickstats {
@@ -728,7 +833,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-quickstats b {
-  font: 600 16px var(--font-heading);
+  font: 600 16px var(--font-body);
   color: var(--color-text);
   margin-left: 4px;
 }
@@ -763,30 +868,6 @@ body.fcp-active #notifications {
 
 /* ---------- Sheet: modes, traits, lists ---------- */
 
-.fcp-modebar {
-  display: flex;
-  gap: 6px;
-  margin: 0 0 18px;
-  overflow-x: auto;
-}
-
-.fcp-modebar button {
-  flex: none;
-  min-height: var(--fcp-tap);
-  padding: 6px 14px;
-  border: 1.5px solid var(--color-text);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  font: 600 11px var(--font-heading);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.fcp-modebar button.active {
-  background: var(--color-text);
-  color: var(--color-bg);
-}
-
 .fcp-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -812,7 +893,7 @@ body.fcp-active #notifications {
 
 .fcp-tile-value {
   order: -1;
-  font: 700 26px/1 var(--font-heading);
+  font: 700 24px/1 var(--font-num);
 }
 
 .fcp-tile.fcp-zero .fcp-tile-value {
@@ -821,7 +902,6 @@ body.fcp-active #notifications {
 
 .fcp-tile-label {
   font: 500 12.5px/1.2 var(--font-body);
-  letter-spacing: 0.04em;
   color: var(--color-neutral-700);
 }
 
@@ -855,7 +935,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-line span {
-  font: 700 17px var(--font-heading);
+  font: 700 17px var(--font-num);
   flex: none;
 }
 
@@ -877,8 +957,8 @@ body.fcp-active #notifications {
   display: grid;
   grid-template-columns: 1fr auto 1fr auto 1fr;
   align-items: stretch;
-  border-top: 1.5px solid var(--color-text);
-  border-bottom: 1.5px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 .fcp-thresholds .band {
@@ -887,7 +967,7 @@ body.fcp-active #notifications {
 
 .fcp-thresholds .band b {
   display: block;
-  font: 700 19px/1.2 var(--font-heading);
+  font: 700 19px/1.2 var(--font-num);
 }
 
 .fcp-thresholds .band small {
@@ -909,13 +989,12 @@ body.fcp-active #notifications {
   transform: translate(-50%, -50%);
   background: var(--color-bg);
   padding: 2px 4px;
-  font: 700 13px var(--font-heading);
+  font: 700 13px var(--font-body);
   color: var(--color-accent-700);
 }
 
 .fcp-section-note {
   font: 500 12px var(--font-body);
-  letter-spacing: 0.06em;
   color: var(--color-neutral-700);
   white-space: nowrap;
 }
@@ -932,7 +1011,7 @@ body.fcp-active #notifications {
   gap: 10px;
   margin-bottom: 8px;
   padding-bottom: 5px;
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 .fcp-headrow .fcp-label {
@@ -954,7 +1033,7 @@ body.fcp-active #notifications {
   gap: 6px;
   min-height: var(--fcp-tap);
   padding: 5px 12px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   font: 500 13px var(--font-body);
@@ -989,7 +1068,7 @@ body.fcp-active #notifications {
 
 .fcp-passive b {
   display: block;
-  font: 700 15px/1.25 var(--font-heading);
+  font: 700 15px/1.25 var(--font-body);
 }
 
 /* Never let one long word (a URL, a leftover id) widen the column. */
@@ -1017,7 +1096,7 @@ body.fcp-active #notifications {
 }
 
 .fcp-about .fcp-headline b {
-  font: 600 15.5px var(--font-heading);
+  font: 600 15.5px var(--font-body);
 }
 
 .fcp-about .fcp-headline span {
@@ -1035,10 +1114,8 @@ body.fcp-active #notifications {
   flex: 1;
   min-height: var(--fcp-tap);
   text-align: center;
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1.5px solid var(--color-text);
+  font: 700 12px var(--font-body);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
@@ -1059,9 +1136,7 @@ body.fcp-active #notifications {
   margin-bottom: 12px;
   border: 1.5px dashed var(--color-accent);
   color: var(--color-accent);
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 700 12px var(--font-body);
 }
 
 /* The level up window (advancement.mjs switches it to dnd5e's light theme): bigger text and controls to tap. */
@@ -1096,20 +1171,20 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   }
 }
 
+/* Buttons: filled, never outlined. Neutral by default; the green ones (.fcp-primary, .rolls) play. */
 .fcp-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: var(--fcp-tap);
-  padding: 6px 18px;
-  border: 1.5px solid var(--color-text);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  box-shadow: var(--fcp-lift);
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text);
+  padding: 0 var(--fcp-s4);
+  border: 0;
+  border-radius: var(--fcp-r-ctl);
+  background: var(--fcp-track);
+  box-shadow: none;
+  font: 600 15px var(--font-body);
+  color: var(--fcp-ink);
 }
 
 .fcp-btn.small {
@@ -1131,9 +1206,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   min-height: 46px;
   padding: 6px 20px;
   border-radius: var(--radius-sm);
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 700 12px var(--font-body);
   text-align: center;
 }
 
@@ -1184,7 +1257,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   flex: none;
   width: 34px;
   height: 34px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: 50%;
   background: var(--color-surface);
   object-fit: cover;
@@ -1219,7 +1292,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 .fcp-uses {
   font: 500 12px var(--font-body);
   color: var(--color-text);
-  border: 1.5px solid var(--color-text);
+  border: 0;
   padding: 3px 6px;
   white-space: nowrap;
 }
@@ -1247,7 +1320,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   color: var(--color-text);
 }
@@ -1270,7 +1343,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-item-desc :is(h1, h2, h3, h4, h5, h6) {
-  font: 600 15px/1.3 var(--font-heading);
+  font: 600 15px/1.3 var(--font-body);
   margin: 10px 0 4px;
   color: var(--color-text);
 }
@@ -1325,7 +1398,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   margin: -8px -20px 16px;
   padding: 10px 20px 12px;
   background: var(--color-bg);
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 .fcp-targets-head {
@@ -1341,7 +1414,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   gap: 6px;
   min-height: 32px;
   padding: 0 10px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-surface);
   font: 600 13px var(--font-body);
 }
@@ -1417,7 +1490,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   height: var(--fcp-tap);
   display: grid;
   place-items: center;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-accent);
   box-shadow: var(--fcp-lift);
 }
@@ -1466,7 +1539,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   min-height: var(--fcp-tap);
   padding: 4px 2px;
   text-align: center;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   font: 600 12px var(--font-body);
@@ -1512,7 +1585,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   object-fit: cover;
 }
 
@@ -1555,8 +1628,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   gap: 8px;
   margin-bottom: 3px;
   font: 600 10.5px/1 var(--font-body);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--color-accent-700);
 }
 
@@ -1573,7 +1644,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-chat-log .chat-message .dice-roll .dice-total {
-  font: 700 32px/1 var(--font-heading);
+  font: 700 32px/1 var(--font-num);
   text-align: left;
   padding: 0;
   background: none;
@@ -1596,7 +1667,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   width: 100%;
   margin-top: 6px;
   text-align: center;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   font: 600 13px var(--font-body);
@@ -1608,7 +1679,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   grid-template-columns: 1fr auto;
   gap: 8px;
   padding: 10px 0 12px;
-  border-top: 2px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
   background: var(--color-bg);
 }
 
@@ -1621,12 +1692,10 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   padding: 6px 18px;
   background: var(--color-text);
   color: var(--color-bg);
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   box-shadow: var(--fcp-lift);
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 700 12px var(--font-body);
   text-align: center;
 }
 
@@ -1635,9 +1704,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   padding: 6px 16px;
   text-align: center;
   border-radius: var(--radius-sm);
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 700 12px var(--font-body);
 }
 
 /* ---------- Actor picker ---------- */
@@ -1656,7 +1723,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   gap: 8px;
   min-height: var(--fcp-tap);
   padding: 4px 12px 4px 4px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   font: 500 13px var(--font-body);
@@ -1689,7 +1756,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-map-title h1 {
-  font: 700 24px/1.1 var(--font-heading);
+  font: 700 20px/1.15 var(--font-heading);
   margin: 7px 0 0;
 }
 
@@ -1705,8 +1772,8 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   justify-content: center;
-  border-top: 2px solid var(--color-text);
-  border-bottom: 2px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
+  border-bottom: 1px solid var(--fcp-line);
   background: var(--color-neutral-200);
 }
 
@@ -1841,13 +1908,11 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   flex: none;
   min-height: var(--fcp-tap);
   padding: 6px 14px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
   color: var(--color-text);
-  font: 700 11px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 700 11px var(--font-body);
   border-radius: var(--radius-sm);
   text-align: center;
 }
@@ -1857,7 +1922,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   height: 230px;
   position: relative;
   background: var(--color-neutral-200);
-  border-top: 2px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
   margin-top: 10px;
 }
 
@@ -1869,7 +1934,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   height: 196px;
   border-radius: 50%;
   background: var(--color-bg);
-  border: 1.5px solid var(--color-text);
+  border: 0;
   box-shadow: var(--fcp-lift);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1894,7 +1959,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   border-radius: 50%;
   background: var(--color-text);
   color: var(--color-bg);
-  font: 700 15px var(--font-heading);
+  font: 700 15px var(--font-body);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1935,7 +2000,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 #fcp-app.fcp-wide > .fcp-header,
 #fcp-app.fcp-wide > .fcp-tab:is([data-tab="sheet"], [data-tab="notes"]) {
-  border-right: 1.5px solid var(--color-text);
+  border-right: 1px solid var(--fcp-line);
 }
 
 #fcp-app.fcp-wide > .fcp-tab:is([data-tab="sheet"], [data-tab="notes"]) {
@@ -1965,7 +2030,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   align-self: stretch;
   padding: var(--fcp-safe-top) 8px 0;
   border-top: 0;
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 #fcp-app.fcp-wide > .fcp-nav button {
@@ -2004,45 +2069,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 /* Header: sub-tabs of the sheet and the advantage bar. */
-.fcp-panes {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  margin-top: 6px;
-  border-bottom: 1.5px solid var(--color-text);
-}
-
-.fcp-panes button {
-  min-height: var(--fcp-tap);
-  padding: 0 0 7px;
-  text-align: center;
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-neutral-600);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.fcp-panes button.active {
-  background: var(--color-text);
-  color: var(--color-bg);
-  padding-bottom: 0;
-}
-
-.fcp-modebar.fcp-modebar-head {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin: 8px 0 0;
-}
-
-.fcp-modebar.fcp-modebar-head button {
-  border: 1.5px solid var(--color-text);
-  justify-content: center;
-}
-
 /* Hit points */
 .fcp-hpblock {
   margin-top: 14px;
@@ -2065,7 +2091,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-hpbig b {
-  font: 700 44px/1 var(--font-heading);
+  font: 700 48px/1 var(--font-num);
   letter-spacing: -0.01em;
 }
 
@@ -2090,7 +2116,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   overflow: hidden;
   background: transparent;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   margin-bottom: 10px;
 }
@@ -2116,18 +2142,16 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
-  font: 700 19px var(--font-heading);
+  font: 700 19px var(--font-body);
 }
 
 .fcp-hpcontrols button.dmg,
 .fcp-hpcontrols button.heal {
   font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .fcp-hpcontrols button.dmg {
@@ -2157,9 +2181,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-death-title {
-  font: 700 11.5px/1 var(--font-heading);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 700 11.5px/1 var(--font-body);
   color: var(--color-accent-800);
   margin-bottom: 3px;
 }
@@ -2181,7 +2203,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   flex: none;
   width: 84px;
   font: 600 12px var(--font-body);
-  letter-spacing: 0.04em;
   color: var(--color-accent-800);
 }
 
@@ -2189,7 +2210,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 700 17px var(--font-heading);
+  font: 700 17px var(--font-body);
   color: var(--color-bg);
 }
 
@@ -2201,8 +2222,8 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 .fcp-statrow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border-top: 1.5px solid var(--color-text);
-  border-bottom: 1.5px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
+  border-bottom: 1px solid var(--fcp-line);
   margin-bottom: 24px;
 }
 
@@ -2212,12 +2233,11 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 .fcp-statrow b {
   display: block;
-  font: 700 22px/1.1 var(--font-heading);
+  font: 700 22px/1.1 var(--font-num);
 }
 
 .fcp-statrow span {
   font: 500 11.5px/1.2 var(--font-body);
-  letter-spacing: 0.04em;
   color: var(--color-neutral-700);
 }
 
@@ -2280,13 +2300,13 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 .fcp-lines.compact .fcp-line > span {
   width: 44px;
   text-align: right;
-  font: 700 17px var(--font-heading);
+  font: 700 17px var(--font-body);
 }
 
 .fcp-lines.feature .fcp-line > span {
   width: 44px;
   text-align: right;
-  font: 700 19px var(--font-heading);
+  font: 700 19px var(--font-body);
 }
 
 .fcp-lines.compact .fcp-line.inactive b {
@@ -2346,7 +2366,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   width: auto;
   font: 500 12.5px var(--font-body);
   padding: 5px 9px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text);
@@ -2367,7 +2387,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 .fcp-meter-head b {
   font: 600 13px var(--font-body);
-  letter-spacing: 0.04em;
 }
 
 .fcp-meter.tone-pact .fcp-meter-head b,
@@ -2398,7 +2417,8 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-chip.add {
-  border: 1.5px dashed var(--color-text);
+  border: 0;
+  box-shadow: inset 0 0 0 1.5px var(--fcp-line-2);
   background: transparent;
   font-weight: 600;
 }
@@ -2432,39 +2452,12 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   margin-bottom: 8px;
 }
 
-.fcp-segmented {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.fcp-segmented button {
-  flex: 1;
-  min-height: var(--fcp-tap);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--color-text);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  font: 700 11px var(--font-heading);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.fcp-segmented button.active {
-  background: var(--color-text);
-  color: var(--color-bg);
-}
-
 .fcp-spell-level {
   margin-bottom: 14px;
 }
 
 .fcp-sublabel {
   font: 600 11px var(--font-body);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   color: var(--color-neutral-700);
   margin-bottom: 4px;
 }
@@ -2501,7 +2494,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   position: relative;
   width: 52px;
   height: 30px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   border-radius: 15px;
   background: var(--color-neutral-200);
   transition: background 0.14s ease;
@@ -2515,7 +2508,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   height: 22px;
   border-radius: 50%;
   background: var(--color-bg);
-  border: 1.5px solid var(--color-text);
+  border: 0;
   transition: left 0.14s ease;
 }
 
@@ -2648,8 +2641,6 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   align-items: center;
   gap: 6px;
   font: 500 10px var(--font-body);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
   color: var(--color-neutral-700);
   white-space: nowrap;
 }
@@ -2693,7 +2684,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   padding: 6px 12px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-surface);
   font: 500 13px var(--font-body);
 }
@@ -2708,14 +2699,12 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-note-toc summary {
-  font: 700 11.5px/1 var(--font-heading);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 700 11.5px/1 var(--font-body);
   color: var(--color-accent-700);
   min-height: var(--fcp-tap);
   display: flex;
   align-items: center;
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 #fcp-app .fcp-note-toc-list button {
@@ -2757,7 +2746,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   top: 0;
   z-index: 1;
   background: var(--color-bg);
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
 }
 
 #fcp-app .fcp-note-editor .editor-menu button {
@@ -2767,7 +2756,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   min-width: 40px;
   min-height: 40px;
   padding: 0 8px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-surface);
 }
 
@@ -2941,11 +2930,9 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   min-height: 36px;
   margin-top: 6px;
   padding: 0 12px;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-surface);
-  font: 700 11px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 700 11px var(--font-body);
 }
 
 /* Above the pad the strip is a plain band, not the sticky header it is in Actions. */
@@ -2953,7 +2940,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   position: static;
   flex: none;
   margin: 10px 0 0;
-  border-top: 1.5px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
 }
 
 /* Folded map: the pad takes the room, centered and bigger. */
@@ -3042,7 +3029,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    border: 1.5px solid var(--color-text);
+    border: 0;
     background: var(--color-surface) center / cover no-repeat;
     box-shadow: var(--fcp-lift);
   }
@@ -3068,11 +3055,11 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
     gap: 6px;
     min-height: var(--fcp-tap);
     padding: 6px 14px;
-    border: 1.5px solid var(--color-text);
+    border: 0;
     background: var(--color-surface);
     box-shadow: var(--fcp-lift);
     color: var(--color-text);
-    font: 700 11px var(--font-heading);
+    font: 700 11px var(--font-body);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     border-radius: var(--radius-sm);
@@ -3105,21 +3092,19 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-bottom: 1.5px solid var(--color-text);
+  border-bottom: 1px solid var(--fcp-line);
   padding-bottom: 12px;
 }
 
 .fcp-pk-kicker {
-  font: 700 11px var(--font-heading);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 700 11px var(--font-body);
   color: var(--color-accent);
 }
 
 .fcp-pk-title h2 {
   margin: 2px 0 0;
   border: none;
-  font: 700 20px var(--font-heading);
+  font: 700 20px var(--font-body);
   line-height: 1.2;
 }
 
@@ -3139,9 +3124,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 .fcp-pk-group {
   margin: 14px 0 4px;
   border: none;
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 700 12px var(--font-body);
   color: var(--color-neutral-700);
 }
 
@@ -3198,7 +3181,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   flex: none;
   display: grid;
   place-items: center;
-  border: 1.5px solid var(--color-text);
+  border: 0;
   background: var(--color-surface);
   font-weight: 700;
 }
@@ -3236,7 +3219,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: flex;
   align-items: center;
   gap: 10px;
-  border-top: 1.5px solid var(--color-text);
+  border-top: 1px solid var(--fcp-line);
   padding-top: 12px;
 }
 
@@ -3249,10 +3232,8 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   min-height: 46px;
   padding: 6px 16px;
   text-align: center;
-  font: 700 12px var(--font-heading);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1.5px solid var(--color-text);
+  font: 700 12px var(--font-body);
+  border: 0;
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
 }
