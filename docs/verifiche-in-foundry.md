@@ -55,3 +55,16 @@ Esito dell'ultima prova: 26/9/2026, VPS (Foundry 14.367), mondo `faglia` (dnd5e 
 - 7 ok: la risposta "scene" arriva, ma con il GM collegato da due client (uno senza canvas) arrivava per prima anche quando l'effetto partiva. Corretto: risponde solo il client che ha la scena aperta (testato con node; dal vivo in Daggerheart con un solo client GM arriva una sola risposta, il caso con due client non è stato rifatto).
 
 Nota per chi prova: GM e giocatore vanno in due sessioni separate del browser (per esempio GM in incognito). Nello stesso profilo, entrare col secondo utente ricarica l'altra scheda con quell'utente, e "canvas spento" vale per tutte le schede.
+
+## Registro degli errori
+
+Ogni errore del modulo, e sui telefoni ogni errore o avviso che il giocatore vede, finisce in
+`Data/worlds/<mondo>/phone-companion-log/<aaaa-mm-gg>.txt`: una riga JSON per evento, con utente,
+personaggio, tab, dispositivo, versioni e stack. Lo scrive il client del GM attivo (i telefoni mandano
+a lui); senza GM collegato il telefono tiene fino a 60 eventi e li manda quando un GM entra.
+Nessuna password, nessun QR, nessun testo di chat.
+
+- Dal server: `jq -c '{t,lvl,where,msg,user,actor,tab,dev}' Data/worlds/<mondo>/phone-companion-log/<giorno>.txt`
+- Dalla console del GM: `await game.modules.get("foundry-companion-local-phone").api.errorLog("2026-11-15")`
+
+Il GM deve avere il permesso di caricare file (il ruolo Gamemaster ce l'ha).

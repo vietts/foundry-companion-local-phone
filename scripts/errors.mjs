@@ -1,4 +1,5 @@
 import { SOCKET_NAME, MODULE_ID } from "./constants.mjs";
+import { logEvent } from "./error-log.mjs";
 
 /*
  * When something breaks at the table nobody looks at the console. The phone shows what failed where it failed,
@@ -12,6 +13,7 @@ const sent = new Map();
 export function reportError(where, err, actor = null) {
   const message = String(err?.message ?? err ?? "?").split("\n")[0].slice(0, 200);
   console.error(`${MODULE_ID} | ${where}${actor ? ` (${actor.name})` : ""} | system ${game.system.id} ${game.system.version}`, err);
+  logEvent("error", where, err, { actor });
   if (game.user.isGM) return message;
   // Once per place and message for the whole session: a part that always fails is redrawn on every move,
   // and the GM got the same red notice every 30 seconds from every phone.
@@ -67,10 +69,35 @@ export function installRecovery() {
   });
   window.addEventListener("error", event => {
     if (String(event.filename ?? "").includes(MODULE_ID)) reportError("general", event.error ?? event.message);
+    // On a phone everything matters: Foundry's or the system's errors are what the player ran into.
+    else logEvent("error", `page:${String(event.filename ?? "").split("/").slice(-2).join("/")}`, event.error ?? event.message);
   });
   window.addEventListener("unhandledrejection", event => {
     if (String(event.reason?.stack ?? "").includes(MODULE_ID)) reportError("general", event.reason);
+    else logEvent("error", "promise", event.reason);
   });
+  logNotices();
+}
+
+/**
+ * What the player saw: Foundry's and the system's red and yellow notices on the phone go to the log too
+ * ("not enough Hope", "no combat", a failed roll), with where they were in the companion.
+ */
+function logNotices() {
+  const proto = foundry.applications?.ui?.Notifications?.prototype;
+  if (!proto || proto.fcpLogged) return;
+  for (const level of ["error", "warn"]) {
+    const original = proto[level];
+    proto[level] = function (message, options) {
+      const notification = original.call(this, message, options);
+      let text = typeof message === "string" ? message : String(message ?? "");
+      if (text.startsWith("ERROR.RESOLUTION.")) return notification; // muted on phones, see device.mjs
+      if (options?.localize && game.i18n?.has?.(text)) text = game.i18n.localize(text);
+      logEvent(level, "notice", text);
+      return notification;
+    };
+  }
+  proto.fcpLogged = true;
 }
 
 /** What goes in place of a part that failed to render. */

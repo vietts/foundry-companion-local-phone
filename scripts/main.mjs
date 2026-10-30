@@ -17,6 +17,7 @@ import { installPicker } from "./app/picker.mjs";
 import { installAdvancementTheme } from "./app/advancement.mjs";
 import { installSpellStep, openSpellStep } from "./app/spell-step.mjs";
 import { installRecovery, reportError } from "./errors.mjs";
+import { logEvent, setLogContext, flushLogQueue, readLog } from "./error-log.mjs";
 
 let app = null;
 
@@ -39,8 +40,14 @@ Hooks.once("init", () => {
     /** Class spells window, e.g. from a macro: `api.openSpellStep(actor)` (first caster class) or `(actor, classId)`. */
     openSpellStep: (actor, classId) => openSpellStep(actor, classId),
     /** Forget what the party explored on a scene, e.g. from a macro: `game.modules.get("foundry-companion-local-phone").api.resetFog()` */
-    resetFog: scene => fogRecorder.reset(scene)
+    resetFog: scene => fogRecorder.reset(scene),
+    /** What went wrong on a day (default today): `await game.modules.get("foundry-companion-local-phone").api.errorLog()` */
+    errorLog: day => readLog(day)
   };
+  // GM side: keep module errors of this client in the log too (players' come through the socket).
+  window.addEventListener("unhandledrejection", event => {
+    if (game.user?.isGM && String(event.reason?.stack ?? "").includes(MODULE_ID)) logEvent("error", "gm", event.reason);
+  });
 });
 
 Hooks.once("setup", () => {
@@ -49,6 +56,9 @@ Hooks.once("setup", () => {
 });
 
 Hooks.once("ready", async () => {
+  // Entries kept while no GM was connected; and when a GM arrives later.
+  flushLogQueue();
+  Hooks.on("userConnected", (user, connected) => { if (connected && user.isGM) setTimeout(flushLogQueue, 2000); });
   // Journal entries open as a document. The system's sheet stays available under "Configure Sheet".
   const base = registerDocSheet();
   log(`journal document sheet built over ${base.name}`);
@@ -96,6 +106,7 @@ function activateCompanion() {
     installPicker();
     installAdvancementTheme();
   }
+  setLogContext(() => ({ tab: app?.activeTab ?? null, live: !!app?.live, companion: true }));
   installRecovery();
   keepReconnecting();
   app = new CompanionApp(adapter);
