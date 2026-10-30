@@ -101,6 +101,7 @@
   "FCP.ChatPlaceholder": "Scrivi qualcosa…",
   "FCP.Move.Title": "Muovi",
   "FCP.Move.Hint": "Tocca una freccia per muoverti di una casella, oppure tocca un punto sulla mappa.",
+  "FCP.Map.PickToken": "— quale token muovere? —",
   "FCP.Map.Show": "Mappa",
   "FCP.Map.Hide": "Nascondi",
   "FCP.Move.HintPad": "Tocca una freccia per muoverti di una casella.",

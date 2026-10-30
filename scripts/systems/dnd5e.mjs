@@ -617,6 +617,12 @@ export class Dnd5eAdapter extends SystemAdapter {
 
   /** Bring the remaining hit dice to `target`, spending the largest dice first and recovering the smallest first. */
   async #setHitDice(actor, target) {
+    // NPCs (summons) have no classes: their dice are spent on the actor itself.
+    if (!Object.keys(actor.classes ?? {}).length) {
+      const hd = actor.system.attributes.hd;
+      if (!hd?.max) return false;
+      return actor.update({ "system.attributes.hd.spent": Math.clamp(hd.max - target, 0, hd.max) });
+    }
     const classes = Object.values(actor.classes ?? {})
       .map(c => ({ c, faces: parseInt(String(c.system.hd?.denomination ?? "d0").slice(1)) || 0 }));
     let delta = (actor.system.attributes.hd?.value ?? 0) - target; // > 0: spend, < 0: recover

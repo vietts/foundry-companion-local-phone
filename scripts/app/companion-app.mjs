@@ -231,8 +231,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const scene = activeScene();
     if (!scene) return null;
     const mine = actorTokens(this.actor, scene);
-    const choices = mine.length ? mine : ownedTokens(scene);
-    return choices.find(t => t.id === this.tokenId) ?? choices[0] ?? null;
+    // Another owned token (a companion, an NPC lent by the GM) only when picked on purpose, never by default:
+    // the pad moved it when the character itself was not on the scene.
+    return mine.find(t => t.id === this.tokenId) ?? ownedTokens(scene).find(t => t.id === this.tokenId) ?? mine[0] ?? null;
   }
 
   /** Re-render only some parts, coalescing bursts of updates. */
@@ -711,6 +712,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const mine = actorTokens(actor, scene);
     const choices = mine.length ? mine : ownedTokens(scene);
     const token = this.token;
+    // Character not on the scene: its other tokens are offered, none moved until one is picked.
+    const pickOne = !token && choices.length ? [{ id: "", name: game.i18n.localize("FCP.Map.PickToken"), selected: true }] : [];
     const d = scene.dimensions;
     const grid = scene.grid;
     const src = scene.background?.src;
@@ -759,7 +762,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       cells,
       walls: this.#mapWalls(scene),
       viewBox: `0 0 ${d.sceneWidth} ${d.sceneHeight}`,
-      tokenChoices: choices.map(t => ({ id: t.id, name: t.name, selected: t.id === token?.id })),
+      tokenChoices: [...pickOne, ...choices.map(t => ({ id: t.id, name: t.name, selected: t.id === token?.id }))],
       step: this.step,
       target: this.mapTarget
     };
@@ -1338,7 +1341,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onPlayVfx(event, target) {
     const tokenDoc = this.token;
-    const item = this.actor?.items.get(target.dataset.itemId);
+    // Rows of a multi-action item are keyed "itemId.actionId".
+    const item = this.actor?.items.get(String(target.dataset.itemId ?? "").split(".")[0]);
     if (!tokenDoc || !item || target.disabled) return;
     target.disabled = true;
     target.classList.add("playing");

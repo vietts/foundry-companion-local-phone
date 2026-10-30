@@ -101,6 +101,7 @@
   "FCP.ChatPlaceholder": "Say something…",
   "FCP.Move.Title": "Move",
   "FCP.Move.Hint": "Tap an arrow to move one square, or tap a spot on the map.",
+  "FCP.Map.PickToken": "— which token to move? —",
   "FCP.Map.Show": "Map",
   "FCP.Map.Hide": "Hide",
   "FCP.Move.HintPad": "Tap an arrow to move one square.",

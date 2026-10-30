@@ -229,7 +229,9 @@ export class DaggerheartAdapter extends SystemAdapter {
       const isAttack = action === item.system.attack;
       const base = isAttack ? labelsToText(item) : (action.name && list.length <= 1 ? "" : action.name ?? "");
       rows.push({
-        id: item.id,
+        // One row per action: their own key, or opening one card action opened them all.
+        id: list.length > 1 ? `${item.id}.${action.id}` : item.id,
+        itemId: item.id,
         name: list.length > 1 && action.name && action.name !== item.name ? `${item.name}: ${action.name}` : item.name,
         img: action.img || item.img,
         meta: [base, this.#costText(action)].filter(Boolean).join(" · "),
@@ -532,7 +534,8 @@ export class DaggerheartAdapter extends SystemAdapter {
     return { rerender: ["sheet"] };
   }
 
-  async #useItem(actor, { itemId, actionId }) {
+  async #useItem(actor, { itemId: rowId, actionId }) {
+    const itemId = String(rowId ?? "").split(".")[0];
     const opts = this.#rollOptions();
     const useOpts = { dialog: opts.dialog, event: {}, ...(opts.actionType === "reaction" ? { actionType: "reaction" } : {}) };
     if (actionId === "unarmed") return this.#useAction(actor.system.attack, useOpts, opts.roll.advantage);
@@ -548,6 +551,9 @@ export class DaggerheartAdapter extends SystemAdapter {
       const action = item.system.actions?.get(actionId);
       if (action) return this.#useAction(action, useOpts, opts.roll.advantage);
     }
+    // A consumable with a single action goes through the same path as the cards: quick rolls and the roll mode apply.
+    const only = Array.from(item.system.actionsList ?? []);
+    if (only.length === 1 && only[0] !== item.system.attack) return this.#useAction(only[0], useOpts, opts.roll.advantage);
     return item.use({});
   }
 
@@ -570,7 +576,7 @@ export class DaggerheartAdapter extends SystemAdapter {
   }
 
   async #toggleItem(actor, { itemId, mode }) {
-    const item = actor.items.get(itemId);
+    const item = actor.items.get(String(itemId ?? "").split(".")[0]);
     if (!item) return false;
     // Vault -> loadout is free unless the player asked for a recall (which pays the Stress cost).
     if (item.type === "domainCard") return item.system.toggleVault({}, !item.system.inVault, mode === "recall");
