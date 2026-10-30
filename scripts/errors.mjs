@@ -93,7 +93,9 @@ function logNotices() {
       let text = typeof message === "string" ? message : String(message ?? "");
       if (text.startsWith("ERROR.RESOLUTION.")) return notification; // muted on phones, see device.mjs
       if (options?.localize && game.i18n?.has?.(text)) text = game.i18n.localize(text);
-      logEvent(level, "notice", text);
+      // Who raised it: a red notice alone does not say which code failed.
+      const origin = level === "error" ? new Error(text) : text;
+      logEvent(level, "notice", origin);
       return notification;
     };
   }

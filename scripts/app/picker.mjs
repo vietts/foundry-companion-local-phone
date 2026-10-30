@@ -1,3 +1,4 @@
+import { logEvent } from "../error-log.mjs";
 /**
  * Phone picker for dnd5e choices.
  *
@@ -29,6 +30,7 @@ export function installPicker() {
     if (!document.body.classList.contains("fcp-active") || !choosing) return original.call(this, options, renderOptions);
     return pick(CB, options).catch(err => {
       console.error(`${MODULE_ID} | picker failed, falling back to the compendium browser`, err);
+      logEvent("error", "picker", err);
       return original.call(this, options, renderOptions);
     });
   };
