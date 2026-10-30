@@ -118,6 +118,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       setMode: CompanionApp.#onSetMode,
       roll: CompanionApp.#onAdapterAction,
       useItem: CompanionApp.#onAdapterAction,
+      useActivity: CompanionApp.#onAdapterAction,
       toggleItem: CompanionApp.#onAdapterAction,
       rest: CompanionApp.#onAdapterAction,
       levelUp: CompanionApp.#onAdapterAction,
@@ -899,20 +900,49 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /*  Sheet actions                                */
   /* -------------------------------------------- */
 
+  /**
+   * Hit point changes run one after the other: the adapters read the current value and write value ± n,
+   * so two quick taps started from the same value and the second one overwrote the first.
+   */
+  #hpQueue = Promise.resolve();
+  #hpBusy = false;
+  #queueHp(fn) {
+    const run = this.#hpQueue.then(fn);
+    this.#hpQueue = run.catch(() => {});
+    return run;
+  }
+
   static async #onHpDelta(event, target) {
     const actor = this.actor;
     if (!actor) return;
-    await this.adapter.modifyHP(actor, Number(target.dataset.delta));
+    const delta = Number(target.dataset.delta);
+    try {
+      await this.#queueHp(() => this.adapter.modifyHP(actor, delta));
+    } catch (err) {
+      ui.notifications.error(game.i18n.format("FCP.Error.Action", { message: reportError("hp", err, actor) }));
+    }
   }
 
   static async #onHpApply(event, target) {
     const actor = this.actor;
-    if (!actor) return;
+    if (!actor || this.#hpBusy) return;
     const input = this.element.querySelector("input[name=hpAmount]");
     const amount = Math.abs(Number(input?.value) || 0);
     if (!amount) return;
+    // A double tap on Damage applied it twice (or opened two armor questions in Daggerheart).
+    this.#hpBusy = true;
+    for (const btn of this.element.querySelectorAll("[data-action=hpApply]")) btn.disabled = true;
     try {
-      const result = Number(target.dataset.sign) < 0
+      await this.#queueHp(() => this.#applyHp(actor, input, amount, Number(target.dataset.sign)));
+    } finally {
+      this.#hpBusy = false;
+      for (const btn of this.element.querySelectorAll("[data-action=hpApply]")) btn.disabled = false;
+    }
+  }
+
+  async #applyHp(actor, input, amount, sign) {
+    try {
+      const result = sign < 0
         ? await this.adapter.applyDamage(actor, amount)
         : await this.adapter.applyHealing(actor, amount);
       // Daggerheart answers null or [] when nothing was applied (armor question unanswered or closed):

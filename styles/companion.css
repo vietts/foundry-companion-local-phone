@@ -3285,6 +3285,8 @@ body.fcp-active #fcp-reload {
   cursor: pointer;
 }
 body.fcp-active #fcp-reload:active { background: rgba(43, 36, 28, 0.85); }
+/* While the companion window is up, it has its own reload (header, error cards): the floating one sat on Send and the pad. */
+body.fcp-active:has(#fcp-app) #fcp-reload { display: none; }
 
 /* A part that failed to render: the other tabs keep working. */
 .fcp-part-error .fcp-error-card {

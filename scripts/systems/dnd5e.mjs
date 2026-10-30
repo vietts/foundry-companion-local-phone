@@ -663,7 +663,8 @@ export class Dnd5eAdapter extends SystemAdapter {
       case "init":
         return f("FCP.D5.PinD20", { name: t("FCP.D5.Initiative"), mod: signed(s.attributes.init?.total) });
       case "item": {
-        const item = actor.items.get(id);
+        // Rows of a multi-activity item are keyed "itemId.activityId".
+        const item = actor.items.get(id.split(".")[0]);
         if (!item) return "";
         const meta = this.#meta(item);
         return meta ? `${item.name} · ${meta}` : item.name;
@@ -678,8 +679,43 @@ export class Dnd5eAdapter extends SystemAdapter {
     return { configure: !getSetting(SETTINGS.QUICK_ROLLS) };
   }
 
+  /** Only the chosen mode: an explicit false would override advantage granted by features and effects. */
   #adv() {
-    return { advantage: this.mode === "advantage", disadvantage: this.mode === "disadvantage" };
+    if (this.mode === "advantage") return { advantage: true };
+    if (this.mode === "disadvantage") return { disadvantage: true };
+    return {};
+  }
+
+  /**
+   * Without a canvas Actor#getActiveTokens is empty, so core's createCombatants adds a tokenless duplicate
+   * on every tap. The phone joins the combat itself with the actor's token on the combat's scene, once.
+   */
+  async #rollInitiative(actor, adv, dialog) {
+    const combat = game.combat;
+    if (!combat) {
+      ui.notifications.warn("COMBAT.NoneActive", { localize: true });
+      return null;
+    }
+    if (!combat.getCombatantsByActor(actor).length) {
+      const scene = combat.scene ?? game.scenes.active;
+      const tokens = actor.isToken ? [actor.token].filter(t => t?.parent === scene)
+        : scene?.tokens.filter(t => t.actorLink && t.actorId === actor.id) ?? [];
+      const data = tokens.length
+        ? tokens.map(t => ({ tokenId: t.id, sceneId: t.parent.id, actorId: actor.id, hidden: t.hidden }))
+        : [{ actorId: actor.id, hidden: false }];
+      await combat.createEmbeddedDocuments("Combatant", data);
+    }
+    // dnd5e's dialog always asks core to create combatants: turn that off for this call only.
+    const own = Object.getOwnPropertyDescriptor(actor, "rollInitiative");
+    const roll = actor.rollInitiative;
+    actor.rollInitiative = (options = {}, rollOptions) => roll.call(actor, { ...options, createCombatants: false }, rollOptions);
+    try {
+      if (dialog.configure) return await actor.rollInitiativeDialog(adv);
+      return await actor.rollInitiative({}, adv);
+    } finally {
+      if (own) Object.defineProperty(actor, "rollInitiative", own);
+      else delete actor.rollInitiative;
+    }
   }
 
   async handle(actor, action, data) {
@@ -705,9 +741,7 @@ export class Dnd5eAdapter extends SystemAdapter {
       case "ability": return actor.rollAbilityCheck({ ability: key, ...adv }, dialog);
       case "save": return actor.rollSavingThrow({ ability: key, ...adv }, dialog);
       case "skill": return actor.rollSkill({ skill: key, ...adv }, dialog);
-      case "initiative":
-        if (dialog.configure) return actor.rollInitiativeDialog(adv);
-        return actor.rollInitiative({ createCombatants: true }, adv);
+      case "initiative": return this.#rollInitiative(actor, adv, dialog);
       case "deathSave": return actor.rollDeathSave({ ...adv }, dialog);
       case "hitDie": return actor.rollHitDie({}, dialog);
       case "concentration": return actor.rollConcentration({ ...adv }, dialog);
