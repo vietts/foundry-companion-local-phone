@@ -75,7 +75,8 @@ export function spellSources(actor) {
       // Spells are tied to their class by sourceItem; third casters' spells may point at the subclass.
       tags: new Set([`class:${cls.identifier}`, sub && `subclass:${sub.identifier}`].filter(Boolean)),
       cantrips: cantripsKnown(actor, cls, sub) ?? byLevel(third?.cantrips, cls.system.levels),
-      prepared: caster.system.spellcasting?.preparation?.max ?? null,
+      // 0 means the class has no preparation formula (a translated class may have lost it): no limit, not "none".
+      prepared: (caster.system.spellcasting?.preparation?.max ?? 0) > 0 ? caster.system.spellcasting.preparation.max : null,
       maxLevel
     });
   }
@@ -191,9 +192,18 @@ class SpellStep {
     }
 
     const owned = new Map();
+    // Spells from before sourceItem (old or imported sheets) are matched by name/identifier or compendium source,
+    // so a spell the character has is never offered again (choosing it made a second copy).
+    const loose = new Map();
+    const bySource = new Map();
     for (const item of this.actor.items) {
-      if (item.type !== "spell" || !this.source.tags.has(item.system.sourceItem)) continue;
-      owned.set(spellKey(item), item);
+      if (item.type !== "spell") continue;
+      if (this.source.tags.has(item.system.sourceItem)) owned.set(spellKey(item), item);
+      else if (!item.system.sourceItem) {
+        loose.set(spellKey(item), item);
+        const from = item._stats?.compendiumSource;
+        if (from) bySource.set(from, item);
+      }
     }
 
     const seen = new Set();
@@ -202,7 +212,7 @@ class SpellStep {
       const key = spellKey(e);
       const level = e.system?.level ?? 0;
       if (seen.has(key)) continue;
-      const item = owned.get(key);
+      const item = owned.get(key) ?? bySource.get(e.uuid) ?? loose.get(key);
       // Spells above the castable level stay hidden, unless the character already has them.
       if (level > maxLevel && !item) continue;
       seen.add(key);
@@ -222,7 +232,9 @@ class SpellStep {
     const state = !item ? "none" : prepared === 2 ? "always" : level === 0 ? "known" : prepared ? "prepared" : "book";
     // The search also knows the English name, from the identifier ("faerie-fire" finds Luminescenza).
     const search = fold(`${name} ${String(identifier ?? "").replaceAll("-", " ")}`);
-    return { uuid, name, img, level, school, item, search, from: state, state, locked: state === "always" };
+    // Granted by an advancement (level up): forgetting it would delete an item the advancement still points at.
+    const granted = !!item?.flags?.dnd5e?.advancementOrigin;
+    return { uuid, name, img, level, school, item, search, from: state, state, locked: state === "always" || granted };
   }
 
   /* ----- Counters ----- */
@@ -479,6 +491,9 @@ class SpellStep {
         if (r.level > 0) {
           item.system.method = method;
           item.system.prepared = prepared;
+        } else {
+          // The compendium copy carries prepared 0, so dnd5e does not mark it: the desktop then listed it as unprepared.
+          item.system.prepared = 1;
         }
         item.system.sourceItem = `class:${this.source.cls.identifier}`;
         create.push(item);
