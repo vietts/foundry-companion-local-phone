@@ -607,7 +607,7 @@ body.fcp-active #notifications {
   top: calc(100% + 4px);
   right: 0;
   z-index: 20;
-  min-width: 240px;
+  min-width: min(310px, calc(100vw - 24px));
   padding: 6px;
   border-radius: var(--fcp-r-card);
   background: var(--fcp-card);
@@ -824,11 +824,7 @@ body.fcp-active #notifications {
 }
 
 /* Four modes (Daggerheart): a little tighter, so «Svantaggio» never runs off the screen. */
-.fcp-modebar:has(> button:nth-child(4)) button {
-  padding: 0 2px;
-  font-size: 13px;
-  letter-spacing: -0.01em;
-}
+
 
 /* ---------- Cards ---------- */
 
@@ -1421,7 +1417,7 @@ body.fcp-active #notifications {
   position: absolute;
   top: 8px;
   right: 10px;
-  font-size: 9px;
+  font-size: 11px;
   color: var(--fcp-act);
 }
 
@@ -1454,6 +1450,7 @@ body.fcp-active #notifications {
 
 .fcp-grid.inline .fcp-marker {
   position: static;
+  font-size: 12px;
 }
 
 /* Pinned roll in reference mode (no dice): a darker neutral, never the action green. */
@@ -3488,10 +3485,11 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-pk-choose img {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   flex: none;
-  border: 1px solid var(--color-neutral-400);
+  border: 0;
+  border-radius: 8px;
 }
 
 .fcp-pk-text {
@@ -3512,7 +3510,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 .fcp-pk-pre.bad {
-  color: var(--color-accent-700);
+  color: var(--fcp-danger);
 }
 
 .fcp-pk-check {
@@ -3522,11 +3520,14 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: grid;
   place-items: center;
   border: 0;
+  border-radius: 8px;
   background: var(--color-surface);
+  box-shadow: inset 0 0 0 1.5px var(--fcp-line-2);
   font-weight: 700;
 }
 
 .fcp-pk-row.on .fcp-pk-check {
+  box-shadow: none;
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-bg);
@@ -3569,11 +3570,12 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 }
 
 #fcp-picker .fcp-pk-foot button {
-  min-height: 46px;
-  padding: 6px 16px;
+  min-height: var(--fcp-tap);
+  padding: 0 var(--fcp-s4);
   text-align: center;
-  font: 700 12px var(--font-body);
+  font: 600 15px var(--font-body);
   border: 0;
+  border-radius: var(--fcp-r-ctl);
   background: var(--color-surface);
   box-shadow: var(--fcp-lift);
 }
@@ -3710,4 +3712,28 @@ body.fcp-active:has(#fcp-app) #fcp-reload { display: none; }
 @keyframes fcp-boot-load { from { width: 35%; } to { width: 85%; } }
 @media (prefers-reduced-motion: reduce) {
   #fcp-boot li.now .fcp-boot-dot, #fcp-boot .fcp-boot-bar i { animation: none; }
+}
+
+/* Two pills on one row (Danni + Attacca): narrower, so the meta keeps two lines. */
+#fcp-app .fcp-row-line:has(.fcp-use-damage) .fcp-use {
+  min-width: 0;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.fcp-row-line:has(.fcp-use-damage) { gap: 4px; padding-right: var(--fcp-s2); }
+
+/* Review of 30/10: log out set apart from the other menu items; the picker's count on one line. */
+.fcp-more-menu [data-action="logOut"] {
+  margin-top: 4px;
+  border-top: 1px solid var(--fcp-line);
+}
+#fcp-picker .fcp-pk-count {
+  font: 600 14px/1.25 var(--font-body);
+}
+/* The dice item uses Font Awesome (no dice in the Phosphor subset): same box and weight as its neighbours. */
+.fcp-more-menu button i.fa-solid {
+  width: 20px;
+  font-size: 17px;
+  text-align: center;
+  opacity: 0.85;
 }

@@ -473,7 +473,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         for (const section of context.sheet.sections ?? []) {
           for (const tile of section.tiles ?? []) {
-            tile.zero ??= /^[+−-]?0$/.test(String(tile.value).trim());
+            // Zero and below read lighter, as dnd5e already marks its abilities: one rule for every number.
+            tile.zero ??= /^([+−-]?0|[−-]\d+)$/.test(String(tile.value).trim());
             tile.pinned = tile.action === "pin" && this.pin?.actorId === actor?.id && this.pin?.key === tile.data?.key;
             // «Tap to roll»: only what really rolls is green. Experiences are picked for the next roll, not rolled.
             tile.rolls = tile.action === "roll" && tile.data?.kind !== "experience";

@@ -491,7 +491,7 @@ export class DaggerheartAdapter extends SystemAdapter {
       { key: "action", label: t("FCP.DH.Action"), active: this.mode === "action" },
       { key: "reaction", label: t("FCP.DH.Reaction"), active: this.mode === "reaction" },
       { key: "advantage", label: t("FCP.Advantage"), active: this.mode === "advantage" },
-      { key: "disadvantage", label: t("FCP.Disadvantage"), active: this.mode === "disadvantage" }
+      { key: "disadvantage", label: t("FCP.D5.DisadvantageShort"), active: this.mode === "disadvantage" }
     ];
   }
 
