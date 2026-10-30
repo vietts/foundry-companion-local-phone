@@ -51,8 +51,8 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("setup", () => {
-  // Partials are registered by path; the targets strip is shared by Actions and Map.
-  foundry.applications.handlebars.loadTemplates([`modules/${MODULE_ID}/templates/parts/targets.hbs`]);
+  // Partials are registered by path: the targets strip is shared by Actions and Map, the inline icons by all parts.
+  foundry.applications.handlebars.loadTemplates(["targets", "icon"].map(p => `modules/${MODULE_ID}/templates/parts/${p}.hbs`));
 });
 
 Hooks.once("ready", async () => {

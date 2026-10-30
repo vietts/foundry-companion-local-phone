@@ -6,18 +6,17 @@
   {{> "modules/foundry-companion-local-phone/templates/parts/targets.hbs"}}
   {{#each groups}}
   <div class="fcp-group {{#if this.spellbook}}fcp-spellbook{{/if}}">
-    {{#if this.count}}
-    <div class="fcp-headrow"><span class="fcp-label">{{this.title}}</span><span class="fcp-section-note"><b>{{this.count}}</b></span></div>
-    {{else}}
-    <div class="fcp-label">{{this.title}}</div>
-    {{/if}}
-    {{#if this.slots}}
-    <div class="fcp-meter tone-{{this.slots.tone}} fcp-group-slots">
-      <div class="fcp-boxes">
-        {{#each this.slots.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../slots.key}}" data-box="{{this.n}}" aria-label="{{../title}} {{this.n}}"></button>{{/each}}
+    <div class="fcp-group-head">
+      <span class="fcp-label">{{this.title}}</span>
+      {{#if this.count}}<span class="fcp-section-note">{{this.count}}</span>{{/if}}
+      {{#if this.slots}}
+      <div class="fcp-meter fcp-group-slots tone-{{this.slots.tone}}">
+        <div class="fcp-boxes">
+          {{#each this.slots.boxes}}<button type="button" class="fcp-box {{#if this.on}}on{{/if}}" data-action="counter" data-key="{{../slots.key}}" data-box="{{this.n}}" aria-label="{{../title}} {{this.n}}"></button>{{/each}}
+        </div>
       </div>
+      {{/if}}
     </div>
-    {{/if}}
     {{#if this.spellbook}}
     <input type="search" name="spellQuery" placeholder="{{localize 'FCP.D5.Search'}}" value="{{../spellQuery}}" autocomplete="off" autocapitalize="off">
     <div class="fcp-segmented">
@@ -27,6 +26,7 @@
     {{#each this.adders}}
     <button type="button" class="fcp-add-spells" data-action="addSpells" data-class-id="{{this.classId}}"><i class="ph-duotone ph-plus"></i> {{this.label}}</button>
     {{/each}}
+    <div class="fcp-group-card">
     {{#each this.levels}}
     <div class="fcp-spell-level">
       <div class="fcp-sublabel">{{this.title}}</div>
@@ -43,47 +43,51 @@
     </div>
     {{/each}}
     <div class="fcp-empty fcp-spell-empty" hidden>{{localize "FCP.D5.NoSpells"}}</div>
+    </div>
     {{/if}}
+    {{#if this.items.length}}
+    <div class="fcp-group-card">
     {{#each this.items}}
     <div class="fcp-item {{#if this.expanded}}expanded{{/if}}">
       <div class="fcp-row-line">
-      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}} {{#if this.big}}big{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}"{{else}}data-action="noop"{{/if}}>
+      <button type="button" class="fcp-row {{#if this.inactive}}fcp-inactive{{/if}} {{#if this.big}}big{{/if}}" {{#if this.id}}data-action="expandItem" data-item-id="{{this.id}}" aria-expanded="{{#if this.expanded}}true{{else}}false{{/if}}"{{else}}data-action="noop"{{/if}}>
         <img src="{{this.img}}" alt="">
         <span class="fcp-row-main">
           <span class="fcp-row-title">{{this.name}}</span>
-          {{#if this.meta}}<span class="fcp-row-meta">{{this.meta}}</span>{{/if}}
+          {{#if (or this.meta this.badge)}}<span class="fcp-row-meta">{{#if this.action}}{{#if this.badge}}{{#unless this.badge.hit}}<em>{{this.badge.text}}</em>{{#if this.meta}} · {{/if}}{{/unless}}{{/if}}{{/if}}{{this.meta}}</span>{{/if}}
         </span>
         <span class="fcp-row-right">
+          {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}}/{{this.uses.max}}</span>{{/if}}
+          {{#unless this.action}}
           {{#if this.badge}}<span class="fcp-tohit" title="{{this.badge.hint}}">{{this.badge.text}}</span>{{/if}}
-          {{#if this.uses}}<span class="fcp-uses">{{this.uses.value}} / {{this.uses.max}}</span>{{/if}}
           {{#if this.id}}<i class="ph-duotone ph-caret-{{#if this.expanded}}up{{else}}down{{/if}} fcp-chevron"></i>{{/if}}
+          {{/unless}}
         </span>
       </button>
-      {{#if this.vfx}}
-      <button type="button" class="fcp-play" data-action="playVfx" data-item-id="{{this.id}}" data-vfx-action="{{this.vfx.actionId}}" {{#if ../../targets.noToken}}disabled{{/if}} aria-label="{{localize 'FCP.Vfx.Play'}}: {{this.name}}"><span class="fcp-play-icon"></span></button>
+      {{#if this.action}}
+      <button type="button" class="fcp-use" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}} {{#if this.badge.hit}}title="{{this.actionLabel}} · {{this.badge.hint}}"{{/if}}>{{#if this.badge.hit}}<i class="ph-duotone ph-sword"></i><b>{{this.badge.text}}</b>{{else}}{{this.actionLabel}}{{/if}}</button>
       {{/if}}
       </div>
-      {{#unless ../../useInBody}}
-      {{#if this.action}}
-      <div class="fcp-use-row"><button type="button" class="fcp-primary" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button></div>
-      {{/if}}
-      {{/unless}}
       {{#if this.expanded}}
       <div class="fcp-item-body">
         <div class="fcp-item-desc">{{{this.description}}}</div>
-        {{#if ../../useInBody}}{{#if this.action}}
-        <button type="button" class="fcp-primary fcp-use-full" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}>{{this.actionLabel}}</button>
-        {{/if}}{{/if}}
-        {{#if this.toggle}}
+        {{#if (or this.vfx this.toggle)}}
         <div class="fcp-item-actions">
+          {{#if this.vfx}}
+          <button type="button" class="fcp-btn small fcp-play" data-action="playVfx" data-item-id="{{this.id}}" data-vfx-action="{{this.vfx.actionId}}" {{#if ../../targets.noToken}}disabled{{/if}}>{{> "modules/foundry-companion-local-phone/templates/parts/icon.hbs" i="play"}}{{localize "FCP.Vfx.Only"}}</button>
+          {{/if}}
+          {{#if this.toggle}}
           <button type="button" class="fcp-btn small" data-action="{{this.toggle.action}}" data-item-id="{{this.id}}"><i class="{{this.toggle.icon}}"></i>{{this.toggle.label}}</button>
           {{#each this.extra}}<button type="button" class="fcp-btn small" data-action="{{this.action}}" data-item-id="{{../id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}}><i class="{{this.icon}}"></i>{{this.label}}</button>{{/each}}
+          {{/if}}
         </div>
         {{/if}}
       </div>
       {{/if}}
     </div>
     {{/each}}
+    </div>
+    {{/if}}
   </div>
   {{/each}}
   {{/unless}}

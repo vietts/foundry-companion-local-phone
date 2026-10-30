@@ -66,8 +66,8 @@ export class DaggerheartAdapter extends SystemAdapter {
     const t = key => game.i18n.localize(key);
     const defs = [
       { key: "hp", label: t("FCP.DH.HPMarked"), tone: "hp", res: r.hitPoints },
-      { key: "hope", label: t("FCP.DH.Hope"), tone: "hope", res: r.hope },
       { key: "stress", label: t("FCP.DH.Stress"), tone: "stress", res: r.stress },
+      { key: "hope", label: t("FCP.DH.Hope"), tone: "hope", res: r.hope },
       { key: "armor", label: t("FCP.DH.ArmorLabel"), tone: "armor", res: r.armor }
     ].filter(d => d.res && d.res.max > 0);
 

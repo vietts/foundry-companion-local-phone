@@ -1,10 +1,12 @@
 {{#if targets}}
-<div class="fcp-targets" style="--fcp-user: {{targets.color}};">
+<div class="fcp-targets fcp-card" style="--fcp-user: {{targets.color}};">
   <div class="fcp-targets-head">
     <span class="fcp-label">{{localize "FCP.Vfx.Targets"}}</span>
     {{#if targets.count}}
-    <button type="button" class="fcp-targets-clear" data-action="clearTargets" aria-label="{{localize 'FCP.Vfx.Clear'}}"><b>{{targets.count}}</b><i class="ph-duotone ph-x"></i></button>
-    {{/if}}
+    <button type="button" class="fcp-targets-clear" data-action="clearTargets" aria-label="{{localize 'FCP.Vfx.Clear'}}">{{targets.countLabel}}</button>
+    {{else}}{{#unless targets.noToken}}
+    <span class="fcp-section-note">{{localize "FCP.Vfx.Hint"}}</span>
+    {{/unless}}{{/if}}
   </div>
   {{#if targets.noToken}}
   <div class="fcp-targets-empty">{{localize "FCP.Vfx.NoToken"}}</div>

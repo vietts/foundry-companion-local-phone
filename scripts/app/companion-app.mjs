@@ -23,7 +23,7 @@ const TOUCH_GRACE_MS = 350;
 const MOVE_LIMIT_MS = 20000;
 
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
-const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map", "pad"];
+const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map", "modes", "pad"];
 const PLAYER_HIDDEN_PARTS = ["notes"];
 
 const TAB_ICONS = {
@@ -188,6 +188,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       quickNote: CompanionApp.#onQuickNote,
       noteHeading: CompanionApp.#onNoteHeading,
       toggleMap: CompanionApp.#onToggleMap,
+      dismissWelcome: CompanionApp.#onDismissWelcome,
       fullscreen: CompanionApp.#onFullscreen,
       noop: () => {}
     }
@@ -201,6 +202,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     inventory: { template: `${T}/items.hbs`, scrollable: [""] },
     chat: { template: `${T}/chat.hbs`, scrollable: [""] },
     map: { template: `${T}/map.hbs`, scrollable: [""] },
+    // Roll mode bar: its own part so it sits above the nav, where the thumb is.
+    modes: { template: `${T}/modes.hbs` },
     nav: { template: `${T}/nav.hbs` },
     // Phone turned sideways: a controller with a big pad over everything else (shown by CSS only).
     pad: { template: `${T}/pad.hbs` }
@@ -328,6 +331,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._dirty.size) this.refreshParts();
   };
 
+  /** The header's «⋯» is a <details>: closed by a tap anywhere else, or once one of its items has been chosen. */
+  #closeMenus = event => {
+    for (const menu of this.element?.querySelectorAll("details.fcp-more[open]") ?? []) {
+      if (!menu.contains(event.target) || event.target.closest(".fcp-more-menu button")) menu.open = false;
+    }
+  };
+
   /** Locking the phone hides the page first: that is the moment to keep the view for the reload that may follow. */
   #onHide = () => this.saveView();
 
@@ -428,10 +438,12 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       left: tab === "sheet" ? loc("FCP.Title") : loc(`FCP.Tabs.${tab.capitalize()}`),
       right,
-      summary: header?.summary?.[tab] ?? "",
+      // The map has no summary of its own: hit points and the rest, as in Actions.
+      summary: header?.summary?.[tab === "map" ? "actions" : tab] ?? "",
       // Actions show the pin only where opening an item sets it (dnd5e); elsewhere it belongs to the sheet.
       pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : "",
-      menu: tab === this.primaryTab,
+      // The «⋯» menu is on every tab: one small target instead of three buttons next to the name.
+      menu: true,
       // Live day: no way out of the companion or of the account by mistake, only reload.
       exits: !this.live
     };
@@ -457,17 +469,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
           for (const tile of section.tiles ?? []) {
             tile.zero ??= /^[+−-]?0$/.test(String(tile.value).trim());
             tile.pinned = tile.action === "pin" && this.pin?.actorId === actor?.id && this.pin?.key === tile.data?.key;
+            // «Tap to roll»: only what really rolls is green. Experiences are picked for the next roll, not rolled.
+            tile.rolls = tile.action === "roll" && tile.data?.kind !== "experience";
           }
+          section.rolls = (section.tiles ?? []).some(t => t.rolls);
         }
+        context.statTiles = this.#statTiles(context.header?.stats, actor);
         context.condPicker = this.condPicker;
         break;
       case "actions":
         context.tabId = "actions";
-        {
-          const prepared = actor ? await this.adapter.prepareActions(actor) : { groups: [] };
-          context.groups = prepared.groups;
-          context.useInBody = !!prepared.useInBody;
-        }
+        // One use button per row, for every system: the old `useInBody` (dnd5e: open the row, then Use) is gone.
+        context.groups = actor ? (await this.adapter.prepareActions(actor)).groups : [];
         await this.#decorateItems(actor, context.groups);
         context.targets = actor && this.#decorateVfx(actor, context.groups) ? this.#prepareTargets() : null;
         this.showsTargets = !!context.targets;
@@ -533,6 +546,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (tile.data?.kind === "experience") { tile.sub = null; tile.prof = false; }
       }
     }
+  }
+
+  /** The numbers under the hit points: the ones that roll (initiative) roll, or pin their recipe in reference mode. */
+  #statTiles(stats, actor) {
+    return (stats ?? []).map(s => {
+      if (s.action !== "roll") return { ...s, action: null };
+      if (this.diceEnabled) return { ...s, rolls: true };
+      const key = s.data?.pin;
+      if (!key || !this.adapter.pinText) return { ...s, action: null };
+      return { ...s, action: "pin", data: { key }, pinned: this.pin?.actorId === actor?.id && this.pin?.key === key };
+    });
   }
 
   /** Hide "use" buttons in reference mode and inline the enriched text of expanded items. */
@@ -609,6 +633,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
         mine: t.id === origin.id
       })),
       count: this.targetIds.size,
+      countLabel: game.i18n.format(this.targetIds.size === 1 ? "FCP.Vfx.ChosenOne" : "FCP.Vfx.ChosenMany", { n: this.targetIds.size }),
       color: game.user.color?.css ?? String(game.user.color ?? "")
     };
   }
@@ -760,8 +785,10 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       hasScene: true,
       sceneName: scene.navName || scene.name,
-      liveName: this.live ? (token?.name ?? actor?.name ?? "") : "",
       hasToken: !!token,
+      // The character's portrait in the middle of the pad: whose token the arrows move.
+      img: [actor?.img, token ? this.#tokenImage(token) : null].find(src => src && !VIDEO_RE.test(src) && !src.includes("mystery-man")) ?? null,
+      welcome: this.live && !this.#welcomeSeen(),
       ratio: (d.sceneWidth / d.sceneHeight).toFixed(4),
       initial: (token?.name ?? "").trim().charAt(0).toUpperCase(),
       background,
@@ -819,6 +846,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.padQuery?.addEventListener("change", this.#onPadChange);
       document.addEventListener("fullscreenchange", this.#onFullscreenChange);
       el.addEventListener("pointerdown", this.#onPointerDown, { capture: true });
+      el.addEventListener("click", this.#closeMenus);
       window.addEventListener("pagehide", this.#onHide);
       document.addEventListener("visibilitychange", this.#onHide);
       for (const type of ["pointerup", "pointercancel"]) el.addEventListener(type, this.#onPointerUp, { capture: true });
@@ -1002,7 +1030,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (tab === "map") this.markDirty("map");
     this.#flushStale();
-    this.markDirty("header");
+    // The roll mode bar shows only under Sheet and Actions.
+    this.markDirty("header", "modes");
   }
 
   static #onPin(event, target) {
@@ -1310,6 +1339,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Parts that show the targets strip right now. */
   #targetParts() {
     return [...(this.showsTargets ? ["actions"] : []), ...(this.mapShowsTargets ? ["map"] : [])];
+  }
+
+  static WELCOME_KEY = "fcp-map-welcome";
+
+  /** The live-day welcome on the map is shown once per device. */
+  #welcomeSeen() {
+    try { return localStorage.getItem(CompanionApp.WELCOME_KEY) === "1"; } catch (err) { return false; }
+  }
+
+  static #onDismissWelcome() {
+    try { localStorage.setItem(CompanionApp.WELCOME_KEY, "1"); } catch (err) { /* private mode: shown again next time */ }
+    this.markDirty("map");
   }
 
   static async #onToggleMap() {
