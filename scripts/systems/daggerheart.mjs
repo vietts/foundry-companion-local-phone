@@ -545,7 +545,8 @@ export class DaggerheartAdapter extends SystemAdapter {
     if (item.type === "domainCard" && item.system.isDomainTouchedSuppressed) {
       // Same check as Item#use on the desktop, which we skip by calling the action directly.
       const domain = game.i18n.localize(CONFIG.DH.DOMAIN.allDomains()[item.system.domain]?.label ?? "");
-      return ui.notifications.warn(game.i18n.format("DAGGERHEART.UI.Notifications.domainTouchRequirement", { nr: item.system.domainTouched, domain }));
+      ui.notifications.warn(game.i18n.format("DAGGERHEART.UI.Notifications.domainTouchRequirement", { nr: item.system.domainTouched, domain }));
+      return false;
     }
     if (actionId) {
       const action = item.system.actions?.get(actionId);

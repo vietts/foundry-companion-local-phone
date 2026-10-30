@@ -100,3 +100,25 @@ test("normal mode passes no advantage keys, so effects can still grant advantage
   await roll(adapter, actor);
   assert.deepEqual(actor.rolled, [{}, { advantage: true }]);
 });
+
+test("two quick taps on initiative add one combatant, not two", async () => {
+  quickRolls = true;
+  const { actor, combatants } = setup();
+  actor.uuid = "Actor.a1";
+  const adapter = new Dnd5eAdapter();
+  await Promise.all([roll(adapter, actor), roll(adapter, actor)]);
+  assert.equal(combatants.length, 1);
+  assert.equal(actor.rolled.length, 1);
+});
+
+test("a token actor whose token is on another scene warns and adds nothing", async () => {
+  const { actor, combatants } = setup();
+  actor.isToken = true;
+  actor.uuid = "Scene.x.Token.t9.Actor.a1";
+  actor.token = { id: "t9", parent: { id: "other" } };
+  game.combat.getCombatantsByActor = () => [];
+  warnings.length = 0;
+  await roll(new Dnd5eAdapter(), actor);
+  assert.deepEqual(combatants, []);
+  assert.deepEqual(warnings, ["FCP.D5.InitiativeOffScene"]);
+});

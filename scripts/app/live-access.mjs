@@ -103,8 +103,12 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /** Someone logging in or out changes which rows may be shown or ticked. */
+  #onUserConnected = () => this.render();
+
   async _onRender(context, options) {
     await super._onRender(context, options);
+    if (options.isFirstRender) Hooks.on("userConnected", this.#onUserConnected);
     for (const box of this.element.querySelectorAll("input[name=actor]")) {
       box.addEventListener("change", () => {
         if (box.checked) this.#selected.add(box.value);
@@ -185,7 +189,8 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const done = [];
     for (const card of issued) {
       try {
-        if (card.password !== null) await card.user.update({ password: card.password });
+        // A hook can refuse the update without an error: then the card would carry a password that does not work.
+        if (card.password !== null && !(await card.user.update({ password: card.password }))) throw new Error("update refused");
         done.push(card);
       } catch (err) {
         ui.notifications.error(game.i18n.format("FCP.Live.PasswordFailed", { name: card.actor.name }));
@@ -221,11 +226,21 @@ export class LiveAccessApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return made;
   }
 
+  _onClose(options) {
+    Hooks.off("userConnected", this.#onUserConnected);
+    super._onClose(options);
+  }
+
   /** One character's QR, full screen on the display, until that character logs in or the GM hides it. */
   static async #onShowOnDisplay(event, target) {
     const actor = game.actors.get(target.dataset.actorId);
     const user = actor && this.#userFor(actor);
     if (!user || !this.#displayId) return;
+    // The window may be older than the login: a new password would log that player out.
+    if (user.active) {
+      ui.notifications.warn(game.i18n.format("FCP.Live.ShowPlaying", { name: actor.name }));
+      return this.render();
+    }
     const display = game.users.get(this.#displayId);
     // Nobody would see it, and the password would change for nothing.
     if (!display?.active) {

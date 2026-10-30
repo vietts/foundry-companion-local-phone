@@ -68,7 +68,8 @@ Hooks.once("ready", async () => {
 async function maybePromptCanvas() {
   let noCanvas = false;
   try { noCanvas = game.settings.get("core", "noCanvas"); } catch (err) { return; }
-  if (noCanvas) return;
+  // Not for a GM: the active GM's canvas checks the players' moves against walls and plays their effects.
+  if (noCanvas || game.user.isGM) return;
   await game.settings.set("core", "noCanvas", true);
   window.location.reload();
   await new Promise(() => {}); // never resolve: page is reloading

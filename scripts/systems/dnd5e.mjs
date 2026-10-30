@@ -696,7 +696,18 @@ export class Dnd5eAdapter extends SystemAdapter {
    * Without a canvas Actor#getActiveTokens is empty, so core's createCombatants adds a tokenless duplicate
    * on every tap. The phone joins the combat itself with the actor's token on the combat's scene, once.
    */
-  async #rollInitiative(actor, adv, dialog) {
+  /** One initiative at a time per actor: two quick taps both saw no combatant and both added one. */
+  #initiativeLocks = new Map();
+
+  #rollInitiative(actor, adv, dialog) {
+    const key = actor.uuid;
+    if (this.#initiativeLocks.has(key)) return this.#initiativeLocks.get(key);
+    const run = this.#rollInitiativeNow(actor, adv, dialog).finally(() => this.#initiativeLocks.delete(key));
+    this.#initiativeLocks.set(key, run);
+    return run;
+  }
+
+  async #rollInitiativeNow(actor, adv, dialog) {
     const combat = game.combat;
     if (!combat) {
       ui.notifications.warn("COMBAT.NoneActive", { localize: true });
@@ -706,6 +717,11 @@ export class Dnd5eAdapter extends SystemAdapter {
       const scene = combat.scene ?? game.scenes.active;
       const tokens = actor.isToken ? [actor.token].filter(t => t?.parent === scene)
         : scene?.tokens.filter(t => t.actorLink && t.actorId === actor.id) ?? [];
+      // A token actor elsewhere: a tokenless combatant would never match it, and a new one came at every tap.
+      if (actor.isToken && !tokens.length) {
+        ui.notifications.warn("FCP.D5.InitiativeOffScene", { localize: true });
+        return null;
+      }
       const data = tokens.length
         ? tokens.map(t => ({ tokenId: t.id, sceneId: t.parent.id, actorId: actor.id, hidden: t.hidden }))
         : [{ actorId: actor.id, hidden: false }];
@@ -716,7 +732,11 @@ export class Dnd5eAdapter extends SystemAdapter {
     const roll = actor.rollInitiative;
     actor.rollInitiative = (options = {}, rollOptions) => roll.call(actor, { ...options, createCombatants: false }, rollOptions);
     try {
-      if (dialog.configure) return await actor.rollInitiativeDialog(adv);
+      // dnd5e's dialog returns nothing even when it rolled: the combat says whether a roll was made.
+      if (dialog.configure) {
+        await actor.rollInitiativeDialog(adv);
+        return combat.getCombatantsByActor(actor).some(c => c.initiative !== null) || null;
+      }
       return await actor.rollInitiative({}, adv);
     } finally {
       if (own) Object.defineProperty(actor, "rollInitiative", own);
@@ -758,16 +778,21 @@ export class Dnd5eAdapter extends SystemAdapter {
   async #useItem(actor, { itemId }) {
     const item = actor.items.get(itemId);
     if (!item) return false;
-    this.#attackMode(item);
-    return item.use({ event: {} }, this.#dialog(), {});
+    const off = this.#attackMode(item);
+    const result = await item.use({ event: {} }, this.#dialog(), {});
+    // Usage window closed: no attack will come, the mode must not wait for a later one.
+    if (!result) off();
+    return result;
   }
 
   async #useActivity(actor, { itemId, activity }) {
     const item = actor.items.get(String(itemId).split(".")[0]);
     const act = item?.system.activities?.get(activity);
     if (!act) return false;
-    this.#attackMode(item);
-    return act.use({ event: {} }, this.#dialog(), {});
+    const off = this.#attackMode(item);
+    const result = await act.use({ event: {} }, this.#dialog(), {});
+    if (!result) off();
+    return result;
   }
 
   /**
@@ -777,12 +802,14 @@ export class Dnd5eAdapter extends SystemAdapter {
    */
   #attackMode(item) {
     const adv = this.#adv();
-    if (!adv.advantage && !adv.disadvantage) return;
+    if (!adv.advantage && !adv.disadvantage) return () => {};
     const name = "dnd5e.preRollAttackV2";
     let id = null;
     const off = () => { if (id !== null) Hooks.off(name, id); id = null; };
     id = Hooks.on(name, config => {
-      if (config.subject?.item !== item) return;
+      // Activity#use works on a clone of the item: same id and actor, not the same object.
+      const subject = config.subject?.item;
+      if (subject?.id !== item.id || subject?.actor !== item.actor) return;
       for (const roll of config.rolls ?? []) {
         roll.options ??= {};
         if (adv.advantage) roll.options.advantage = true;
@@ -790,8 +817,10 @@ export class Dnd5eAdapter extends SystemAdapter {
       }
       off();
     });
-    // An activity that never rolls (or a closed usage window) must not leave the hook for a later attack.
-    setTimeout(off, 120_000);
+    // An activity that never rolls must not leave the hook for a later attack.
+    // unref: in node (the tests) the timer must not keep the process alive; browsers have no unref.
+    setTimeout(off, 120_000)?.unref?.();
+    return off;
   }
 
   async #toggleItem(actor, { itemId }) {

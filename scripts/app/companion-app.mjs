@@ -79,7 +79,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     try { view = JSON.parse(sessionStorage.getItem(CompanionApp.VIEW_KEY) ?? "null"); } catch (err) { view = null; }
     if (!view || view.userId !== game.user.id || Date.now() - (view.at ?? 0) > 6 * 3600_000) return;
     if (this.tabs.includes(view.tab)) this.activeTab = view.tab;
-    if (view.actorId) this._actorId = view.actorId;
+    // A character assigned by the GM in the meantime wins over the one the phone had open.
+    if (view.actorId && (view.assigned ?? null) === (game.user.character?.id ?? null)) this._actorId = view.actorId;
     if ([1, 2, 3].includes(view.step)) this.step = view.step;
     if (typeof view.pane === "string") this.sheetPane = view.pane;
     this.expandedItems = new Set(Array.isArray(view.expanded) ? view.expanded : []);
@@ -89,6 +90,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   saveView() {
     const view = {
       userId: game.user.id, at: Date.now(), tab: this.activeTab, actorId: this._actorId, step: this.step,
+      assigned: game.user.character?.id ?? null,
       pane: this.sheetPane, expanded: [...this.expandedItems], targets: [...this.targetIds]
     };
     try { sessionStorage.setItem(CompanionApp.VIEW_KEY, JSON.stringify(view)); } catch (err) { /* private mode */ }
@@ -318,6 +320,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   #onPadChange = () => this.#flushStale();
+
+  /** The click the grace period waits for has arrived (bubbling, after the action ran): redraw now, not 350 ms later. */
+  #onClickDone = () => {
+    clearTimeout(this.#touchTimer);
+    this.#touching = false;
+    if (this._dirty.size) this.refreshParts();
+  };
 
   /** Locking the phone hides the page first: that is the moment to keep the view for the reload that may follow. */
   #onHide = () => this.saveView();
@@ -813,6 +822,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       window.addEventListener("pagehide", this.#onHide);
       document.addEventListener("visibilitychange", this.#onHide);
       for (const type of ["pointerup", "pointercancel"]) el.addEventListener(type, this.#onPointerUp, { capture: true });
+      el.addEventListener("click", this.#onClickDone);
     }
     if (this.moving) this.#setPadEnabled(false);
 
@@ -863,6 +873,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     if (options.isFirstRender && this._dirty.size) this.refreshParts();
+    // Targets kept across a reload: core cleared them on the other clients when this one disconnected.
+    if (options.isFirstRender && this.targetIds.size) this.#syncTargets();
   }
 
   _onClose(options) {
@@ -1289,6 +1301,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (px < 0 || px > 1 || py < 0 || py > 1) return;
     const d = scene.dimensions;
     const center = { x: d.sceneX + px * d.sceneWidth, y: d.sceneY + py * d.sceneHeight };
+    // A tap the queue will drop must not leave a destination marker behind.
+    if (this.#pendingMoves >= 2) return;
     this.mapTarget = { left: (px * 100).toFixed(2), top: (py * 100).toFixed(2) };
     await this.#moveTo(t => positionAtCenter(t, center));
   }
