@@ -44,12 +44,21 @@ async function fetchEntries(CB, options) {
   const filters = CB.applyFilters(context.filterDefinitions, context.filters);
   if (context.filters.arbitrary?.length) filters.push(...context.filters.arbitrary);
   const { validate, fullDocuments } = browser.options.prerequisites;
-  const entries = await CB.fetch(CONFIG[context.filters.documentClass].documentClass, {
+  const query = indexFields => CB.fetch(CONFIG[context.filters.documentClass].documentClass, {
     filters,
     types: context.filters.types,
     index: !(validate && fullDocuments),
-    indexFields: new Set(["system.source", "system.level", "system.school", "system.type"])
+    indexFields
   });
+  let entries;
+  try {
+    entries = await query(new Set(["system.source", "system.level", "system.school", "system.type"]));
+  } catch (err) {
+    // dnd5e 6.0.6: the server builds the index with dnd5e's own fields too, and one of ours overlapping one of
+    // theirs ("x" and "x.value" with x a number) makes it throw. The browser's own fields are enough to choose.
+    logEvent("warn", "picker", err);
+    entries = await query(new Set());
+  }
   return { browser, entries, documentClass: context.filters.documentClass };
 }
 
