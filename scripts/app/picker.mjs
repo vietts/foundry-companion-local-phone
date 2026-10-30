@@ -50,9 +50,15 @@ async function fetchEntries(CB, options) {
     index: !(validate && fullDocuments),
     indexFields
   });
+  // Only what the list shows, and never a parent of a key the filters already index ("system.type" next to
+  // "system.type.value"): the server sets both, and stops on any document where the parent is a number.
+  const types = context.filters.types ?? new Set();
+  const wanted = types.has?.("spell") ? ["system.level", "system.school"] : ["system.type.value", "system.type.subtype"];
+  const taken = [...uniqueFilterKeys(filters)];
+  const fields = wanted.filter(f => !taken.some(k => k !== f && (k.startsWith(`${f}.`) || f.startsWith(`${k}.`))));
   let entries;
   try {
-    entries = await query(new Set(["system.source", "system.level", "system.school", "system.type"]));
+    entries = await query(new Set(fields));
   } catch (err) {
     // dnd5e 6.0.6: the server builds the index with dnd5e's own fields too, and one of ours overlapping one of
     // theirs ("x" and "x.value" with x a number) makes it throw. The browser's own fields are enough to choose.
@@ -60,6 +66,16 @@ async function fetchEntries(CB, options) {
     entries = await query(new Set());
   }
   return { browser, entries, documentClass: context.filters.documentClass };
+}
+
+/** Key paths the filters ask the index for (same walk as dnd5e's uniqueKeys). */
+function uniqueFilterKeys(filters, keys = new Set()) {
+  for (const f of filters ?? []) {
+    if (f?.k) keys.add(f.k);
+    if (Array.isArray(f?.v)) uniqueFilterKeys(f.v, keys);
+    else if (f?.v && typeof f.v === "object" && "k" in f.v) uniqueFilterKeys([f.v], keys);
+  }
+  return keys;
 }
 
 /** Prerequisite check from the caller (e.g. a feat that needs Strength 13): disabled when invalid and enforced. */
