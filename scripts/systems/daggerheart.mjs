@@ -322,7 +322,47 @@ export class DaggerheartAdapter extends SystemAdapter {
     }
     if (featureRows.length) groups.push({ title: game.i18n.localize("FCP.DH.Features"), items: featureRows });
 
+    for (const g of groups) for (const row of g.items) this.#markPendingDamage(actor, row);
     return { groups };
+  }
+
+  /** The chat changes these rows: after an attack, its «Damage» button appears on the row that rolled it. */
+  actionsFollowChat = true;
+
+  /**
+   * An attack whose damage is still to roll: the system puts «Roll Damage» on its chat card, and the player had to go
+   * to the Chat tab to find it. The row of that action gets the same button, for the latest such roll of this
+   * character in the last 10 minutes.
+   */
+  #markPendingDamage(actor, row) {
+    const actionId = row.data?.["action-id"];
+    if (!actionId) return;
+    const itemId = row.itemId ?? row.id;
+    const item = itemId ? actor.items.get(itemId) : null;
+    const realAction = actionId === "attack" ? item?.system.attack?._id ?? item?.system.attack?.id
+      : actionId === "unarmed" ? actor.system.attack?._id ?? actor.system.attack?.id : actionId;
+    const since = Date.now() - 10 * 60_000;
+    const messages = game.messages.contents;
+    for (let i = messages.length - 1, seen = 0; i >= 0 && seen < 30; i--, seen++) {
+      const m = messages[i];
+      if ((m.timestamp ?? 0) < since) break;
+      const sys = m.system;
+      if (!sys?.source || sys.source.actor !== actor.uuid || sys.source.action !== realAction) continue;
+      if (item && sys.source.item !== item.id) continue;
+      if (!sys.hasDamage && !sys.hasHealing) return;
+      // Already rolled: the card now offers "apply", which belongs to the GM.
+      if (sys.damage && Object.keys(sys.damage).length) return;
+      row.damage = { messageId: m.id, label: game.i18n.localize(sys.hasHealing && !sys.hasDamage ? "FCP.DH.RollHealing" : "FCP.DH.RollDamage") };
+      return;
+    }
+  }
+
+  /** Same as the card's «Roll Damage» button. */
+  async #rollDamage({ messageId }) {
+    const message = game.messages.get(messageId);
+    if (!message?.onRollDamage) return false;
+    await message.onRollDamage({ stopPropagation() {}, preventDefault() {}, shiftKey: false, altKey: false, ctrlKey: false, metaKey: false });
+    return { rerender: ["actions"] };
   }
 
   /** " / max" suffix for the loadout title, empty when the limit cannot be read. */
@@ -476,6 +516,7 @@ export class DaggerheartAdapter extends SystemAdapter {
       case "roll": return this.#roll(actor, data);
       case "useItem": return this.#useItem(actor, data);
       case "toggleItem": return this.#toggleItem(actor, data);
+      case "rollDamage": return this.#rollDamage(data);
       case "rest": return this.rest(actor, data.kind);
       case "counter":
         if (data.box !== undefined) return this.setBox(actor, data.key, Number(data.box));

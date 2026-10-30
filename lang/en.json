@@ -169,6 +169,8 @@
   "FCP.DH.HPMarked": "HP marked",
   "FCP.DH.HPShort": "HP",
   "FCP.DH.Hope": "Hope",
+  "FCP.DH.RollDamage": "Damage",
+  "FCP.DH.RollHealing": "Healing",
   "FCP.DH.NotEnoughHope": "Not enough Hope for the chosen experience ({n} needed): tap it again to drop it, or regain Hope.",
   "FCP.DH.Stress": "Stress",
   "FCP.DH.ArmorLabel": "Armor",

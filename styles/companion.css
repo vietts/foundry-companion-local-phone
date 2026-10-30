@@ -1967,6 +1967,12 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   text-align: center;
 }
 
+/* Damage still to roll after an attack (Daggerheart): next to the attack, in the colour of damage, not of actions. */
+#fcp-app .fcp-use.fcp-use-damage {
+  background: var(--fcp-danger-tint);
+  color: var(--fcp-danger);
+}
+
 .fcp-use b {
   font: 700 17px var(--font-num);
 }

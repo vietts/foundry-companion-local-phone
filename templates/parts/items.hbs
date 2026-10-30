@@ -64,6 +64,9 @@
           {{/unless}}
         </span>
       </button>
+      {{#if this.damage}}
+      <button type="button" class="fcp-use fcp-use-damage" data-action="rollDamage" data-message-id="{{this.damage.messageId}}">{{this.damage.label}}</button>
+      {{/if}}
       {{#if this.action}}
       <button type="button" class="fcp-use" data-action="{{this.action}}" data-item-id="{{this.id}}" {{#each this.data}}data-{{@key}}="{{this}}" {{/each}} {{#if this.badge.hit}}title="{{this.actionLabel}} · {{this.badge.hint}}"{{/if}}>{{#if this.badge.hit}}<i class="ph-duotone ph-sword"></i><b>{{this.badge.text}}</b>{{else}}{{this.actionLabel}}{{/if}}</button>
       {{/if}}

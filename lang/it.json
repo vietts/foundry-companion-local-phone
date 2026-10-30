@@ -169,6 +169,8 @@
   "FCP.DH.HPMarked": "PF segnati",
   "FCP.DH.HPShort": "PF",
   "FCP.DH.Hope": "Speranza",
+  "FCP.DH.RollDamage": "Danni",
+  "FCP.DH.RollHealing": "Cura",
   "FCP.DH.NotEnoughHope": "Non hai abbastanza Speranza per l'esperienza scelta (serve {n}): toccala di nuovo per toglierla, oppure recupera Speranza.",
   "FCP.DH.Stress": "Stress",
   "FCP.DH.ArmorLabel": "Armatura",

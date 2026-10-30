@@ -163,6 +163,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       roll: CompanionApp.#onAdapterAction,
       useItem: CompanionApp.#onAdapterAction,
       useActivity: CompanionApp.#onAdapterAction,
+      rollDamage: CompanionApp.#onAdapterAction,
       toggleItem: CompanionApp.#onAdapterAction,
       rest: CompanionApp.#onAdapterAction,
       levelUp: CompanionApp.#onAdapterAction,
@@ -983,6 +984,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Called by hooks when a chat message changes. */
   onChatChanged(message, { deleted = false, created = false } = {}) {
     this._chatCache.delete(message.id);
+    // Rows that show a chat card's buttons (Daggerheart's «Damage» after an attack).
+    if (this.adapter.actionsFollowChat && message.system?.source?.actor === this.actor?.uuid) this.markDirty("actions");
     if (!deleted && !message.visible) return;
     // Only new messages are unread: an edit (a roll resolving, a card updating) is not news.
     if (this.activeTab !== "chat" && created) {
