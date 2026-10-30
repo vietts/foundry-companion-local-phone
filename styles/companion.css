@@ -59,6 +59,14 @@ body.fcp-active {
   overscroll-behavior: none;
   background: #f3ede1;
 }
+/* Chrome on Android reads pull-to-refresh from the root element, not the body: a swipe down reloaded the page. */
+html:has(body.fcp-active) {
+  overscroll-behavior: none;
+}
+body.fcp-active .fcp-tab,
+body.fcp-active .fcp-chat-log {
+  overscroll-behavior: contain;
+}
 
 body.fcp-active #notifications {
   top: calc(var(--fcp-safe-top) + 8px);
@@ -3283,7 +3291,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   display: none;
 }
 
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 500px) and (min-aspect-ratio: 4/3) {
   #fcp-app .fcp-sidepad {
     position: fixed;
     inset: 0;
@@ -3587,11 +3595,15 @@ body.fcp-active:has(#fcp-app) #fcp-reload { display: none; }
 
 /* Any other Foundry window opened from the phone (Daggerheart armor question, rests, roll setup):
    never wider than the screen, so its buttons stay reachable. */
-@media (max-width: 739px) {
+@media (max-width: 739px), (max-height: 500px) {
   body.fcp-active .application:not(#fcp-app):not(#fcp-picker) {
     left: 8px !important;
     max-width: calc(100vw - 16px) !important;
     max-height: calc(100dvh - var(--fcp-safe-top) - 16px);
+  }
+  /* Core clips the content: a long window (roll setup, rests, armor) hid its buttons below the screen. */
+  body.fcp-active .application:not(#fcp-app):not(#fcp-picker) > .window-content {
+    overflow-y: auto;
   }
 }
 

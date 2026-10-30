@@ -15,7 +15,8 @@ const VIDEO_RE = /\.(webm|mp4|m4v|ogv|ogg)(\?.*)?$/i;
 /** Tablet layout: the sheet stays on the left, the other tabs open on the right. Phones in landscape stay single-column. */
 const WIDE_QUERY = "(min-width: 740px) and (min-height: 500px)";
 /** Same query as the CSS that shows the sideways pad. */
-const PAD_QUERY = "(orientation: landscape) and (max-height: 500px)";
+// min-aspect-ratio: an on-screen keyboard in portrait can make the page "landscape" and short; it is never that wide.
+const PAD_QUERY = "(orientation: landscape) and (max-height: 500px) and (min-aspect-ratio: 4/3)";
 /** Parts that are tabs: a hidden one is redrawn when it is opened, not while it is out of sight. */
 const TAB_PARTS = new Set(["notes", "sheet", "actions", "inventory", "chat", "map"]);
 /** After a finger leaves the screen the click still has to arrive on the same button. */
