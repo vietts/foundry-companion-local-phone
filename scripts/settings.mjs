@@ -126,6 +126,26 @@ export function registerSettings() {
     default: 40
   });
 
+  // The GM turns digital dice on for every phone: a client setting alone could not be reached from a phone,
+  // where Foundry's settings window is hidden behind the companion.
+  game.settings.register(MODULE_ID, SETTINGS.DICE_ALL, {
+    name: "FCP.Settings.DiceAll.Name",
+    hint: "FCP.Settings.DiceAll.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => game.modules.get(MODULE_ID)?.api?.getApp()?.render({ force: true })
+  });
+
+  // This phone's own choice from the companion's «⋯» menu: "" follows the GM, "on"/"off" overrides.
+  game.settings.register(MODULE_ID, SETTINGS.DICE_CHOICE, {
+    scope: "client",
+    config: false,
+    type: String,
+    default: ""
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.DIGITAL_DICE, {
     name: "FCP.Settings.DigitalDice.Name",
     hint: "FCP.Settings.DigitalDice.Hint",

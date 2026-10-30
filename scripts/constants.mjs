@@ -12,6 +12,8 @@ export const SETTINGS = {
   CHAT_LIMIT: "chatLimit",
   QUICK_ROLLS: "quickRolls",
   DIGITAL_DICE: "digitalDice",
+  DICE_ALL: "diceAll",
+  DICE_CHOICE: "diceChoice",
   LAST_ACTOR: "lastActor",
   LAST_TAB: "lastTab",
   RECENT_NOTES: "recentNotes",

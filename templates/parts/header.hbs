@@ -25,6 +25,7 @@
       <summary title="{{localize 'FCP.Menu'}}" aria-label="{{localize 'FCP.Menu'}}">{{> "modules/foundry-companion-local-phone/templates/parts/icon.hbs" i="dots"}}</summary>
       <div class="fcp-more-menu">
         <button type="button" data-action="refresh"><i class="ph-duotone ph-arrows-clockwise"></i>{{localize "FCP.Reload"}}</button>
+        {{#if actor}}<button type="button" data-action="toggleDice"><i class="fa-solid fa-dice"></i>{{#if dice}}{{localize "FCP.DiceOff"}}{{else}}{{localize "FCP.DiceOn"}}{{/if}}</button>{{/if}}
         {{#if headerInfo.exits}}
         <button type="button" data-action="exitCompanion"><i class="ph-duotone ph-desktop"></i>{{localize "FCP.ExitCompanionShort"}}</button>
         <button type="button" data-action="logOut"><i class="ph-duotone ph-sign-out"></i>{{localize "FCP.LogOutShort"}}</button>

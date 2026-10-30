@@ -135,8 +135,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** Digital dice off = reference mode: nothing rolls, items open their text. */
+  /** This phone's choice from the menu, else the device setting or the GM's choice for every phone. */
   get diceEnabled() {
-    return !!getSetting(SETTINGS.DIGITAL_DICE);
+    const choice = getSetting(SETTINGS.DICE_CHOICE);
+    if (choice === "on" || choice === "off") return choice === "on";
+    return !!getSetting(SETTINGS.DIGITAL_DICE) || !!getSetting(SETTINGS.DICE_ALL);
   }
 
   static DEFAULT_OPTIONS = {
@@ -149,6 +152,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       switchTab: CompanionApp.#onTab,
       selectActor: CompanionApp.#onSelectActor,
       refresh: CompanionApp.#onRefresh,
+      toggleDice: CompanionApp.#onToggleDice,
       exitCompanion: CompanionApp.#onExit,
       logOut: CompanionApp.#onLogOut,
       hpDelta: CompanionApp.#onHpDelta,
@@ -1070,6 +1074,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Targets belong to the character that chose them: the new one starts clean.
     this.targetIds.clear();
     this.expandedItems.clear();
+    this.render({ force: true });
+  }
+
+  static async #onToggleDice() {
+    await setSetting(SETTINGS.DICE_CHOICE, this.diceEnabled ? "off" : "on");
     this.render({ force: true });
   }
 
