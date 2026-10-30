@@ -109,7 +109,7 @@ function activateCompanion() {
     installPicker();
     installAdvancementTheme();
   }
-  setLogContext(() => ({ tab: app?.activeTab ?? null, live: !!app?.live, companion: true }));
+  setLogContext(() => ({ tab: app?.activeTab ?? null, live: !!app?.live, companion: true, character: app?.actor?.name ?? null }));
   installRecovery();
   keepReconnecting();
   app = new CompanionApp(adapter);
