@@ -353,5 +353,9 @@
   "FCP.Vfx.Only": "Solo effetto",
   "FCP.Vfx.Hint": "tocca chi vuoi colpire",
   "FCP.Vfx.ChosenOne": "1 scelto · azzera",
-  "FCP.Vfx.ChosenMany": "{n} scelti · azzera"
+  "FCP.Vfx.ChosenMany": "{n} scelti · azzera",
+  "FCP.Menu": "Altro",
+  "FCP.ExitCompanionShort": "Interfaccia completa di Foundry",
+  "FCP.LogOutShort": "Esci",
+  "FCP.RollMode": "Modo del prossimo tiro"
 }

@@ -546,21 +546,67 @@ body.fcp-active #notifications {
   display: none;
 }
 
-.fcp-menu {
+/* «⋯»: reload, desktop interface and log out, out of reach of a stray thumb. */
+.fcp-more {
+  position: relative;
+  flex: none;
   margin-left: auto;
-  display: flex;
-  gap: 4px;
 }
 
-.fcp-menu button {
+.fcp-more > summary {
   width: var(--fcp-tap);
   height: var(--fcp-tap);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   border-radius: 50%;
   color: var(--fcp-ink-2);
+  list-style: none;
+}
+
+#fcp-app .fcp-more > summary svg.fcp-ico {
+  width: 24px;
+  height: 24px;
+}
+
+.fcp-more[open] > summary {
+  background: var(--fcp-track);
+}
+
+.fcp-more-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 240px;
+  padding: 6px;
+  border-radius: var(--fcp-r-card);
+  background: var(--fcp-card);
+  box-shadow: 0 8px 28px rgba(31, 26, 20, 0.18), 0 1px 3px rgba(31, 26, 20, 0.1);
+}
+
+#fcp-app .fcp-more-menu button {
+  width: 100%;
+  min-height: var(--fcp-tap);
+  display: flex;
+  align-items: center;
+  gap: var(--fcp-s3);
+  padding: 0 var(--fcp-s3);
+  border-radius: var(--fcp-r-ctl);
+  font: 600 15px var(--font-body);
+  color: var(--fcp-ink);
+}
+
+.fcp-more-menu button i {
   font-size: 20px;
+  color: var(--fcp-ink-2);
+}
+
+.fcp-more-menu button + button {
+  margin-top: 2px;
+}
+
+#fcp-app .fcp-more-menu button[data-action="logOut"] {
+  color: var(--fcp-danger);
 }
 
 /* ---------- Tabs ---------- */
@@ -711,12 +757,47 @@ body.fcp-active #notifications {
   box-shadow: var(--fcp-shadow);
 }
 
-.fcp-modebar {
-  margin: var(--fcp-s2) 0 0;
+/* Roll mode: a bar above the nav, where the thumb is, only under Sheet and Actions with digital dice. */
+.fcp-modes {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--fcp-s3);
+  padding: var(--fcp-s2) var(--fcp-s4);
+  background: var(--fcp-page);
+  border-top: 1px solid var(--fcp-line);
+}
+
+.fcp-modes:not(:has(.fcp-modebar)) {
+  display: none;
+}
+
+.fcp-modes-ic {
+  flex: none;
+  display: grid;
+  color: var(--fcp-muted);
+}
+
+#fcp-app .fcp-modes-ic svg.fcp-ico {
+  width: 22px;
+  height: 22px;
+}
+
+.fcp-modes .fcp-modebar {
+  flex: 1;
+  min-width: 0;
 }
 
 .fcp-modebar button {
+  min-height: var(--fcp-tap);
+  font-size: 14px;
+}
+
+/* Four modes (Daggerheart): a little tighter, so «Svantaggio» never runs off the screen. */
+.fcp-modebar:has(> button:nth-child(4)) button {
+  padding: 0 2px;
   font-size: 13px;
+  letter-spacing: -0.01em;
 }
 
 /* ---------- Cards ---------- */
@@ -783,8 +864,11 @@ body.fcp-active #notifications {
   clip-path: inset(-6px -6px 0 -6px);
 }
 
+.fcp-card:has(> .fcp-grid.inline) > .fcp-sublabel {
+  margin-top: 0;
+}
+
 .fcp-card:has(> .fcp-grid.inline) {
-  padding-top: 0;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   clip-path: inset(0 -6px -6px -6px);
@@ -2134,30 +2218,36 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 .fcp-chat-tools {
   flex: none;
-  margin-bottom: 14px;
+  margin-bottom: var(--fcp-s3);
 }
 
+.fcp-header .fcp-kicker {
+  margin-bottom: var(--fcp-s3);
+}
+
+/* Quick dice: each one rolls, so each one is a green chip. */
 .fcp-dicebar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: var(--fcp-s2);
 }
 
 .fcp-dicebar button {
   min-height: var(--fcp-tap);
-  padding: 4px 2px;
+  padding: 0 2px;
   text-align: center;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  font: 600 12px var(--font-body);
+  border-radius: var(--fcp-r-ctl);
+  background: var(--fcp-act-tint);
+  color: var(--fcp-act-ink);
+  font: 700 14px var(--font-body);
 }
 
 .fcp-customroll {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 6px;
+  gap: var(--fcp-s2);
 }
 
 .fcp-chat-log {
@@ -2166,27 +2256,28 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 8px;
+  gap: var(--fcp-s2);
+  padding: var(--fcp-s1) 0 var(--fcp-s2);
 }
 
+/* Each message a small card: who, then what, then the roll total. */
 .fcp-chat-log .chat-message {
-  background: none;
+  background: var(--fcp-card);
   border: none;
-  padding: 0 0 12px;
+  border-radius: var(--fcp-r-card);
+  box-shadow: var(--fcp-shadow);
+  padding: var(--fcp-s3) var(--fcp-s4);
   margin: 0;
-  border-bottom: 1px solid var(--color-neutral-300);
-  color: var(--color-text);
+  color: var(--fcp-ink);
   font: 400 16px/1.5 var(--font-quote);
   user-select: text;
   -webkit-user-select: text;
 }
 
-/* Sender line: a small round portrait, the name in small caps, the time on the right. */
 .fcp-chat-log .chat-message .message-sender {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fcp-s2);
   margin: 0;
 }
 
@@ -2198,9 +2289,14 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   object-fit: cover;
 }
 
+.fcp-chat-log .chat-message .name-stacked {
+  display: flex;
+  flex-direction: column;
+}
+
 .fcp-chat-log .chat-message .name-stacked .subtitle {
-  font-size: 9.5px;
-  color: var(--color-neutral-700);
+  font: 500 12px var(--font-body);
+  color: var(--fcp-muted);
 }
 
 /* Pictures inside a message stay inside the phone. */
@@ -2213,7 +2309,7 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 /* !important: a system rule outside Foundry's layers would otherwise win with its light-on-dark colors. */
 .fcp-chat-log .chat-message .message-content,
 .fcp-chat-log .chat-message .message-content p {
-  color: var(--color-text) !important;
+  color: var(--fcp-ink) !important;
 }
 
 .fcp-chat-log .chat-message .portrait {
@@ -2226,18 +2322,18 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
   width: 24px;
   height: 24px;
   object-fit: cover;
-  border: 1px solid var(--color-neutral-400);
+  border: 0;
+  border-radius: 6px;
 }
 
 .fcp-chat-log .chat-message .message-header {
   align-items: center;
   display: flex;
   justify-content: flex-start;
-  gap: 8px;
-  gap: 8px;
-  margin-bottom: 3px;
-  font: 600 10.5px/1 var(--font-body);
-  color: var(--color-accent-700);
+  gap: var(--fcp-s2);
+  margin-bottom: 6px;
+  font: 600 14px/1.2 var(--font-body);
+  color: var(--fcp-ink);
 }
 
 .fcp-chat-log .chat-message .message-header .message-metadata,
@@ -2247,9 +2343,8 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 
 .fcp-chat-log .chat-message .message-header time {
   margin-left: auto;
-  font: 400 10.5px var(--font-body);
-  letter-spacing: 0;
-  text-transform: none;
+  font: 500 12px var(--font-body);
+  color: var(--fcp-muted);
 }
 
 .fcp-chat-log .chat-message .dice-roll .dice-total {
@@ -2274,80 +2369,80 @@ body.fcp-active .application.fcp-advancement [data-application-part="manager"] n
 .fcp-chat-log .chat-message button {
   min-height: var(--fcp-tap);
   width: 100%;
-  margin-top: 6px;
+  margin-top: var(--fcp-s2);
   text-align: center;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  font: 600 13px var(--font-body);
+  border-radius: var(--fcp-r-ctl);
+  background: var(--fcp-track);
+  font: 600 14px var(--font-body);
 }
 
 .fcp-chat-compose {
   flex: none;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 8px;
-  padding: 10px 0 12px;
+  gap: var(--fcp-s2);
+  padding: var(--fcp-s2) 0 var(--fcp-s3);
   border-top: 1px solid var(--fcp-line);
-  background: var(--color-bg);
+  background: var(--fcp-page);
 }
 
 .fcp-chat-compose input {
-  min-height: 46px;
+  min-height: 48px;
 }
 
 .fcp-chat-compose button {
-  min-height: 46px;
-  padding: 6px 18px;
-  background: var(--color-text);
-  color: var(--color-bg);
+  min-height: 48px;
+  padding: 0 var(--fcp-s4);
   border: 0;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--fcp-lift);
-  font: 700 12px var(--font-body);
+  border-radius: var(--fcp-r-ctl);
+  background: var(--fcp-ink);
+  color: var(--fcp-card);
+  box-shadow: none;
+  font: 600 15px var(--font-body);
   text-align: center;
 }
 
 .fcp-customroll button {
   min-height: var(--fcp-tap);
-  padding: 6px 16px;
+  padding: 0 var(--fcp-s4);
   text-align: center;
-  border-radius: var(--radius-sm);
-  font: 700 12px var(--font-body);
+  border-radius: var(--fcp-r-ctl);
+  font: 600 15px var(--font-body);
 }
 
 /* ---------- Actor picker ---------- */
 
 .fcp-actorpicker {
   display: flex;
-  gap: 8px;
+  gap: var(--fcp-s2);
   overflow-x: auto;
-  padding: 10px 0 0;
+  padding: var(--fcp-s1) 0 var(--fcp-s3);
 }
 
 .fcp-actorpicker button {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--fcp-s2);
   min-height: var(--fcp-tap);
-  padding: 4px 12px 4px 4px;
+  padding: 4px 14px 4px 4px;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  font: 500 13px var(--font-body);
-  color: var(--color-neutral-700);
+  border-radius: 999px;
+  background: var(--fcp-track);
+  font: 600 14px var(--font-body);
+  color: var(--fcp-ink-2);
 }
 
 .fcp-actorpicker button.active {
-  background: var(--color-text);
-  color: var(--color-bg);
-  font-weight: 600;
+  background: var(--fcp-card);
+  color: var(--fcp-ink);
+  box-shadow: var(--fcp-shadow), inset 0 0 0 2px var(--fcp-ink);
 }
 
 .fcp-actorpicker img {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   object-fit: cover;
 }

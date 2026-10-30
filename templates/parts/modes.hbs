@@ -1,0 +1,9 @@
+{{!-- Roll mode, above the nav where the thumb is: only on Sheet and Actions, only with digital dice. --}}
+<div class="fcp-modes">
+  {{#if dice}}{{#if header.modes}}{{#if (or (eq headerTab 'sheet') (eq headerTab 'actions'))}}
+  <span class="fcp-modes-ic" title="{{localize 'FCP.RollMode'}}">{{> "modules/foundry-companion-local-phone/templates/parts/icon.hbs" i="dice"}}</span>
+  <div class="fcp-modebar" role="group" aria-label="{{localize 'FCP.RollMode'}}">
+    {{#each header.modes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="setMode" data-mode="{{this.key}}">{{this.label}}</button>{{/each}}
+  </div>
+  {{/if}}{{/if}}{{/if}}
+</div>

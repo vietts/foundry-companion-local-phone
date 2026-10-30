@@ -353,5 +353,9 @@
   "FCP.Vfx.Only": "Effect only",
   "FCP.Vfx.Hint": "tap who you want to hit",
   "FCP.Vfx.ChosenOne": "1 chosen · clear",
-  "FCP.Vfx.ChosenMany": "{n} chosen · clear"
+  "FCP.Vfx.ChosenMany": "{n} chosen · clear",
+  "FCP.Menu": "More",
+  "FCP.ExitCompanionShort": "Full Foundry interface",
+  "FCP.LogOutShort": "Log out",
+  "FCP.RollMode": "Next roll mode"
 }

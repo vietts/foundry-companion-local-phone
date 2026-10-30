@@ -1,9 +1,7 @@
 <header class="fcp-header {{#if (eq headerTab 'sheet')}}big{{/if}} {{#if (eq headerTab 'map')}}fcp-hidden{{/if}}">
-  <div class="fcp-kicker"><span>{{headerInfo.left}}</span><span>{{headerInfo.right}}</span></div>
-  <div class="fcp-rule"></div>
   {{#if (eq headerTab 'chat')}}
+  <div class="fcp-kicker"><span>{{headerInfo.left}}</span><span>{{headerInfo.right}}</span></div>
   {{#if dice}}
-  <div class="fcp-label">{{localize "FCP.QuickDice"}}</div>
   <div class="fcp-dicebar">
     {{#each chat.quickDice}}<button type="button" data-action="quickRoll" data-formula="{{this}}">{{this}}</button>{{/each}}
   </div>
@@ -22,22 +20,20 @@
     <div class="fcp-name"><b>{{localize "FCP.Title"}}</b></div>
     {{/if}}
     {{#if headerInfo.menu}}
-    <div class="fcp-menu">
-      <button type="button" data-action="refresh" title="{{localize 'FCP.Reload'}}"><i class="ph-duotone ph-arrows-clockwise"></i></button>
-      {{#if headerInfo.exits}}
-      <button type="button" data-action="exitCompanion" title="{{localize 'FCP.ExitCompanion'}}"><i class="ph-duotone ph-desktop"></i></button>
-      <button type="button" data-action="logOut" title="{{localize 'FCP.LogOut'}}"><i class="ph-duotone ph-sign-out"></i></button>
-      {{/if}}
-    </div>
+    {{!-- One «⋯» instead of three buttons by the name: reload, desktop and log out are rare and should not be one tap away. --}}
+    <details class="fcp-more">
+      <summary title="{{localize 'FCP.Menu'}}" aria-label="{{localize 'FCP.Menu'}}">{{> "modules/foundry-companion-local-phone/templates/parts/icon.hbs" i="dots"}}</summary>
+      <div class="fcp-more-menu">
+        <button type="button" data-action="refresh"><i class="ph-duotone ph-arrows-clockwise"></i>{{localize "FCP.Reload"}}</button>
+        {{#if headerInfo.exits}}
+        <button type="button" data-action="exitCompanion"><i class="ph-duotone ph-desktop"></i>{{localize "FCP.ExitCompanionShort"}}</button>
+        <button type="button" data-action="logOut"><i class="ph-duotone ph-sign-out"></i>{{localize "FCP.LogOutShort"}}</button>
+        {{/if}}
+      </div>
+    </details>
     {{/if}}
   </div>
-  {{#if (eq headerTab 'sheet')}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
-  {{#if (eq headerTab 'actions')}}{{#if headerInfo.pin}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}{{/if}}
-  {{#if dice}}{{#if header.modes}}{{#if (or (eq headerTab 'sheet') (eq headerTab 'actions'))}}
-  <div class="fcp-modebar fcp-modebar-head">
-    {{#each header.modes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="setMode" data-mode="{{this.key}}">{{this.label}}</button>{{/each}}
-  </div>
-  {{/if}}{{/if}}{{/if}}
+  {{#if headerInfo.pin}}<div class="fcp-pin">{{headerInfo.pin}}</div>{{/if}}
   {{#if (eq headerTab 'sheet')}}{{#if panes}}
   <div class="fcp-panes">
     {{#each panes}}<button type="button" class="{{#if this.active}}active{{/if}}" data-action="switchPane" data-pane="{{this.key}}">{{this.label}}</button>{{/each}}

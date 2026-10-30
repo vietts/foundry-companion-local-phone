@@ -23,7 +23,7 @@ const TOUCH_GRACE_MS = 350;
 const MOVE_LIMIT_MS = 20000;
 
 /** Parts that do not exist in each mode: the GM has no character, players have no notes. */
-const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map", "pad"];
+const GM_HIDDEN_PARTS = ["sheet", "actions", "inventory", "map", "modes", "pad"];
 const PLAYER_HIDDEN_PARTS = ["notes"];
 
 const TAB_ICONS = {
@@ -197,6 +197,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     inventory: { template: `${T}/items.hbs`, scrollable: [""] },
     chat: { template: `${T}/chat.hbs`, scrollable: [""] },
     map: { template: `${T}/map.hbs`, scrollable: [""] },
+    // Roll mode bar: its own part so it sits above the nav, where the thumb is.
+    modes: { template: `${T}/modes.hbs` },
     nav: { template: `${T}/nav.hbs` },
     // Phone turned sideways: a controller with a big pad over everything else (shown by CSS only).
     pad: { template: `${T}/pad.hbs` }
@@ -304,6 +306,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   #onPadChange = () => this.#flushStale();
 
+  /** The header's «⋯» is a <details>: closed by a tap anywhere else, or once one of its items has been chosen. */
+  #closeMenus = event => {
+    for (const menu of this.element?.querySelectorAll("details.fcp-more[open]") ?? []) {
+      if (!menu.contains(event.target) || event.target.closest(".fcp-more-menu button")) menu.open = false;
+    }
+  };
+
   /** Locking the phone hides the page first: that is the moment to keep the view for the reload that may follow. */
   #onHide = () => this.saveView();
 
@@ -407,7 +416,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       summary: header?.summary?.[tab] ?? "",
       // Actions show the pin only where opening an item sets it (dnd5e); elsewhere it belongs to the sheet.
       pin: tab === "sheet" || (tab === "actions" && this.adapter.pinOnExpand) ? this.#pinText(actor) : "",
-      menu: tab === this.primaryTab,
+      // The «⋯» menu is on every tab: one small target instead of three buttons next to the name.
+      menu: true,
       // Live day: no way out of the companion or of the account by mistake, only reload.
       exits: !this.live
     };
@@ -804,6 +814,7 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.padQuery?.addEventListener("change", this.#onPadChange);
       document.addEventListener("fullscreenchange", this.#onFullscreenChange);
       el.addEventListener("pointerdown", this.#onPointerDown, { capture: true });
+      el.addEventListener("click", this.#closeMenus);
       window.addEventListener("pagehide", this.#onHide);
       document.addEventListener("visibilitychange", this.#onHide);
       for (const type of ["pointerup", "pointercancel"]) el.addEventListener(type, this.#onPointerUp, { capture: true });
@@ -964,7 +975,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (tab === "map") this.markDirty("map");
     this.#flushStale();
-    this.markDirty("header");
+    // The roll mode bar shows only under Sheet and Actions.
+    this.markDirty("header", "modes");
   }
 
   static #onPin(event, target) {
