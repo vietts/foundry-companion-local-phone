@@ -50,7 +50,9 @@ body.fcp-active #ui-right,
 body.fcp-active #ui-top,
 body.fcp-active #ui-bottom,
 body.fcp-active #hud,
-body.fcp-active #chat-notifications {
+body.fcp-active #chat-notifications,
+/* Other modules' floating buttons, put straight on the body: on the phone they covered the companion. */
+body.fcp-active #dh-quickrules-trigger {
   display: none;
 }
 
@@ -3600,6 +3602,20 @@ body.fcp-active:has(#fcp-app) #fcp-reload { display: none; }
     left: 8px !important;
     max-width: calc(100vw - 16px) !important;
     max-height: calc(100dvh - var(--fcp-safe-top) - 16px);
+  }
+  /* Windows sized for a desktop (Quick Rules opens at 1050x750) fill the screen instead, title bar and close in view. */
+  body.fcp-active .application:not(#fcp-app):not(#fcp-picker):not(.dialog) {
+    position: fixed !important;
+    top: calc(var(--fcp-safe-top) + 8px) !important;
+    left: 8px !important;
+    width: calc(100vw - 16px) !important;
+    height: auto !important;
+    max-height: calc(100dvh - var(--fcp-safe-top) - var(--fcp-safe-bottom) - 16px) !important;
+    transform: none !important;
+  }
+  body.fcp-active .application:not(#fcp-app) .window-header [data-action="close"] {
+    min-width: 44px;
+    min-height: 44px;
   }
   /* Core clips the content: a long window (roll setup, rests, armor) hid its buttons below the screen. */
   body.fcp-active .application:not(#fcp-app):not(#fcp-picker) > .window-content {

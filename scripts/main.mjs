@@ -2,6 +2,7 @@ import { MODULE_ID, log } from "./constants.mjs";
 import { registerSettings } from "./settings.mjs";
 import { shouldUseCompanion, migrateStuckMobileMode, likelyCompanion, muteResolutionWarning } from "./device.mjs";
 import { showBoot, hideBoot } from "./boot.mjs";
+import { installPhoneGuard } from "./phone-guard.mjs";
 import { registerSocket } from "./socket.mjs";
 import { registerDisplayHooks } from "./live-display.mjs";
 import { CompanionApp } from "./app/companion-app.mjs";
@@ -26,6 +27,8 @@ Hooks.once("init", () => {
   if (likelyCompanion()) {
     showBoot();
     muteResolutionWarning();
+    // Other modules' questions (Carolingian's Fear tracker) come early, before the companion is up.
+    installPhoneGuard();
   }
   registerSettings();
   registerAdapter(Dnd5eAdapter);
