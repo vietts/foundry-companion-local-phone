@@ -170,6 +170,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       quickRoll: CompanionApp.#onQuickRoll,
       customRoll: CompanionApp.#onCustomRoll,
       sendChat: CompanionApp.#onSendChat,
+      // Roll cards carry core's data-action="expandRoll": inside this window it is ours to handle.
+      expandRoll: (event, target) => { event.preventDefault(); target.classList.toggle("expanded"); },
       move: CompanionApp.#onMove,
       mapTap: CompanionApp.#onMapTap,
       stepToggle: CompanionApp.#onStepToggle,
@@ -832,8 +834,15 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.notes?.onRender(el);
 
     const log = el.querySelector(".fcp-chat-log");
+    if (log && !log.dataset.bound) {
+      log.dataset.bound = "1";
+      // dnd5e wires its cards (description toggle, context menu) on the sidebar's log only.
+      const cards = CONFIG.Item.documentClass?.chatListeners;
+      if (game.system.id === "dnd5e" && typeof cards === "function") cards.call(CONFIG.Item.documentClass, log);
+    }
     if (log && (options.isFirstRender || options.parts?.includes("chat") || !options.parts)) {
-      await this.#fillChat(log);
+      // Not awaited: rendering every message could hold the render queue (and every other update) for seconds.
+      this.#fillChat(log).catch(err => warn("chat fill failed", err));
     }
 
     if (options.isFirstRender && this._dirty.size) this.refreshParts();
@@ -873,10 +882,17 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const btn of book.querySelectorAll("[data-action=spellFilter]")) btn.classList.toggle("active", btn.dataset.filter === this.spellFilter);
   }
 
+  #chatGeneration = 0;
+
+  /**
+   * Rebuild the log off screen and swap it in at the end. Two fills could run at once (a full render and a roll
+   * arriving) and both appended after their awaits: messages came out twice or out of order. Only the latest wins.
+   */
   async #fillChat(log) {
+    const generation = ++this.#chatGeneration;
     const limit = getSetting(SETTINGS.CHAT_LIMIT);
     const messages = game.messages.contents.filter(m => m.visible).slice(-limit);
-    log.replaceChildren();
+    const fragment = document.createDocumentFragment();
     for (const m of messages) {
       let html = this._chatCache.get(m.id);
       if (!html) {
@@ -888,12 +904,18 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
           continue;
         }
       }
-      log.appendChild(html);
+      if (generation !== this.#chatGeneration) return;
+      fragment.appendChild(html);
     }
+    if (generation !== this.#chatGeneration) return;
+    // Someone reading an older roll stays there; at the bottom (or on the first fill) the log follows new messages.
+    const atBottom = !log.childElementCount || log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+    const from = log.scrollTop;
+    log.replaceChildren(fragment);
     // Keep only what is on screen: a long session would otherwise hold every message ever rendered.
     const ids = new Set(messages.map(m => m.id));
     for (const id of this._chatCache.keys()) if (!ids.has(id)) this._chatCache.delete(id);
-    log.scrollTop = log.scrollHeight;
+    log.scrollTop = atBottom ? log.scrollHeight : from;
   }
 
   /** Called by hooks when a chat message changes. */
@@ -1164,10 +1186,11 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!text) return;
     input.value = "";
     try {
+      // As the character open on the phone, not the user's assigned one.
+      const speaker = ChatMessage.implementation.getSpeaker({ actor: this.actor, token: this.token });
       if (typeof ui.chat?.processMessage === "function") {
-        await ui.chat.processMessage(text);
+        await ui.chat.processMessage(text, { speaker });
       } else {
-        const speaker = ChatMessage.implementation.getSpeaker({ actor: this.actor, token: this.token });
         await ChatMessage.implementation.create({ content: text, speaker });
       }
     } catch (err) {
