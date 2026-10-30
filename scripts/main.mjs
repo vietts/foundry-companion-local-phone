@@ -80,6 +80,18 @@ async function maybePromptCanvas() {
   }
 }
 
+/**
+ * Core gives up after 10 tries 0.5 s apart and sends the browser to the exit page: a phone waking up often needs
+ * longer than that to get its wifi back, and the player had to log in again (scan the QR again on a live day).
+ * The phone keeps trying, a little slower, for as long as it takes.
+ */
+function keepReconnecting() {
+  const manager = game.socket?.io;
+  if (!manager?.reconnectionAttempts) return;
+  manager.reconnectionAttempts(Infinity);
+  manager.reconnectionDelayMax(3000);
+}
+
 function activateCompanion() {
   const adapter = getAdapter();
   log(`companion mode on (system adapter: ${adapter.constructor.id})`);
@@ -90,6 +102,7 @@ function activateCompanion() {
     installAdvancementTheme();
   }
   installRecovery();
+  keepReconnecting();
   app = new CompanionApp(adapter);
   app.render({ force: true }).catch(err => reportError("render", err));
   registerRefreshHooks();

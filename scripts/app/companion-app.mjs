@@ -65,6 +65,33 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.padQuery = window.matchMedia?.(PAD_QUERY) ?? null;
     this.#onWideChange = () => this.render();
     this.#onFullscreenChange = () => this.markDirty("pad");
+    this.#restoreView();
+  }
+
+  /*
+   * Foundry reloads the page when the socket comes back after 5 s or more (a phone locked between turns).
+   * The view is kept in this tab's sessionStorage, so the reload puts the player back where they were.
+   */
+  static VIEW_KEY = "fcp-view";
+
+  #restoreView() {
+    let view;
+    try { view = JSON.parse(sessionStorage.getItem(CompanionApp.VIEW_KEY) ?? "null"); } catch (err) { view = null; }
+    if (!view || view.userId !== game.user.id || Date.now() - (view.at ?? 0) > 6 * 3600_000) return;
+    if (this.tabs.includes(view.tab)) this.activeTab = view.tab;
+    if (view.actorId) this._actorId = view.actorId;
+    if ([1, 2, 3].includes(view.step)) this.step = view.step;
+    if (typeof view.pane === "string") this.sheetPane = view.pane;
+    this.expandedItems = new Set(Array.isArray(view.expanded) ? view.expanded : []);
+    this.targetIds = new Set(Array.isArray(view.targets) ? view.targets : []);
+  }
+
+  saveView() {
+    const view = {
+      userId: game.user.id, at: Date.now(), tab: this.activeTab, actorId: this._actorId, step: this.step,
+      pane: this.sheetPane, expanded: [...this.expandedItems], targets: [...this.targetIds]
+    };
+    try { sessionStorage.setItem(CompanionApp.VIEW_KEY, JSON.stringify(view)); } catch (err) { /* private mode */ }
   }
 
   #onWideChange;
@@ -276,6 +303,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   #onPadChange = () => this.#flushStale();
+
+  /** Locking the phone hides the page first: that is the moment to keep the view for the reload that may follow. */
+  #onHide = () => this.saveView();
 
   /** @override */
   _configureRenderParts(options) {
@@ -761,6 +791,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.padQuery?.addEventListener("change", this.#onPadChange);
       document.addEventListener("fullscreenchange", this.#onFullscreenChange);
       el.addEventListener("pointerdown", this.#onPointerDown, { capture: true });
+      window.addEventListener("pagehide", this.#onHide);
+      document.addEventListener("visibilitychange", this.#onHide);
       for (const type of ["pointerup", "pointercancel"]) el.addEventListener(type, this.#onPointerUp, { capture: true });
     }
     if (this.moving) this.#setPadEnabled(false);
@@ -813,6 +845,8 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.wideQuery?.removeEventListener("change", this.#onWideChange);
     this.padQuery?.removeEventListener("change", this.#onPadChange);
     document.removeEventListener("fullscreenchange", this.#onFullscreenChange);
+    window.removeEventListener("pagehide", this.#onHide);
+    document.removeEventListener("visibilitychange", this.#onHide);
     clearTimeout(this.#touchTimer);
     super._onClose(options);
   }

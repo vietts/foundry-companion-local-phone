@@ -27,6 +27,10 @@ export async function syncWakeLock() {
   if (!("wakeLock" in navigator)) return log("wake lock not supported by this browser");
   try {
     sentinel = await navigator.wakeLock.request("screen");
+    // Battery saver can take the lock back while the page is visible: ask again at the next touch.
+    sentinel.addEventListener("release", () => {
+      if (document.visibilityState === "visible") document.addEventListener("pointerdown", syncWakeLock, { once: true });
+    });
   } catch (err) {
     // Some browsers only grant it after a user gesture: retry on the first touch.
     log(`wake lock refused (${err.name}), retrying on the next touch`);
