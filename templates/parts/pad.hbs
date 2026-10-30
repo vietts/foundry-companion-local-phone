@@ -19,7 +19,7 @@
     {{#if pad.sceneName}}<div class="fcp-kicker"><span>{{pad.sceneName}}</span></div>{{/if}}
     <div class="fcp-sidepad-tools">
       <button type="button" data-action="stepToggle">{{localize "FCP.Move.Step"}} ×{{pad.step}}</button>
-      {{#if pad.fullscreen}}<button type="button" data-action="fullscreen"><i class="ph-duotone ph-arrows-out"></i> {{localize "FCP.Pad.Fullscreen"}}</button>{{/if}}
+      {{#if pad.fullscreen}}<button type="button" data-action="fullscreen">{{#if pad.fullscreenOn}}<i class="fa-solid fa-compress"></i> {{localize "FCP.Pad.ExitFullscreen"}}{{else}}<i class="ph-duotone ph-arrows-out"></i> {{localize "FCP.Pad.Fullscreen"}}{{/if}}</button>{{/if}}
     </div>
     <p class="fcp-sidepad-hint">{{localize "FCP.Pad.Hint"}}</p>
   </div>

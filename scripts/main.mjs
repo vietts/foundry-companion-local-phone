@@ -157,6 +157,13 @@ function registerRefreshHooks() {
     Hooks.on(hook, () => { const parts = targetParts(); if (parts.length) app.markDirty(...parts); });
   }
   Hooks.on("canvasReady", () => app.markDirty("map"));
+  // Walls drawn on the minimap, and the GM's map options, were stale until something else redrew the map.
+  for (const hook of ["createWall", "updateWall", "deleteWall"]) {
+    Hooks.on(hook, wall => { if (wall.parent?.id === activeScene()?.id) app.markDirty("map"); });
+  }
+  Hooks.on("updateSetting", setting => {
+    if (setting.key?.startsWith(`${MODULE_ID}.`) && !setting.key.endsWith(".liveDisplay")) app.markDirty("map", "actions", "sheet");
+  });
   Hooks.on("updateUser", (user, changes) => {
     if (user.id === game.user.id && "character" in changes) app.render({ force: true });
   });

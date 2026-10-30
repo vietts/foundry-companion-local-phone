@@ -347,5 +347,6 @@
   "FCP.Error.Where.general": "errore generico",
   "FCP.Spells.Waiting": "Carico le liste degli incantesimi…",
   "FCP.Pad.Hint": "Gira il telefono in verticale per tornare alla scheda.",
+  "FCP.Pad.ExitFullscreen": "Esci dallo schermo intero",
   "FCP.Pad.Fullscreen": "Schermo intero"
 }

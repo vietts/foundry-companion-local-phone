@@ -251,10 +251,22 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       if (this.state === CompanionApp.RENDER_STATES.RENDERING) setTimeout(() => this.refreshParts(), 120);
       return;
     }
-    const parts = Array.from(this._dirty);
-    this._dirty.clear();
-    this.render({ parts });
+    // The part holding the field being typed in waits until the field is left: redrawn under the keyboard, it lost
+    // the cursor, and iOS does not reopen the keyboard outside a tap.
+    const typing = this.#typingPart();
+    const parts = Array.from(this._dirty).filter(p => p !== typing);
+    this._dirty = new Set(typing && this._dirty.has(typing) ? [typing] : []);
+    if (this._dirty.size) this.element.addEventListener("focusout", () => setTimeout(() => this.refreshParts(), 0), { once: true });
+    if (parts.length) this.render({ parts });
   }, 80);
+
+  /** The part with the focused text field, if any. */
+  #typingPart() {
+    const el = document.activeElement;
+    if (!el || !this.element?.contains(el)) return null;
+    const typing = el.matches?.("input:not([type=checkbox]):not([type=radio]):not([type=button]), textarea, select, [contenteditable=true], [contenteditable='']");
+    return typing ? el.closest("[data-application-part]")?.dataset.applicationPart ?? null : null;
+  }
 
   _dirty = new Set();
   /** Parts changed while out of sight: drawn when they show up again (tab opened, phone turned). */
@@ -686,7 +698,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
       sceneName: scene ? scene.navName || scene.name : "",
       step: this.step,
       // iPhone Safari has no fullscreen for pages: the button would do nothing there.
-      fullscreen: !!document.fullscreenEnabled && !document.fullscreenElement
+      fullscreen: !!document.fullscreenEnabled,
+      // Locked sideways in full screen, the sheet was out of reach: the same button gets you out.
+      fullscreenOn: !!document.fullscreenElement
     };
   }
 
@@ -1008,6 +1022,9 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     setSetting(SETTINGS.LAST_ACTOR, this._actorId);
     this.tokenId = null;
     this.mapTarget = null;
+    // Targets belong to the character that chose them: the new one starts clean.
+    this.targetIds.clear();
+    this.expandedItems.clear();
     this.render({ force: true });
   }
 
@@ -1283,8 +1300,13 @@ export class CompanionApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.markDirty("map");
   }
 
-  /** Android: full screen hides the browser bars, then the screen can stay sideways. */
+  /** Android: full screen hides the browser bars, then the screen can stay sideways. Tapped again, it lets go. */
   static async #onFullscreen() {
+    if (document.fullscreenElement) {
+      try { screen.orientation?.unlock?.(); } catch (err) { /* not locked */ }
+      await document.exitFullscreen().catch(() => {});
+      return this.markDirty("pad");
+    }
     try {
       await document.documentElement.requestFullscreen({ navigationUI: "hide" });
       await screen.orientation?.lock?.("landscape").catch(() => {});

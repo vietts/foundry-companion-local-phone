@@ -13,8 +13,10 @@ export function reportError(where, err, actor = null) {
   const message = String(err?.message ?? err ?? "?").split("\n")[0].slice(0, 200);
   console.error(`${MODULE_ID} | ${where}${actor ? ` (${actor.name})` : ""} | system ${game.system.id} ${game.system.version}`, err);
   if (game.user.isGM) return message;
+  // Once per place and message for the whole session: a part that always fails is redrawn on every move,
+  // and the GM got the same red notice every 30 seconds from every phone.
   const key = `${where}|${message}`;
-  if (Date.now() - (sent.get(key) ?? 0) < 30000) return message;
+  if (sent.has(key)) return message;
   sent.set(key, Date.now());
   const gm = game.users.activeGM;
   if (gm) {
