@@ -42,6 +42,19 @@ export function muteResolutionWarning() {
   proto.fcpMuted = true;
 }
 
+/**
+ * A new phone gets the server's default language (English here), and on a phone Foundry's settings window, where
+ * the language is chosen, is hidden. At `init` (Foundry reads the language just after) a phone with no language
+ * chosen yet takes the browser's, when this module speaks it.
+ */
+export function preferBrowserLanguage(moduleLangs) {
+  try {
+    if (localStorage.getItem("core.language") !== null) return;
+    const code = String(navigator.language ?? "").slice(0, 2).toLowerCase();
+    if (code && moduleLangs.includes(code)) localStorage.setItem("core.language", JSON.stringify(code));
+  } catch (err) { /* private mode: Foundry's default */ }
+}
+
 /** Same threshold as Foundry's own "resolution too low" warning (1024x700 CSS pixels). */
 export function isLowResolution() {
   const minW = foundry.Game?.MIN_WINDOW_WIDTH ?? 1024;

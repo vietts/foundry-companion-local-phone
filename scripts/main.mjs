@@ -1,6 +1,6 @@
 import { MODULE_ID, log } from "./constants.mjs";
 import { registerSettings } from "./settings.mjs";
-import { shouldUseCompanion, migrateStuckMobileMode, likelyCompanion, muteResolutionWarning } from "./device.mjs";
+import { shouldUseCompanion, migrateStuckMobileMode, likelyCompanion, muteResolutionWarning, preferBrowserLanguage } from "./device.mjs";
 import { showBoot, hideBoot } from "./boot.mjs";
 import { installPhoneGuard } from "./phone-guard.mjs";
 import { registerSocket } from "./socket.mjs";
@@ -25,6 +25,7 @@ let app = null;
 Hooks.once("init", () => {
   // A phone gets the waiting screen and no "resolution too low" error: the companion is made for that screen.
   if (likelyCompanion()) {
+    preferBrowserLanguage(Array.from(game.modules.get(MODULE_ID)?.languages ?? [], l => l.lang));
     showBoot();
     muteResolutionWarning();
     // Other modules' questions (Carolingian's Fear tracker) come early, before the companion is up.

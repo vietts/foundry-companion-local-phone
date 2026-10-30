@@ -169,7 +169,7 @@
   "FCP.DH.HPMarked": "PF segnati",
   "FCP.DH.HPShort": "PF",
   "FCP.DH.Hope": "Speranza",
-  "FCP.DH.NotEnoughHope": "Servono {n} Speranza per le esperienze scelte.",
+  "FCP.DH.NotEnoughHope": "Non hai abbastanza Speranza per l'esperienza scelta (serve {n}): toccala di nuovo per toglierla, oppure recupera Speranza.",
   "FCP.DH.Stress": "Stress",
   "FCP.DH.ArmorLabel": "Armatura",
   "FCP.DH.DiceRecipe": "{trait} {mod} · d12 Speranza + d12 Paura {mod}",

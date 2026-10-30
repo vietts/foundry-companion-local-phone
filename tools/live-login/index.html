@@ -129,6 +129,11 @@
 
     // Il telefono non carica la mappa di Foundry: il modulo lo farebbe comunque, così si risparmia un ricaricamento.
     try { localStorage.setItem("core.noCanvas", "true"); } catch (err) { /* navigazione privata */ }
+    // Foundry parte nella lingua del server (inglese) e sul telefono non si può cambiare: si usa quella del browser.
+    try {
+      const lang = String(navigator.language ?? "").slice(0, 2).toLowerCase();
+      if (localStorage.getItem("core.language") === null && ["it", "en"].includes(lang)) localStorage.setItem("core.language", JSON.stringify(lang));
+    } catch (err) { /* navigazione privata */ }
 
     let response;
     try {
