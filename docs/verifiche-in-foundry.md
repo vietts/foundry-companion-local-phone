@@ -2,6 +2,34 @@
 
 Cose che i test con `node --test` non coprono. Da rifare dopo ogni modifica che le tocca.
 
+## Prima del tavolo (ogni release)
+
+Su un telefono vero (almeno un iPhone e un Android), giocatore senza canvas, GM sul portatile.
+
+**Ingresso**
+1. QR di una carta appena stampata: pagina «Ciao, sei …» con ritratto, poi la stessa schermata mentre Foundry carica, poi la Mappa. Nessuna pagina di Foundry, nessuna domanda, nessun avviso rosso.
+2. Carta vecchia (password cambiata): «Questa carta non vale più» con Riprova.
+3. Finestra «Accessi della giornata dal vivo» senza indirizzo di accesso: avviso rosso e, se `/accesso/` risponde, il pulsante per usarla.
+4. Ristampa con un giocatore collegato: la conferma lo nomina; non spuntato di default.
+
+**Scheda e tiri (dnd5e)**
+5. Tocco su caratteristica, salvezza, abilità: il tiro parte; con Vantaggio il dado è doppio, poi la barra torna su Normale.
+6. Privilegio con più attività (es. Incanalare Divinità): ogni «Usa» parte.
+7. Attacco con Vantaggio dalla scheda Azioni: la finestra di dnd5e si apre già su Vantaggio.
+8. Iniziativa dal telefono col token già in combattimento: nessun combattente nuovo nel tracker; toccata due volte, sempre uno.
+9. PF: tre «−» rapidi tolgono 3; doppio tocco su Danno lo applica una volta.
+
+**Scheda e tiri (Daggerheart)**
+10. Reazione per una prova, poi un attacco: l'attacco è un'azione (Speranza/Paura assegnate).
+11. Esperienza scelta sul telefono con la finestra del tiro attiva: è già spuntata nella finestra.
+12. Danno grezzo: soglie e armatura come dal desktop.
+
+**Telefono**
+13. Bloccare lo schermo 30 s e sbloccare: si torna sulla stessa tab, stesso personaggio, stessi oggetti aperti.
+14. Durante un combattimento con tanti tiri: la barra in basso e i pulsanti rispondono al primo tocco.
+15. Chat: rileggere un tiro vecchio mentre arrivano messaggi nuovi, la chat non salta in fondo; nessun messaggio doppio.
+16. Scrivere nel campo dei PF mentre il GM cambia qualcosa del personaggio: la tastiera resta aperta.
+
 ## Effetti dal telefono (daggerheart-vfx)
 
 Serve `daggerheart-vfx` attivo (o lo stub in `tools/vfx-stub/`, solo sul Foundry locale), un GM
